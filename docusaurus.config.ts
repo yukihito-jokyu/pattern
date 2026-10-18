@@ -1,0 +1,34 @@
+import {themes as prismThemes} from 'prism-react-renderer';
+import type {Config} from '@docusaurus/types';
+import type * as Preset from '@docusaurus/preset-classic';
+
+const config: Config = {
+  title: 'pattern',
+  tagline: '仕組みを理解し、実装を持ち帰る',
+  url: 'http://localhost:3000',
+  baseUrl: process.env.SITE_BASE_URL || '/',
+  future: {v4: true},
+  onBrokenLinks: 'throw',
+  onBrokenAnchors: 'throw',
+  onDuplicateRoutes: 'throw',
+  markdown: {
+    format: 'md',
+    hooks: {onBrokenMarkdownLinks: 'throw', onBrokenMarkdownImages: 'throw'},
+  },
+  i18n: {defaultLocale: 'ja', locales: ['ja']},
+  presets: [['classic', {
+    docs: {sidebarPath: './sidebars.ts', routeBasePath: 'docs'},
+    blog: false,
+  } satisfies Preset.Options]],
+  plugins: ['./plugins/site-search'],
+  themeConfig: {
+    colorMode: {respectPrefersColorScheme: true},
+    navbar: {
+      title: 'pattern',
+      items: [{type: 'docSidebar', sidebarId: 'docsSidebar', label: 'ドキュメント', position: 'left'}],
+    },
+    prism: {theme: prismThemes.github, darkTheme: prismThemes.dracula},
+  } satisfies Preset.ThemeConfig,
+};
+
+export default config;
