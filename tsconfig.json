@@ -1,0 +1,6 @@
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {"strict": true, "baseUrl": ".", "ignoreDeprecations": "6.0"},
+  "include": ["docusaurus.config.ts", "sidebars.ts", "src/**/*", "plugins/**/*.d.ts", "tests/browser/**/*.ts", "playwright.config.ts"],
+  "exclude": ["node_modules", "build", ".docusaurus"]
+}
