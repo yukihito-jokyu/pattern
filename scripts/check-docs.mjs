@@ -29,7 +29,7 @@ export async function checkDocs(root) {
     try {data = parseYaml(tree.children.find(n => n.type === 'yaml')?.value || '') || {};} catch (e) {errors.push(`${file}: front matterが不正です: ${e.message}`); data = {};}
     for (const key of ['title', 'description', 'slug']) if (typeof data[key] !== 'string' || !data[key].trim()) errors.push(`${file}: ${key}を指定してください。`);
     for (const key of ['title', 'description', 'slug']) if (typeof data[key] === 'string' && /\{\{[^}]+\}\}|TODO|ここに記入/.test(data[key])) errors.push(`${file}: ${key}にテンプレートの記入欄が残っています。`);
-    if (data.slug) {
+    if (typeof data.slug === 'string' && data.slug.trim()) {
       if (!data.slug.startsWith('/') || data.slug.startsWith('/docs/') || /[?#]/.test(data.slug)) errors.push(`${file}: slugは/docsを含めない/始まりのパスにしてください。`);
       if (slugs.has(data.slug)) errors.push(`${file}: slugが${slugs.get(data.slug)}と重複しています。`);
       slugs.set(data.slug, file);

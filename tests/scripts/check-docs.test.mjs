@@ -23,6 +23,7 @@ for (const [name, from, to, expected] of [
   ['メタデータ', 'description: 管理基盤のテスト専用サンプル。', '', /description/],
   ['未記入欄', '入力された名前', '{{ここに記入}}', /記入欄/],
   ['メタデータの未記入欄', 'title: Helloのパターン', 'title: "{{パターン名}}"', /title.*記入欄/],
+  ['slugの型違い', 'slug: /sample/basic/hello', 'slug: 22', /index.md.*slugを指定/],
 ]) test(name, async t => {
   const root = await project(t);
   await change(root, from, to);
