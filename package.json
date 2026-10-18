@@ -1,0 +1,44 @@
+{
+  "name": "pattern",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "npm run downloads:build && docusaurus start",
+    "check:dir": "node scripts/check-dir.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "downloads:build": "node scripts/build-downloads.mjs",
+    "verify:patterns": "node scripts/verify-patterns.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/scripts/*.test.mjs tests/search/*.test.mjs",
+    "build": "npm run check:dir && npm run check:docs && npm run downloads:build && docusaurus build",
+    "serve": "docusaurus serve",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/faster": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@mdx-js/react": "^3.0.0",
+    "clsx": "^2.0.0",
+    "fflate": "^0.8.2",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "~6.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

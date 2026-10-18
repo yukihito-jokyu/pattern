@@ -1,0 +1,7 @@
+node_modules/
+.docusaurus/
+build/
+static/downloads/patterns/
+playwright-report/
+test-results/
+.DS_Store
