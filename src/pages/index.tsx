@@ -1,12 +1,11 @@
 import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
+import PatternArticle from '@site/src/components/PatternArticle';
 import documentPreview from '@site/docs/web/documentation/docusaurus-basic/images/document-desktop.png';
 import styles from './index.module.css';
 
 export default function Home(): ReactNode {
-  const downloadUrl = useBaseUrl('/downloads/patterns/web/documentation/docusaurus-basic.zip');
   return <Layout title="pattern" description="設定や構成の説明と、対応する実装を掲載するパターン集です。">
     <main className={styles.page}>
       <div className="container">
@@ -15,28 +14,44 @@ export default function Home(): ReactNode {
           <p>設定や構成の説明と、対応する実装を掲載しています。<br className={styles.desktopBreak} />各パターンの実装・README・検証用ファイルをZIPで取得できます。</p>
         </header>
 
-        <article className={styles.pattern} aria-labelledby="docusaurus-title">
-          <div className={styles.details}>
-            <p className={styles.category}>Web <span aria-hidden="true">/</span> ドキュメント</p>
-            <h2 id="docusaurus-title"><Link to="/docs/web/documentation/docusaurus-basic">Docusaurusのドキュメントサイト</Link></h2>
-            <p className={styles.description}>Markdownの記事をサイドバーで整理し、日本語で検索できるサイトの構成です。サイト名や公開先などの設定は、付属のsetupスキルから変更できます。</p>
-            <dl className={styles.features}>
-              <div><dt>文書の表示</dt><dd>記事・コード・画像、自動サイドバー</dd></div>
-              <div><dt>検索</dt><dd>タイトルと本文を対象とする日本語検索</dd></div>
-              <div><dt>セットアップ</dt><dd>設定台帳と、質問に沿って設定するスキル</dd></div>
-            </dl>
-            <div className={styles.actions}>
-              <Link className="button button--primary" to="/docs/web/documentation/docusaurus-basic">構成と設定の説明</Link>
-              <a href={downloadUrl} download>実装をダウンロード <span className={styles.fileType}>ZIP</span></a>
-            </div>
-          </div>
-          <figure className={styles.preview}>
-            <Link to="/docs/web/documentation/docusaurus-basic#完成画面" aria-label="Docusaurusパターンの完成画面を見る">
-              <img src={documentPreview} alt="左にサイドバー、中央に本文とコード、右に目次を配置した文書画面" width="1440" height="1100" />
-            </Link>
-            <figcaption>文書画面の例 · Docusaurus</figcaption>
-          </figure>
-        </article>
+        <PatternArticle
+          id="docusaurus-title"
+          category={['Web', 'ドキュメント']}
+          title="Docusaurusのドキュメントサイト"
+          to="/docs/web/documentation/docusaurus-basic"
+          description="Markdownの記事をサイドバーで整理し、日本語で検索できるサイトの構成です。サイト名や公開先などの設定は、付属のsetupスキルから変更できます。"
+          features={[
+            {label: '文書の表示', value: '記事・コード・画像、自動サイドバー'},
+            {label: '検索', value: 'タイトルと本文を対象とする日本語検索'},
+            {label: 'セットアップ', value: '設定台帳と、質問に沿って設定するスキル'},
+          ]}
+          actionLabel="構成と設定の説明"
+          downloadPath="/downloads/patterns/web/documentation/docusaurus-basic.zip"
+          preview={{
+            to: '/docs/web/documentation/docusaurus-basic#完成画面',
+            linkLabel: 'Docusaurusパターンの完成画面を見る',
+            src: documentPreview,
+            alt: '左にサイドバー、中央に本文とコード、右に目次を配置した文書画面',
+            width: 1440,
+            height: 1100,
+            caption: '文書画面の例 · Docusaurus',
+          }}
+        />
+
+        <PatternArticle
+          id="go-clean-title"
+          category={['バックエンド', 'アーキテクチャ']}
+          title="Goのクリーンアーキテクチャ"
+          to="/docs/backend/architecture/go-clean"
+          description="ユーザーの作成・取得APIを通じて、HTTP、業務ルール、DBの責務を分ける構成です。依存方向をlintで検査し、ZIP単体でテストとAPIの動作確認ができます。"
+          features={[
+            {label: '構成', value: 'domain・usecase・adapter・infraと手書きDI'},
+            {label: '永続化', value: 'PostgreSQL、トランザクション、マイグレーション'},
+            {label: '検証', value: '単体テスト、依存方向の違反検出、API確認'},
+          ]}
+          actionLabel="構成と処理の説明"
+          downloadPath="/downloads/patterns/backend/architecture/go-clean.zip"
+        />
 
         <section className={styles.guide} aria-labelledby="usage-title">
           <h2 id="usage-title">パターンの利用手順</h2>
