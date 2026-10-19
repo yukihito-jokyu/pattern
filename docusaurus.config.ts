@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'pattern',
-  tagline: '仕組みを理解し、実装を持ち帰る',
+  tagline: '設定・構成の説明と実装のパターン集',
   url: 'http://localhost:3000',
   baseUrl: process.env.SITE_BASE_URL || '/',
   future: {v4: true},
