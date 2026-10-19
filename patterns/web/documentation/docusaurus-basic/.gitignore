@@ -1,0 +1,8 @@
+node_modules/
+build/
+.docusaurus/
+test-results/
+playwright-report/
+.setup-state.json
+setup-answers.json
+.DS_Store
