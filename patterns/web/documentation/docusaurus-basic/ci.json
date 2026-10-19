@@ -1,0 +1,6 @@
+{
+  "command": [
+    "bash",
+    "scripts/verify-ci.sh"
+  ]
+}

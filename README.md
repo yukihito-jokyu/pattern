@@ -23,7 +23,8 @@ npm start
 docs/                           # パターンの説明と運用文書
 patterns/                       # 配布する実装・README・検証用ファイル
 static/downloads/patterns/      # ビルド時に生成するZIP（Git管理対象外）
-src/pages/                      # サイトの入口
+src/components/                 # 一覧画面と紹介用コンポーネント
+plugins/pattern-list/            # 文書情報からトップページを生成
 src/theme/SearchBar/            # 検索UI
 plugins/site-search/            # 検索データ生成と検索処理
 scripts/                        # プロジェクト全体の配置・文書検証、ZIP生成、検証補助

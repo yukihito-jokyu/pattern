@@ -21,7 +21,7 @@ const config: Config = {
     docs: {sidebarPath: './sidebars.ts', routeBasePath: 'docs'},
     blog: false,
   } satisfies Preset.Options]],
-  plugins: ['./plugins/site-search'],
+  plugins: ['./plugins/site-search', './plugins/pattern-list'],
   themeConfig: {
     colorMode: {respectPrefersColorScheme: true},
     navbar: {

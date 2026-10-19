@@ -1,4 +1,5 @@
 import path from 'node:path';
+import {assertPatternId, patternPaths} from './lib/patterns.mjs';
 import os from 'node:os';
 import {parseArgs} from 'node:util';
 import {spawn} from 'node:child_process';
@@ -6,6 +7,7 @@ import {mkdir, mkdtemp, readFile, writeFile, rm} from 'node:fs/promises';
 import {unzipSync} from 'fflate';
 import {buildDownloads} from './build-downloads.mjs';
 import {main} from './lib/project.mjs';
+import {readPatternCI} from './pattern-ci.mjs';
 
 export async function runVerification(directory, command, timeout) {
   return new Promise(resolve => {
@@ -33,15 +35,15 @@ export async function verifyPatterns(root, {id, command, timeout = 120000} = {})
   if (!Number.isSafeInteger(timeout) || timeout < 1) throw new Error('timeoutは1以上の整数（ミリ秒）にしてください。');
   if (!id) throw new Error('--idで検証対象を指定してください。');
   if (!Array.isArray(command) || !command.length || command.some(arg => typeof arg !== 'string') || !command[0]) throw new Error('--の後に検証コマンドと引数を指定してください。');
-  if (!/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/.test(id)) throw new Error(`不正なパターンIDです: ${id}`);
+  assertPatternId(id);
   const {ids, output} = await buildDownloads(root);
   if (!ids.includes(id)) throw new Error(`パターンがありません: ${id}`);
   const results = [];
   for (const target of [id]) {
     const temp = await mkdtemp(path.join(os.tmpdir(), 'pattern-verify-'));
     try {
-      const entries = unzipSync(await readFile(path.join(output, `${target}.zip`)));
-      const directory = path.join(temp, path.posix.basename(target));
+      const entries = unzipSync(await readFile(path.join(output, patternPaths(target).archive)));
+      const directory = path.join(temp, patternPaths(target).name);
       for (const [name, content] of Object.entries(entries)) {
         const file = path.resolve(temp, name);
         if (!file.startsWith(directory + path.sep)) throw new Error(`${target}: ZIPの展開先が不正です: ${name}`);
@@ -55,10 +57,13 @@ export async function verifyPatterns(root, {id, command, timeout = 120000} = {})
 }
 
 main(import.meta.url, async () => {
-  const {values: options, positionals: command} = parseArgs({
+  const {values: options, positionals} = parseArgs({
     allowPositionals: true,
-    options: {root: {type: 'string', default: process.cwd()}, id: {type: 'string'}, 'timeout-ms': {type: 'string', default: '120000'}},
+    options: {root: {type: 'string', default: process.cwd()}, id: {type: 'string'}, ci: {type: 'boolean', default: false}, 'timeout-ms': {type: 'string', default: '120000'}},
   });
+  if (options.ci && positionals.length) throw new Error('--ciと実行コマンドは同時に指定できません。');
+  if (options.ci) assertPatternId(options.id);
+  const command = options.ci ? (await readPatternCI(options.root, options.id)).command : positionals;
   const results = await verifyPatterns(options.root, {id: options.id, command, timeout: Number(options['timeout-ms'])});
   for (const result of results) console.log(`${result.id}: ${result.state}\n${result.detail}`);
   if (results.some(result => result.state !== '成功')) process.exitCode = 1;

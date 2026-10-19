@@ -38,8 +38,12 @@ jobs:
           retention-days: 7
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [verify, docusaurus-basic]
+    if: >-
+      always() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.verify.result == 'success' && needs.discover-patterns.result == 'success' &&
+      (needs.patterns.result == 'success' ||
+       (needs.patterns.result == 'skipped' && needs.discover-patterns.outputs.has-patterns == 'false'))
+    needs: [verify, discover-patterns, patterns]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -58,35 +62,73 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  docusaurus-basic:
+  discover-patterns:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has-patterns: ${{ steps.matrix.outputs.has-patterns }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: matrix
+        name: Select changed patterns
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = pull_request ]; then
+            matrix=$(node scripts/pattern-ci.mjs --base "$BASE_SHA" --head "$HEAD_SHA" --merge-base)
+          elif [ -z "$BASE_SHA" ] || [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            matrix=$(node scripts/pattern-ci.mjs)
+          else
+            matrix=$(node scripts/pattern-ci.mjs --base "$BASE_SHA" --head "$HEAD_SHA")
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "has-patterns=$(node -e 'console.log(JSON.parse(process.argv[1]).include.length > 0)' "$matrix")" >> "$GITHUB_OUTPUT"
+
+  patterns:
+    needs: discover-patterns
+    if: needs.discover-patterns.outputs.has-patterns == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover-patterns.outputs.matrix) }}
+    name: Verify ZIP (${{ matrix.id }})
+    env:
+      PATTERN_ID: ${{ matrix.id }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-go@v5
+        if: matrix.goVersionFile != ''
+        with:
+          go-version-file: ${{ matrix.goVersionFile }}
+          cache: false
+      - uses: actions/setup-python@v5
+        if: matrix.pythonVersion != ''
+        with:
+          python-version: ${{ matrix.pythonVersion }}
       - run: npm ci
-      - run: npm run downloads:build
-      - name: Extract standalone pattern
-        run: unzip static/downloads/patterns/web/documentation/docusaurus-basic.zip -d "$RUNNER_TEMP/pattern-verification"
-      - run: npm ci
-        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
-      - run: npm run setup -- check
-        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
-      - run: npm run typecheck
-        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
-      - run: npm run build
-        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
-      - run: npx playwright install --with-deps chromium
-        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
-      - run: npm test
-        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - name: Verify standalone ZIP
+        shell: bash
+        run: |
+          set -o pipefail
+          export CI_ARTIFACTS_DIR="$RUNNER_TEMP/pattern-ci-artifacts"
+          mkdir -p "$CI_ARTIFACTS_DIR"
+          npm run verify:patterns -- --id "$PATTERN_ID" --ci --timeout-ms 1200000 2>&1 | tee "$CI_ARTIFACTS_DIR/verification.log"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: docusaurus-basic-browser-results
-          path: ${{ runner.temp }}/pattern-verification/docusaurus-basic/test-results/
+          name: pattern-results-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/pattern-ci-artifacts/
           if-no-files-found: ignore
           retention-days: 7

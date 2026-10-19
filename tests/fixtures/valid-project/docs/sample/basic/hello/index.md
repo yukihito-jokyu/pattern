@@ -2,6 +2,16 @@
 title: Helloのパターン
 description: 管理基盤のテスト専用サンプル。
 slug: /sample/basic/hello
+pattern:
+  features:
+    - label: 用途
+      value: 共通機能の確認
+  preview:
+    src: ./images/example.png
+    alt: 一覧の画面例
+    width: 480
+    height: 320
+    caption: テスト用の画面例
 ---
 
 # Helloのパターン

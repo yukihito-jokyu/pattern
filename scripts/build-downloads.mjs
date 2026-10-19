@@ -1,4 +1,5 @@
 import path from 'node:path';
+import {patternPaths} from './lib/patterns.mjs';
 import {mkdir, mkdtemp, readFile, writeFile, rename, rm, lstat} from 'node:fs/promises';
 import {zipSync, unzipSync} from 'fflate';
 import {checkDir} from './check-dir.mjs';
@@ -17,10 +18,11 @@ export async function buildDownloads(root) {
   let backedUp = false;
   try {
     for (const id of ids) {
-      const source = path.join(root, 'patterns', id);
+      const paths = patternPaths(id);
+      const source = path.join(root, paths.implementation);
       const entries = Object.create(null);
       for (const file of await filesIn(source)) {
-        const key = `${path.posix.basename(id)}/${path.relative(source, file).split(path.sep).join('/')}`;
+        const key = `${paths.name}/${path.relative(source, file).split(path.sep).join('/')}`;
         entries[key] = await readFile(file);
       }
       const archive = zipSync(entries, {level: 6, mtime: new Date('1980-01-01T00:00:00Z')});
@@ -28,7 +30,7 @@ export async function buildDownloads(root) {
       for (const [key, value] of Object.entries(entries)) {
         if (!Buffer.from(restored[key]).equals(value)) throw new Error(`${id}: ZIP収録内容の確認に失敗しました: ${key}`);
       }
-      const target = path.join(stage, `${id}.zip`);
+      const target = path.join(stage, paths.archive);
       await mkdir(path.dirname(target), {recursive: true});
       await writeFile(target, archive);
     }
