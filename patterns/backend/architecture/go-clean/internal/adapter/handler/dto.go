@@ -21,7 +21,13 @@ type userResponse struct {
 }
 
 func newUserResponse(out *usecase.UserOutput) userResponse {
-	return userResponse{ID: out.ID, Name: out.Name, Email: out.Email, CreatedAt: out.CreatedAt}
+	// 作成直後もDBからの取得後も、UTC・マイクロ秒精度で同じ日時を返す。
+	return userResponse{
+		ID:        out.ID,
+		Name:      out.Name,
+		Email:     out.Email,
+		CreatedAt: out.CreatedAt.UTC().Truncate(time.Microsecond),
+	}
 }
 
 type errorResponse struct {
