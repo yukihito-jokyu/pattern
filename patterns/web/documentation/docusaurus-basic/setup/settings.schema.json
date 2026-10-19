@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Docusaurus pattern settings",
+  "description": "詳細な型・条件・既定値はsettings.catalog.jsonと対象バージョンのOSSスキーマを使ってsetup CLIが検証する。",
+  "type": "object",
+  "required": ["site", "preset", "theme", "sidebar", "documents", "categories", "typescript", "playwright", "custom"],
+  "additionalProperties": false,
+  "properties": {
+    "site": {"type": "object"}, "preset": {"type": "object"}, "theme": {"type": "object"},
+    "sidebar": {"type": "object"}, "documents": {"type": "object"}, "categories": {"type": "object"},
+    "typescript": {"type": "object"}, "playwright": {"type": "object"}, "custom": {"type": "object"}
+  }
+}
