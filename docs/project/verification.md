@@ -19,7 +19,7 @@ sidebar_position: 3
 | `scripts/check-docs.mjs` | Markdownのメタデータ・未記入欄・PNG参照・対応ZIP・一覧の紹介設定 |
 | `scripts/build-downloads.mjs` | 配置確認後、必要なファイルからパターンごとのZIPを生成 |
 | `scripts/verify-patterns.mjs` | ZIPを別の場所に展開し、明示された検証コマンドを実行 |
-| `scripts/pattern-ci.mjs` | 各パターンの`ci.json`を検証し、CIの実行対象一覧をJSONで出力 |
+| `scripts/pattern-ci.mjs` | 各パターンの`ci.json`を検証し、Git差分に基づくCIの実行対象一覧をJSONで出力 |
 
 IDの命名・3階層の検証と文書・実装・ZIPのパス生成は、`scripts/lib/patterns.mjs`を共通の定義として使います。個別のコマンドで正規表現やZIPのURL規則を作り直しません。トップページは`plugins/pattern-list/`が文書の紹介情報を読み、掲載対象と画像をページへ渡します。
 
@@ -60,7 +60,33 @@ npm run verify:patterns -- --id backend/api/error-handling -- go test ./...
 
 検索処理は結果を確認し、ブラウザーでは導線、PNG表示、ZIP取得と中身、検索から対象文書への移動を確認します。検証用サイトは一時環境で作り、公開サイトにサンプルを混ぜません。
 
-共通CIは管理スクリプト・サイトを検証するジョブと、ZIPを検証する共通のmatrixジョブに分かれます。`scripts/pattern-ci.mjs`が文書と実装の対応を確認し、全パターンの`ci.json`から実行対象を作ります。文書だけの更新や、対応済みの実行環境を使うパターンの追加では、ワークフロー本体と公開ジョブの依存先を書き換える必要はありません。対象の欠落、設定ファイルの欠落、不正な設定は一覧の作成時に失敗します。
+共通CIは管理スクリプト・サイトを検証するジョブと、ZIPを検証する共通のmatrixジョブに分かれます。`scripts/pattern-ci.mjs`が文書と実装の対応を確認し、全パターンの`ci.json`を確認したうえで、変更された実装だけをZIP検証の対象にします。文書だけの更新や、対応済みの実行環境を使うパターンの追加では、ワークフロー本体と公開ジョブの依存先を書き換える必要はありません。対象の欠落、設定ファイルの欠落、不正な設定は一覧の作成時に失敗します。
+
+ZIP検証の変更判定は次のとおりです。
+
+| 変更・イベント | ZIP検証の対象 |
+| --- | --- |
+| PR | 比較元ブランチとの共通祖先から、PRの最新コミットまでに変更したパターンすべて。追加pushでもPR全体の差分で判定 |
+| mainへのpush | push前後で変更したパターン |
+| `patterns/<分野>/<分類>/<パターン>/`配下の変更 | README・テスト・設定を含め、そのパターン |
+| `docs/`・`src/`・`plugins/`・ルートの`tests/`だけの変更 | ZIP検証は省略。共通のサイト検証は実行 |
+| 共通のZIP生成・検証・CI・依存定義の変更 | 現在ある全パターン |
+| パターンの改名 | 変更前後のパスを確認し、現在存在する対象を検証 |
+| パターンの削除だけ | 削除済みの実装は実行せず、配置・文書・サイトの共通検証で確認 |
+
+全件検証になる共通ファイルは、`scripts/pattern-ci.mjs`の`sharedVerificationFiles`で管理します。ワークフロー、ZIP生成、配置確認、ZIP検証、その共通ライブラリ、ルートの`package.json`・`package-lock.json`が対象です。共通処理のファイル構成を変えた場合は、この集合も確認します。パターン名の追加登録は不要です。
+
+履歴を取得してGitで比較するため、ファイル一覧の件数制限で対象が欠落することはありません。比較元や共通祖先を取得できない場合はCIを失敗させ、対象0件とは扱いません。push前のコミットが存在しない初回pushでは全件を検証します。
+
+対象が0件ならmatrixジョブを省略します。この場合もmainではサイト検証と対象判定の成功を条件に公開を進めます。選ばれたZIP検証の失敗、比較の失敗、キャンセルは公開につなげません。
+
+手元でPR相当の対象だけを確認するには、次を実行します。
+
+```sh
+node scripts/pattern-ci.mjs --base main --head HEAD --merge-base
+```
+
+`--merge-base`を省略すると2つのコミット間の差分で判定します。`--base`を指定しなければ、従来どおり全件の実行設定を出力します。
 
 各パターンのルートに、次の形式の`ci.json`を置きます。これはCIから呼ぶコマンドを明示するための設定です。テストの種類は各パターンで選びます。
 
@@ -80,6 +106,6 @@ CIと同じコマンドは、環境を準備したうえでルートから実行
 npm run verify:patterns -- --id backend/architecture/go-clean --ci --timeout-ms 1200000
 ```
 
-`--ci`は`ci.json`のコマンドを選びます。手動のコマンド指定とは併用できません。従来の`--`以降にコマンドを書く方法も使えます。CIの検証時間は20分、準備を含むジョブ全体は25分です。各パターンを別のrunnerで実行し、1件が失敗しても他の検証を続けます。全パターンの成功を確認してから公開します。失敗ログを成果物として保存し、ブラウザーの結果など追加資料は`CI_ARTIFACTS_DIR`へ保存できます。Goの検証では通常の失敗時にもAPIと検証DBを終了します。時間切れやrunnerの強制停止時は終了処理が走らない場合があるため、使い捨てのCI環境で実行してください。
+`--ci`は`ci.json`のコマンドを選びます。手動のコマンド指定とは併用できません。従来の`--`以降にコマンドを書く方法も使えます。CIの検証時間は20分、準備を含むジョブ全体は25分です。各パターンを別のrunnerで実行し、1件が失敗しても他の検証を続けます。選ばれたパターンの成功を確認してから公開します。失敗ログを成果物として保存し、ブラウザーの結果など追加資料は`CI_ARTIFACTS_DIR`へ保存できます。Goの検証では通常の失敗時にもAPIと検証DBを終了します。時間切れやrunnerの強制停止時は終了処理が走らない場合があるため、使い捨てのCI環境で実行してください。
 
 仕様は[DocusaurusのDocs設定](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs)、[画像・ファイルの扱い](https://docusaurus.io/docs/markdown-features/assets)、[Playwrightのサーバー起動](https://playwright.dev/docs/test-webserver)、[GitHub Actionsのmatrix](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations)で確認できます。サイト、個別実装、人間の確認結果は分けて記録します。
