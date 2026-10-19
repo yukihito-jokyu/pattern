@@ -1,10 +1,11 @@
 import path from 'node:path';
+import {patternPaths} from './lib/patterns.mjs';
 import {readFile} from 'node:fs/promises';
 import {catalog, requireValid, filesIn, cliOptions, main} from './lib/project.mjs';
 
 export async function readPatternCI(root, id) {
-  const directory = path.join(root, 'patterns', id);
-  const label = `patterns/${id}/ci.json`;
+  const directory = path.join(root, patternPaths(id).implementation);
+  const label = `${patternPaths(id).implementation}/ci.json`;
   const config = JSON.parse(await readFile(path.join(directory, 'ci.json'), 'utf8'));
   const allowed = ['command', 'goVersionFile', 'pythonVersion'];
   if (!config || Array.isArray(config) || typeof config !== 'object' || Object.keys(config).some(key => !allowed.includes(key))) throw new Error(`${label}: 未対応の設定です。`);
@@ -21,7 +22,7 @@ export async function patternMatrix(root) {
   const include = [];
   for (const id of ids) {
     const config = await readPatternCI(root, id);
-    include.push({id, goVersionFile: config.goVersionFile ? `patterns/${id}/${config.goVersionFile}` : '', pythonVersion: config.pythonVersion ?? ''});
+    include.push({id, goVersionFile: config.goVersionFile ? `${patternPaths(id).implementation}/${config.goVersionFile}` : '', pythonVersion: config.pythonVersion ?? ''});
   }
   return {include};
 }
