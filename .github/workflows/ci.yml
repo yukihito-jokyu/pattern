@@ -39,7 +39,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [verify, docusaurus-basic]
+    needs: [verify, docusaurus-basic, go-clean]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -88,5 +88,74 @@ jobs:
         with:
           name: docusaurus-basic-browser-results
           path: ${{ runner.temp }}/pattern-verification/docusaurus-basic/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  go-clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: pattern-go-clean-ci
+      DB_PORT: '15432'
+      DATABASE_URL: postgres://app:app@localhost:15432/app?sslmode=disable
+      APP_ADDR: 127.0.0.1:18080
+      API_BASE_URL: http://127.0.0.1:18080
+    defaults:
+      run:
+        working-directory: ${{ runner.temp }}/go-clean-verification/go-clean
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: patterns/backend/architecture/go-clean/go.mod
+          cache-dependency-path: patterns/backend/architecture/go-clean/go.sum
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+        working-directory: ${{ github.workspace }}
+      - run: npm run downloads:build
+        working-directory: ${{ github.workspace }}
+      - name: Extract standalone Go pattern
+        run: unzip static/downloads/patterns/backend/architecture/go-clean.zip -d "$RUNNER_TEMP/go-clean-verification"
+        working-directory: ${{ github.workspace }}
+      - run: go mod download
+      - run: make tools
+      - run: python3 -m pip install -r requirements-setup.txt
+      - run: python3 scripts/setup.py check
+      - run: make test-setup
+      - run: make check
+      - run: make test
+      - run: make check-deps
+      - run: make db-up
+      - run: make migrate-up
+      - run: make build
+      - name: Verify HTTP API against PostgreSQL
+        run: |
+          bin/api > "$RUNNER_TEMP/go-clean-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          make smoke
+      - name: Verify migration round trip
+        run: |
+          make migrate-down
+          make migrate-up
+      - name: Stop verification database
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          compose_file="$RUNNER_TEMP/go-clean-verification/go-clean/compose.yaml"
+          if [ -f "$compose_file" ]; then
+            docker compose -f "$compose_file" down -v
+          fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: go-clean-verification-logs
+          path: ${{ runner.temp }}/go-clean-api.log
           if-no-files-found: ignore
           retention-days: 7
