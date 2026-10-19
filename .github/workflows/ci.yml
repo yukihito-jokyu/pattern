@@ -38,8 +38,12 @@ jobs:
           retention-days: 7
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [verify, patterns]
+    if: >-
+      always() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.verify.result == 'success' && needs.discover-patterns.result == 'success' &&
+      (needs.patterns.result == 'success' ||
+       (needs.patterns.result == 'skipped' && needs.discover-patterns.outputs.has-patterns == 'false'))
+    needs: [verify, discover-patterns, patterns]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -65,13 +69,25 @@ jobs:
       has-patterns: ${{ steps.matrix.outputs.has-patterns }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - id: matrix
-        name: Read each pattern's verification settings
+        name: Select changed patterns
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          matrix=$(node scripts/pattern-ci.mjs)
+          if [ "$EVENT_NAME" = pull_request ]; then
+            matrix=$(node scripts/pattern-ci.mjs --base "$BASE_SHA" --head "$HEAD_SHA" --merge-base)
+          elif [ -z "$BASE_SHA" ] || [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            matrix=$(node scripts/pattern-ci.mjs)
+          else
+            matrix=$(node scripts/pattern-ci.mjs --base "$BASE_SHA" --head "$HEAD_SHA")
+          fi
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "has-patterns=$(node -e 'console.log(JSON.parse(process.argv[1]).include.length > 0)' "$matrix")" >> "$GITHUB_OUTPUT"
 

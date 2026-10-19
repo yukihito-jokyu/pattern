@@ -52,3 +52,24 @@ test('CIコマンドの失敗を成功にしない', async t => {
   assert.equal(result.status, 1);
   assert.match(result.stdout, /失敗\n終了コード7/);
 });
+
+test('変更した実装だけを選び、文書やサイトだけの変更ではZIP検証を省く', async t => {
+  const root = await project(t);
+  await put(root, configFile, JSON.stringify(config));
+  const second = 'sample/basic/another';
+  await put(root, `docs/${second}/index.md`, '# Another');
+  await put(root, `patterns/${second}/README.md`, '# Another');
+  await put(root, `patterns/${second}/ci.json`, JSON.stringify(config));
+  assert.deepEqual((await patternMatrix(root, {files: [`patterns/${id}/hello.mjs`]})).include.map(item => item.id), [id]);
+  for (const files of [[], [`docs/${id}/index.md`], ['src/components/PatternHome.tsx'], ['scripts/lib/pattern-list.mjs'], [`patterns/${id}-other/file`]]) {
+    assert.deepEqual(await patternMatrix(root, {files}), {include: []});
+  }
+  assert.equal((await patternMatrix(root, {files: ['scripts/build-downloads.mjs']})).include.length, 2);
+  assert.equal((await patternMatrix(root, {files: ['.github/workflows/ci.yml']})).include.length, 2);
+  assert.equal((await patternMatrix(root, {files: ['package-lock.json']})).include.length, 2);
+});
+
+test('対象外でも不正なCI設定を黙って通さない', async t => {
+  const root = await project(t);
+  await assert.rejects(patternMatrix(root, {files: []}), /ci.json/);
+});
