@@ -1,0 +1,8 @@
+{
+  "command": [
+    "bash",
+    "scripts/verify-ci.sh"
+  ],
+  "goVersionFile": "go.mod",
+  "pythonVersion": "3.12"
+}

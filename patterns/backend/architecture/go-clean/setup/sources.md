@@ -49,3 +49,5 @@ Python 3.10以上とPyYAML 6.0.3を仮想環境へ導入する。API本体のGo�
 - [Composeの変数補間](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/)
 - [PostgreSQLの接続URI](https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNSTRING)
 - [PyYAMLのsafe_load](https://pyyaml.org/wiki/PyYAMLDocumentation)
+
+`ci.json`と`scripts/verify-ci.sh`は配布物のCI検証用です。アプリの導入設定とは分け、setup台帳の対象には含めません。CIで使う接続先などは環境変数で指定でき、未指定時は使い捨てのローカル検証用DB・ポートを使用します。
