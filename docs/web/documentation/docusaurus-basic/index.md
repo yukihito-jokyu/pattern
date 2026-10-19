@@ -2,6 +2,23 @@
 title: Docusaurusで構築する日本語ドキュメントサイト
 description: 検索、画面例、設定台帳、対話式setupを備えたDocusaurusのドキュメントサイト構成。
 slug: /web/documentation/docusaurus-basic
+pattern:
+  position: 1
+  actionLabel: 構成と設定の説明
+  features:
+    - label: 文書の表示
+      value: 記事・コード・画像、自動サイドバー
+    - label: 検索
+      value: タイトルと本文を対象とする日本語検索
+    - label: セットアップ
+      value: 設定台帳と、質問に沿って設定するスキル
+  preview:
+    src: ./images/document-desktop.png
+    alt: 左にサイドバー、中央に本文とコード、右に目次を配置した文書画面
+    width: 1440
+    height: 1100
+    caption: 文書画面の例 · Docusaurus
+    anchor: 完成画面
 ---
 
 # Docusaurusで構築する日本語ドキュメントサイト

@@ -33,11 +33,11 @@ export default function PatternArticle({
         <p className={styles.category}>{category[0]} <span aria-hidden="true">/</span> {category[1]}</p>
         <h2 id={id}><Link to={to}>{title}</Link></h2>
         <p className={styles.description}>{description}</p>
-        <dl className={styles.features}>
+        {features.length > 0 && <dl className={styles.features}>
           {features.map(({label, value}) => (
             <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
           ))}
-        </dl>
+        </dl>}
         <div className={styles.actions}>
           <Link className="button button--primary" to={to}>{actionLabel}</Link>
           <a href={downloadUrl} download>実装をダウンロード <span className={styles.fileType}>ZIP</span></a>

@@ -2,6 +2,16 @@
 title: Goのクリーンアーキテクチャ
 description: ユーザー作成APIを入口に、HTTP・業務処理・DBの分け方と、setupによる設定、実行・検証の方法を説明する。
 slug: /backend/architecture/go-clean
+pattern:
+  position: 2
+  actionLabel: 構成と処理の説明
+  features:
+    - label: 構成
+      value: domain・usecase・adapter・infraと手書きDI
+    - label: 永続化
+      value: PostgreSQL、トランザクション、マイグレーション
+    - label: 検証
+      value: 単体テスト、依存方向の違反検出、API確認
 ---
 
 # Goのクリーンアーキテクチャ
