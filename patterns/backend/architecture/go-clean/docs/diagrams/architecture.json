@@ -1,0 +1,216 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "go-clean のアーキテクチャ",
+    "locale": "ja",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      730
+    ]
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "APIクライアント",
+      "sublabel": "HTTP / JSON",
+      "pos": [
+        32.0,
+        280
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "handler",
+      "type": "backend",
+      "label": "HTTP Handler",
+      "sublabel": "adapter/handler",
+      "pos": [
+        264.0,
+        280
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "usecase",
+      "type": "backend",
+      "label": "ユースケース",
+      "sublabel": "UserUsecase",
+      "pos": [
+        520.0,
+        280
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "Repository",
+      "sublabel": "UserRepository / TxManager",
+      "pos": [
+        824.0,
+        280
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "users テーブル",
+      "pos": [
+        1104.0,
+        280
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "ドメイン",
+      "sublabel": "User / Email / ID",
+      "pos": [
+        520.0,
+        560
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "main",
+      "type": "backend",
+      "label": "起動・DI",
+      "sublabel": "cmd/api/main.go",
+      "pos": [
+        264.0,
+        40
+      ],
+      "size": [
+        192,
+        90
+      ]
+    },
+    {
+      "id": "infra",
+      "type": "backend",
+      "label": "技術基盤",
+      "sublabel": "config / database / logger",
+      "pos": [
+        824.0,
+        40
+      ],
+      "size": [
+        192,
+        90
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "client",
+      "to": "handler",
+      "label": "HTTP"
+    },
+    {
+      "from": "handler",
+      "to": "usecase",
+      "label": "Create / Get"
+    },
+    {
+      "from": "usecase",
+      "to": "repo",
+      "label": "port 経由で呼出"
+    },
+    {
+      "from": "repo",
+      "to": "db",
+      "label": "SQL / pgx"
+    },
+    {
+      "from": "usecase",
+      "to": "domain",
+      "label": "生成・検証",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        616.0,
+        460
+      ]
+    },
+    {
+      "from": "main",
+      "to": "handler",
+      "label": "DI・サーバ起動",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        360.0,
+        205
+      ]
+    },
+    {
+      "from": "main",
+      "to": "infra",
+      "label": "設定・接続・ログ初期化",
+      "variant": "dashed"
+    },
+    {
+      "from": "infra",
+      "to": "repo",
+      "label": "*sql.DB を供給",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        920.0,
+        205
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "矢印の読み方",
+      "items": [
+        "実線は実行時の呼出、破線は起動時の組み立て。",
+        "import は handler → usecase → domain。repository → usecase / domain。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "依存性逆転とトランザクション",
+      "items": [
+        "usecase/port.go が UserRepository と TxManager を定義。",
+        "UserUsecase.Create は重複確認と INSERT を TxManager.Do で囲む。"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "HTTP と永続化の境界",
+      "items": [
+        "POST /users、GET /users/:id。GET /healthz は router 内で完結。",
+        "handler が DTO・HTTPエラー変換、repository が SQL・復元を担当。"
+      ]
+    }
+  ]
+}

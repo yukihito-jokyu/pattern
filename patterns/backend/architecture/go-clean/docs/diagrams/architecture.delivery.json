@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/opm008761/Documents/project/practice/go-clean/docs/diagrams/architecture.json",
+  "output": "/Users/opm008761/Documents/project/practice/go-clean/docs/diagrams/architecture.html",
+  "specification": {
+    "sha256": "e50cdeaee79390ca818d83beff65c20abfefc131a2be20fd16cdca472fd5f167",
+    "bytes": 4087
+  },
+  "artifact": {
+    "sha256": "623c42dcb3fc6d8d4a9dec32211832514d5d8b44bcc36d140e737917642c8d37",
+    "bytes": 719338
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

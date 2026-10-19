@@ -1,0 +1,18 @@
+{
+  "diagram_type": "architecture",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "visual_review": "skipped (browser capture unavailable: Chrome SIGABRT; no CUA browsers)",
+  "correction_rounds": 0,
+  "project_checks": {
+    "command": "make -f /private/tmp/go-clean-check.Makefile check",
+    "note": "Makefileと同じcheckレシピ。アクセス禁止の環境ファイルを読まないため -include .env のみ除外。",
+    "build": "passed",
+    "vet": "passed",
+    "test": "passed",
+    "lint": "failed: context loading failed: no go files to analyze"
+  },
+  "specification_sha256": "aa30e1394699df371b147c3783e748a4a0ea8c324dc495f485899473fade8683",
+  "artifact_sha256": "713532c56af12c9c72dfd0344fef9a8d1c7ff0985f19174dfeb385d56e6e5a9f",
+  "guide_sha256": "8733dff5d6cb286de6a621200cb2a4694b0e194d85f3e56b08147aab9e096f46",
+  "evidence": "解説HTMLに実コードと行番号を内蔵。公開リポジトリURLとcommit情報がないため、図に架空のリポジトリメタデータは付与していない。"
+}

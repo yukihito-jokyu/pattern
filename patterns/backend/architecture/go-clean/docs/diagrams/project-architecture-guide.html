@@ -1,0 +1,666 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>go-clean | アーキテクチャー解説とコード根拠</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f5f7fb;color:#19263c;font:16px/1.9 system-ui,-apple-system,sans-serif}header{padding:54px max(28px,calc((100vw - 1220px)/2));background:#14243b;color:#fff}header p{max-width:850px;color:#c5d2e3}.eyebrow{color:#7dd3fc;font-size:12px;letter-spacing:.15em}h1{font-size:clamp(28px,4vw,44px);margin:10px 0}h2{font-size:24px;line-height:1.5;margin:0 0 24px}main{display:grid;grid-template-columns:230px minmax(0,1fr);gap:36px;max-width:1280px;margin:40px auto;padding:0 28px}nav{position:sticky;top:24px;align-self:start}nav a{display:block;padding:9px 0;font-size:13px;color:#465775;text-decoration:none}section{background:#fff;border:1px solid #dbe3ee;border-radius:18px;padding:36px;margin-bottom:26px;scroll-margin-top:24px}p{margin:14px 0}a{color:#1367a8}a.button{display:inline-block;background:#1769a6;color:#fff;padding:10px 22px;border-radius:9px;text-decoration:none}table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.7}th{text-align:left;background:#edf4fb}th,td{padding:13px;border:1px solid #dbe3ee;vertical-align:top}.table{overflow-x:auto}details{border-top:1px solid #e3e9f2;margin-top:18px;padding-top:12px}summary{cursor:pointer;color:#326485;font:13px/1.8 ui-monospace,monospace;overflow-wrap:anywhere}pre{background:#14243b;color:#e4edf7;padding:20px;border-radius:9px;overflow:auto;font:12px/1.8 ui-monospace,monospace}li{margin:10px 0}footer{max-width:1280px;margin:30px auto;padding:0 28px 35px;color:#617087;font-size:13px}@media(max-width:850px){main{display:block;padding:0 16px}nav{position:static;margin-bottom:25px}section{padding:24px}header{padding:36px 24px}}@media(prefers-color-scheme:dark){body{background:#101827;color:#d8e4f0}section{background:#172337;border-color:#30425b}nav a,footer{color:#b0c0d4}a{color:#7dd3fc}th{background:#20334c}th,td,details{border-color:#30425b}}</style><header><div class="eyebrow">GO-CLEAN / ARCHITECTURE NOTES / 2026-10-02</div><h1>図から実装をたどる</h1><p>HTTP処理、依存性逆転、トランザクション、データ制約、実行基盤を順につなぎます。各節のコードを展開すると、根拠となった実際の記述と行番号を確認できます。</p><a class="button" href="project-architecture.html">探索できる全体図を開く ↗</a></header><main><nav aria-label="目次"><a href="#read">01 · 全体図の読み方</a><a href="#layers">02 · 依存方向と責任</a><a href="#create">03 · POST /users：作成から応答まで</a><a href="#get">04 · GET /users/:id と /healthz</a><a href="#tx">05 · トランザクションとエラーの経路</a><a href="#data">06 · User集約とusersテーブル</a><a href="#runtime">07 · 起動・接続プール・終了</a><a href="#scope">08 · 実装範囲と検証の読み方</a></nav><article><section id="read"><h2>01 · 全体図の読み方</h2><p>横の主経路は、HTTPリクエストが永続化へ進む実行時の呼び出しです。下側にはUser集約の検証とトランザクション、上側には起動時の配線を置きました。実線は呼び出し、破線は初期化と配線です。レスポンスとエラーは同じ呼び出しスタックを戻ります。</p><p>この図の usecase → repository は、port を通した実行時の呼び出しです。Go の import は逆向きで、repository が usecase の interface を実装します。infra が adapter を import して接続することはなく、main が生成した *sql.DB を注入します。</p><a class="button" href="project-architecture.html">アーキテクチャー図を開く ↗</a></section><section id="layers"><h2>02 · 依存方向と責任</h2><div class="table"><table><thead><tr><th>場所</th><th>責任</th><th>依存・境界</th></tr></thead><tbody><tr><td>cmd/api</td><td>設定読込、loggerとDB生成、全DI、HTTP起動・終了</td><td>handler / repository / usecase / infra を組み立てる</td></tr><tr><td>internal/adapter/handler</td><td>HTTPをusecase入力に変換し、出力をJSON DTOへ変換</td><td>gin / net/http。handler内の userUsecase interface を使う</td></tr><tr><td>internal/usecase</td><td>Create / Get の業務手順と入出力型</td><td>domain と標準ライブラリ。永続化・Txはport経由</td></tr><tr><td>internal/domain/user</td><td>User / ID / Email の生成、検証、復元、ドメインエラー</td><td>標準ライブラリのみ。非公開フィールド、JSON / DBタグなし</td></tr><tr><td>internal/adapter/repository</td><td>usecaseのport実装、SQL、DBエラー変換、Userの復元</td><td>usecase / domain / database/sql / pgconn。infraへのimportなし</td></tr><tr><td>internal/infra</td><td>環境設定・接続プール・構造化logger</td><td>技術基盤。ビジネス層へ依存しない</td></tr></tbody></table></div><details><summary>internal/usecase/port.go · 9行目</summary><p><a href="../../internal/usecase/port.go">元ファイルを開く</a></p><pre><code>  9  // usecase が必要とする外部依存（port）。実装は adapter 層が持つ。
+ 10  
+ 11  // UserRepository はユーザーの永続化を担う port。
+ 12  type UserRepository interface {
+ 13  	Create(ctx context.Context, u *user.User) error
+ 14  	FindByID(ctx context.Context, id user.ID) (*user.User, error) // 見つからない場合は user.ErrNotFound
+ 15  	ExistsByEmail(ctx context.Context, email user.Email) (bool, error)
+ 16  }
+ 17  
+ 18  // TxManager は fn を1トランザクション内で実行する。fn が error を返すとロールバックする。
+ 19  type TxManager interface {
+ 20  	Do(ctx context.Context, fn func(ctx context.Context) error) error
+ 21  }</code></pre></details><details><summary>internal/adapter/handler/user.go · 13行目</summary><p><a href="../../internal/adapter/handler/user.go">元ファイルを開く</a></p><pre><code> 13  type userUsecase interface {
+ 14  	Create(ctx context.Context, in usecase.CreateUserInput) (*usecase.UserOutput, error)
+ 15  	Get(ctx context.Context, in usecase.GetUserInput) (*usecase.UserOutput, error)
+ 16  }
+ 17  
+ 18  // UserHandler はユーザー API のハンドラ。
+ 19  type UserHandler struct {
+ 20  	users userUsecase
+ 21  }
+ 22  
+ 23  // NewUserHandler は UserHandler を生成する。
+ 24  func NewUserHandler(users userUsecase) *UserHandler {
+ 25  	return &amp;UserHandler{users: users}
+ 26  }</code></pre></details><details><summary>internal/adapter/repository/user.go · 10行目</summary><p><a href="../../internal/adapter/repository/user.go">元ファイルを開く</a></p><pre><code> 10  	&quot;example.com/go-clean/internal/domain/user&quot;
+ 11  	&quot;example.com/go-clean/internal/usecase&quot;
+ 12  )
+ 13  
+ 14  var _ usecase.UserRepository = (*UserRepository)(nil)
+ 15  
+ 16  // UserRepository は usecase.UserRepository の PostgreSQL 実装。
+ 17  type UserRepository struct {
+ 18  	db *sql.DB
+ 19  }
+ 20  
+ 21  // NewUserRepository は UserRepository を生成する。
+ 22  func NewUserRepository(db *sql.DB) *UserRepository {
+ 23  	return &amp;UserRepository{db: db}
+ 24  }</code></pre></details><details><summary>.golangci.yml · 94行目</summary><p><a href="../../.golangci.yml">元ファイルを開く</a></p><pre><code> 94            list-mode: strict
+ 95            files:
+ 96              - &quot;**/internal/usecase/**&quot;
+ 97            allow:
+ 98              - $gostd
+ 99              - example.com/go-clean/internal/domain
+100              - example.com/go-clean/internal/usecase
+101            deny:
+102              - pkg: database/sql
+103                desc: &quot;usecase は port(interface) 経由で永続化する&quot;
+104              - pkg: net/http
+105                desc: &quot;usecase は HTTP を知らない&quot;
+106  
+107          nolog:
+108            list-mode: lax
+109            files:
+110              - &quot;**/internal/domain/**&quot;
+111              - &quot;**/internal/usecase/**&quot;
+112              - &quot;**/internal/adapter/**&quot;
+113              - &quot;!**/internal/adapter/handler/**&quot;
+114            deny:
+115              - pkg: log/slog
+116                desc: &quot;ログは handler の writeError でだけ出す。エラーは %w で包んで返す&quot;
+117  
+118          nodir:
+119            list-mode: lax
+120            files:
+121              - $all
+122            deny:
+123              - pkg: example.com/go-clean/pkg
+124                desc: &quot;pkg/ ディレクトリを作らない。置き場所は層で決める&quot;
+125              - pkg: example.com/go-clean/internal/helper
+126                desc: &quot;helper パッケージを作らない。置き場所は層で決める&quot;
+127              - pkg: example.com/go-clean/internal/shared
+128                desc: &quot;shared パッケージを作らない。置き場所は層で決める&quot;
+129  
+130          adapter:
+131            list-mode: lax
+132            files:
+133              - &quot;**/internal/adapter/**&quot;
+134            deny:
+135              - pkg: example.com/go-clean/internal/adapter
+136                desc: &quot;adapter 同士は依存しない（つなぐのは cmd の DI）&quot;
+137              - pkg: example.com/go-clean/internal/infra
+138                desc: &quot;adapter は infra に依存しない（必要なものは cmd から注入で受け取る）&quot;
+139  
+140          handler:
+141            list-mode: lax
+142            files:
+143              - &quot;**/internal/adapter/handler/**&quot;
+144            deny:
+145              - pkg: database/sql
+146                desc: &quot;handler は DB を直接触らない&quot;
+147  
+148          repository:
+149            list-mode: lax
+150            files:
+151              - &quot;**/internal/adapter/repository/**&quot;
+152            deny:
+153              - pkg: net/http
+154                desc: &quot;repository は HTTP を知らない&quot;
+155              - pkg: github.com/gin-gonic/gin
+156                desc: &quot;repository は HTTP を知らない&quot;
+157  
+158          infra:
+159            list-mode: lax
+160            files:
+161              - &quot;**/internal/infra/**&quot;
+162            deny:
+163              - pkg: example.com/go-clean/internal/domain
+164                desc: &quot;infra は技術的な土台のみ。ビジネスロジックに依存しない&quot;
+165              - pkg: example.com/go-clean/internal/usecase
+166                desc: &quot;infra は技術的な土台のみ。ビジネスロジックに依存しない&quot;
+167              - pkg: example.com/go-clean/internal/adapter
+168                desc: &quot;infra は adapter に依存しない&quot;
+169  
+170      copyloopvar:
+171        check-alias: true
+172  
+173      dupl:
+174        threshold: 75
+175  
+176      embeddedstructfieldcheck:
+177        empty-line: true
+178  
+179      errcheck:
+180        check-blank: true  # _ に代入して捨てるエラーも検出する
+181  
+182      exhaustive:
+183        check:
+184          - switch
+185          - map
+186        default-signifies-exhaustive: true
+187  
+188      forbidigo:
+189        analyze-types: true  # 型で判定する（r.db が *sql.DB かどうか）
+190        forbid:
+191          - pattern: ^fmt\.Print.*$
+192            msg: ログは log/slog を使う
+193          - pattern: ^log\.(Print|Fatal|Panic).*$
+194            msg: ログは log/slog を使う
+195          - pattern: ^print(ln)?$
+196            msg: ログは log/slog を使う
+197          - pattern: ^sql\.DB\.(Exec|Query|QueryRow)Context$
+198            msg: repository は conn(ctx, r.db) 経由で DB にアクセスする（トランザクションに自動で参加するため）
+199          - pattern: ^gin\.H$
+200            msg: レスポンスは dto.go の構造体で返す</code></pre></details></section><section id="create"><h2>03 · POST /users：作成から応答まで</h2><ol><li>recoverPanic と logRequest を通り、UserHandler.Create がJSONをdecodeJSONで読みます。ボディ上限は1 MiBで、未知フィールドを拒否します。</li><li>Name / Email を CreateUserInput に詰め替え、リクエストの context を usecase へ渡します。</li><li>NewEmail が構文を検証し小文字化します。User.New は名前をTrimSpaceし、1〜50文字を検証してUUIDと作成日時を設定します。この時点ではTxを開始していません。</li><li>TxManager.Do がTxを開始し、そのTxを含む context で ExistsByEmail を実行します。重複なら ErrEmailAlreadyExists を返し、INSERT は実行しません。</li><li>重複がなければ同じTxでINSERTします。メールのUNIQUE制約が並行作成の競合も防ぎます。</li><li>Commit成功後、domain → UserOutput → userResponse と変換して201を返します。失敗はhandlerのerrorMappingsでHTTPへ変換します。</li></ol><details><summary>internal/adapter/handler/json.go · 11行目</summary><p><a href="../../internal/adapter/handler/json.go">元ファイルを開く</a></p><pre><code> 11  const maxBodyBytes = 1 &lt;&lt; 20
+ 12  
+ 13  func decodeJSON(c *gin.Context, dst any) error {
+ 14  	dec := json.NewDecoder(http.MaxBytesReader(c.Writer, c.Request.Body, maxBodyBytes))
+ 15  	dec.DisallowUnknownFields()
+ 16  
+ 17  	if err := dec.Decode(dst); err != nil {
+ 18  		return fmt.Errorf(&quot;%w: %w&quot;, errInvalidJSON, err)
+ 19  	}
+ 20  
+ 21  	return nil
+ 22  }</code></pre></details><details><summary>internal/adapter/handler/user.go · 29行目</summary><p><a href="../../internal/adapter/handler/user.go">元ファイルを開く</a></p><pre><code> 29  func (h *UserHandler) Create(c *gin.Context) {
+ 30  	var req createUserRequest
+ 31  	if err := decodeJSON(c, &amp;req); err != nil {
+ 32  		writeError(c, err)
+ 33  		return
+ 34  	}
+ 35  
+ 36  	out, err := h.users.Create(c.Request.Context(), usecase.CreateUserInput{Name: req.Name, Email: req.Email})
+ 37  	if err != nil {
+ 38  		writeError(c, err)
+ 39  		return
+ 40  	}
+ 41  
+ 42  	c.JSON(http.StatusCreated, newUserResponse(out))
+ 43  }
+ 44  
+ 45  // Get は GET /users/:id を処理する。
+ 46  func (h *UserHandler) Get(c *gin.Context) {
+ 47  	out, err := h.users.Get(c.Request.Context(), usecase.GetUserInput{ID: c.Param(&quot;id&quot;)})</code></pre></details><details><summary>internal/usecase/user.go · 42行目</summary><p><a href="../../internal/usecase/user.go">元ファイルを開く</a></p><pre><code> 42  // Create はメールアドレスの重複を確認してユーザーを作成する。
+ 43  func (uc *UserUsecase) Create(ctx context.Context, in CreateUserInput) (*UserOutput, error) {
+ 44  	email, err := user.NewEmail(in.Email)
+ 45  	if err != nil {
+ 46  		return nil, err
+ 47  	}
+ 48  
+ 49  	u, err := user.New(in.Name, email, uc.now())
+ 50  	if err != nil {
+ 51  		return nil, err
+ 52  	}
+ 53  
+ 54  	txErr := uc.tx.Do(ctx, func(ctx context.Context) error {
+ 55  		exists, err := uc.repo.ExistsByEmail(ctx, email)
+ 56  		if err != nil {
+ 57  			return fmt.Errorf(&quot;exists by email: %w&quot;, err)
+ 58  		}
+ 59  
+ 60  		if exists {
+ 61  			return user.ErrEmailAlreadyExists
+ 62  		}
+ 63  
+ 64  		if err := uc.repo.Create(ctx, u); err != nil {
+ 65  			return fmt.Errorf(&quot;create user: %w&quot;, err)
+ 66  		}
+ 67  
+ 68  		return nil
+ 69  	})
+ 70  	if txErr != nil {
+ 71  		return nil, txErr
+ 72  	}
+ 73  
+ 74  	return newUserOutput(u), nil
+ 75  }</code></pre></details><details><summary>internal/adapter/repository/user.go · 26行目</summary><p><a href="../../internal/adapter/repository/user.go">元ファイルを開く</a></p><pre><code> 26  // Create はユーザーを保存する。メールアドレスが重複していれば user.ErrEmailAlreadyExists を返す。
+ 27  func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
+ 28  	const q = `
+ 29  		INSERT INTO users (
+ 30  			id,
+ 31  			name,
+ 32  			email,
+ 33  			created_at
+ 34  		)
+ 35  		VALUES (
+ 36  			$1,
+ 37  			$2,
+ 38  			$3,
+ 39  			$4
+ 40  		)
+ 41  	`
+ 42  
+ 43  	_, err := conn(ctx, r.db).ExecContext(ctx, q, u.ID().String(), u.Name(), u.Email().String(), u.CreatedAt())
+ 44  	if isUniqueViolation(err) {
+ 45  		return user.ErrEmailAlreadyExists
+ 46  	}
+ 47  
+ 48  	if err != nil {
+ 49  		return fmt.Errorf(&quot;insert user: %w&quot;, err)
+ 50  	}
+ 51  
+ 52  	return nil
+ 53  }</code></pre></details></section><section id="get"><h2>04 · GET /users/:id と /healthz</h2><p>Get は文字列IDを ParseID で検証・正規化し、FindByIDで1行を取得します。sql.ErrNoRows は ErrNotFound に変換され、DBの値は Reconstruct でUserへ復元します。Get は TxManager.Do を呼ばず、通常は接続プールから読み取ります。</p><p>/healthz はrouter内で200を返すだけで、DBへのクエリを行いません。DBへの PingContext は起動時の database.Open で実行されます。</p><details><summary>internal/usecase/user.go · 77行目</summary><p><a href="../../internal/usecase/user.go">元ファイルを開く</a></p><pre><code> 77  // Get は ID でユーザーを取得する。
+ 78  func (uc *UserUsecase) Get(ctx context.Context, in GetUserInput) (*UserOutput, error) {
+ 79  	id, err := user.ParseID(in.ID)
+ 80  	if err != nil {
+ 81  		return nil, err
+ 82  	}
+ 83  
+ 84  	u, err := uc.repo.FindByID(ctx, id)
+ 85  	if err != nil {
+ 86  		return nil, err
+ 87  	}
+ 88  
+ 89  	return newUserOutput(u), nil
+ 90  }
+ 91  
+ 92  func newUserOutput(u *user.User) *UserOutput {
+ 93  	return &amp;UserOutput{
+ 94  		ID:        u.ID().String(),
+ 95  		Name:      u.Name(),
+ 96  		Email:     u.Email().String(),
+ 97  		CreatedAt: u.CreatedAt(),
+ 98  	}
+ 99  }</code></pre></details><details><summary>internal/adapter/repository/user.go · 55行目</summary><p><a href="../../internal/adapter/repository/user.go">元ファイルを開く</a></p><pre><code> 55  // FindByID は ID でユーザーを取得する。見つからなければ user.ErrNotFound を返す。
+ 56  func (r *UserRepository) FindByID(ctx context.Context, id user.ID) (*user.User, error) {
+ 57  	const q = `
+ 58  		SELECT
+ 59  			id,
+ 60  			name,
+ 61  			email,
+ 62  			created_at
+ 63  		FROM
+ 64  			users
+ 65  		WHERE
+ 66  			id = $1
+ 67  	`
+ 68  
+ 69  	var (
+ 70  		rowID, name, email string
+ 71  		createdAt          time.Time
+ 72  	)
+ 73  
+ 74  	err := conn(ctx, r.db).QueryRowContext(ctx, q, id.String()).Scan(&amp;rowID, &amp;name, &amp;email, &amp;createdAt)
+ 75  	if errors.Is(err, sql.ErrNoRows) {
+ 76  		return nil, user.ErrNotFound
+ 77  	}
+ 78  
+ 79  	if err != nil {
+ 80  		return nil, fmt.Errorf(&quot;select user: %w&quot;, err)
+ 81  	}
+ 82  
+ 83  	return user.Reconstruct(user.ID(rowID), name, user.Email(email), createdAt), nil
+ 84  }</code></pre></details><details><summary>internal/adapter/handler/router.go · 10行目</summary><p><a href="../../internal/adapter/handler/router.go">元ファイルを開く</a></p><pre><code> 10  func NewRouter(users *UserHandler) http.Handler {
+ 11  	gin.SetMode(gin.ReleaseMode) // 起動時のデバッグ出力を止める。ログは logRequest で slog に出す
+ 12  
+ 13  	r := gin.New()
+ 14  	r.HandleMethodNotAllowed = true
+ 15  	r.Use(recoverPanic, logRequest)
+ 16  
+ 17  	r.GET(&quot;/healthz&quot;, func(c *gin.Context) { c.Status(http.StatusOK) })
+ 18  
+ 19  	r.POST(&quot;/users&quot;, users.Create)
+ 20  	r.GET(&quot;/users/:id&quot;, users.Get)
+ 21  
+ 22  	return r
+ 23  }</code></pre></details></section><section id="tx"><h2>05 · トランザクションとエラーの経路</h2><p>TxManager と UserRepository は同じ *sql.DB を持ちます。Txを含むcontextをcallbackへ渡し、repositoryのconnが *sql.Tx を選ぶことで、重複確認とINSERTが同じTxに参加します。すでにTxがある場合はcallbackをそのまま実行して合流します。</p><p>callbackのエラー、またはCommit失敗ではRollbackを試みます。Rollback失敗はerrors.Joinで元のエラーと結合します。panic時はRollbackを試みて再panicし、HTTPミドルウェアが500へ変換します。この経路では、Rollback失敗のログをrepository側で記録する例外があります。</p><div class="table"><table><thead><tr><th>原因</th><th>HTTP</th><th>JSON error.code</th></tr></thead><tbody><tr><td>JSONのdecode失敗</td><td>400</td><td>invalid_request</td></tr><tr><td>ID / Name / Emailの検証失敗</td><td>400</td><td>invalid_argument</td></tr><tr><td>該当ユーザーなし</td><td>404</td><td>not_found</td></tr><tr><td>メール重複 / SQLSTATE 23505</td><td>409</td><td>already_exists</td></tr><tr><td>未対応エラー / panic</td><td>500</td><td>internal</td></tr></tbody></table></div><p>errors.Isでラップ済みのエラーを判定します。未知エラーは詳細をslogに残し、レスポンスには固定の internal server error を返します。23505の変換は制約名を見ず、すべてのunique violationをメール重複として扱う現実装です。</p><details><summary>internal/adapter/repository/tx.go · 25行目</summary><p><a href="../../internal/adapter/repository/tx.go">元ファイルを開く</a></p><pre><code> 25  // Do は fn をトランザクション内で実行する。既にトランザクション中なら合流する。
+ 26  func (m *TxManager) Do(ctx context.Context, fn func(ctx context.Context) error) (err error) {
+ 27  	if _, ok := ctx.Value(txKey{}).(*sql.Tx); ok {
+ 28  		return fn(ctx)
+ 29  	}
+ 30  
+ 31  	tx, err := m.db.BeginTx(ctx, nil)
+ 32  	if err != nil {
+ 33  		return fmt.Errorf(&quot;begin tx: %w&quot;, err)
+ 34  	}
+ 35  
+ 36  	defer func() {
+ 37  		if p := recover(); p != nil {
+ 38  			if rbErr := tx.Rollback(); rbErr != nil {
+ 39  				slog.ErrorContext(ctx, &quot;rollback after panic&quot;, &quot;error&quot;, rbErr)
+ 40  			}
+ 41  
+ 42  			panic(p)
+ 43  		}
+ 44  
+ 45  		if err == nil {
+ 46  			return
+ 47  		}
+ 48  
+ 49  		if rbErr := tx.Rollback(); rbErr != nil {
+ 50  			err = errors.Join(err, fmt.Errorf(&quot;rollback: %w&quot;, rbErr))
+ 51  		}
+ 52  	}()
+ 53  
+ 54  	if err = fn(context.WithValue(ctx, txKey{}, tx)); err != nil {
+ 55  		return err
+ 56  	}
+ 57  
+ 58  	if err = tx.Commit(); err != nil {
+ 59  		return fmt.Errorf(&quot;commit: %w&quot;, err)
+ 60  	}
+ 61  
+ 62  	return nil
+ 63  }</code></pre></details><details><summary>internal/adapter/repository/db.go · 17行目</summary><p><a href="../../internal/adapter/repository/db.go">元ファイルを開く</a></p><pre><code> 17  type txKey struct{}
+ 18  
+ 19  // conn は ctx にトランザクションがあればそれを、なければ db を返す。
+ 20  func conn(ctx context.Context, db *sql.DB) querier { //nolint:ireturn // *sql.DB と *sql.Tx を同じ型で扱うため
+ 21  	if tx, ok := ctx.Value(txKey{}).(*sql.Tx); ok {
+ 22  		return tx
+ 23  	}
+ 24  
+ 25  	return db
+ 26  }
+ 27  
+ 28  func isUniqueViolation(err error) bool {
+ 29  	var pgErr *pgconn.PgError
+ 30  	return errors.As(err, &amp;pgErr) &amp;&amp; pgErr.Code == &quot;23505&quot;
+ 31  }</code></pre></details><details><summary>internal/adapter/handler/error.go · 18行目</summary><p><a href="../../internal/adapter/handler/error.go">元ファイルを開く</a></p><pre><code> 18  var errorMappings = []struct {
+ 19  	target error
+ 20  	status int
+ 21  	code   string
+ 22  }{
+ 23  	{errInvalidJSON, http.StatusBadRequest, &quot;invalid_request&quot;},
+ 24  	{user.ErrInvalidID, http.StatusBadRequest, codeInvalidArgument},
+ 25  	{user.ErrInvalidName, http.StatusBadRequest, codeInvalidArgument},
+ 26  	{user.ErrInvalidEmail, http.StatusBadRequest, codeInvalidArgument},
+ 27  	{user.ErrNotFound, http.StatusNotFound, &quot;not_found&quot;},
+ 28  	{user.ErrEmailAlreadyExists, http.StatusConflict, &quot;already_exists&quot;},
+ 29  }
+ 30  
+ 31  func writeError(c *gin.Context, err error) {
+ 32  	for _, m := range errorMappings {
+ 33  		if errors.Is(err, m.target) {
+ 34  			c.JSON(m.status, errorResponse{Error: errorBody{Code: m.code, Message: m.target.Error()}})
+ 35  			return
+ 36  		}
+ 37  	}
+ 38  
+ 39  	slog.ErrorContext(
+ 40  		c.Request.Context(),
+ 41  		&quot;unhandled error&quot;,
+ 42  		&quot;error&quot;,
+ 43  		err,
+ 44  		&quot;method&quot;,
+ 45  		c.Request.Method,
+ 46  		&quot;path&quot;,
+ 47  		c.Request.URL.Path,
+ 48  	)
+ 49  	c.JSON(http.StatusInternalServerError, errorResponse{
+ 50  		Error: errorBody{Code: &quot;internal&quot;, Message: &quot;internal server error&quot;},
+ 51  	})
+ 52  }</code></pre></details><details><summary>internal/adapter/handler/middleware.go · 30行目</summary><p><a href="../../internal/adapter/handler/middleware.go">元ファイルを開く</a></p><pre><code> 30  	defer func() {
+ 31  		if v := recover(); v != nil {
+ 32  			slog.ErrorContext(
+ 33  				c.Request.Context(),
+ 34  				&quot;panic recovered&quot;,
+ 35  				&quot;panic&quot;,
+ 36  				v,
+ 37  				&quot;method&quot;,
+ 38  				c.Request.Method,
+ 39  				&quot;path&quot;,
+ 40  				c.Request.URL.Path,
+ 41  			)
+ 42  			c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{
+ 43  				Error: errorBody{Code: &quot;internal&quot;, Message: &quot;internal server error&quot;},
+ 44  			})
+ 45  		}
+ 46  	}()
+ 47  
+ 48  	c.Next()
+ 49  }</code></pre></details></section><section id="data"><h2>06 · User集約とusersテーブル</h2><div class="table"><table><thead><tr><th>列</th><th>SQLの型・制約</th><th>domainでの扱い</th></tr></thead><tbody><tr><td>id</td><td>UUID · PRIMARY KEY</td><td>ID値オブジェクト。標準uuidで生成・ParseIDで正規化</td></tr><tr><td>name</td><td>VARCHAR(50) · NOT NULL</td><td>前後空白を除去、Unicodeの文字数で1〜50を検証</td></tr><tr><td>email</td><td>VARCHAR(254) · NOT NULL · UNIQUE</td><td>net/mailで検証。表示名付きは拒否し、文字列全体を小文字化</td></tr><tr><td>created_at</td><td>TIMESTAMPTZ · NOT NULL</td><td>usecase.now()をNewへ渡す。SQLに明示的に保存</td></tr></tbody></table></div><p>現時点のマイグレーションはusersの1テーブルで、外部キーや他集約との関係はありません。Reconstructは保存済みデータの復元専用で再検証しません。メール254文字の上限はDB側にあり、NewEmailには同じ長さ制限の明示チェックはありません。</p><details><summary>db/migrations/000001_create_users.up.sql · 1行目</summary><p><a href="../../db/migrations/000001_create_users.up.sql">元ファイルを開く</a></p><pre><code>  1  CREATE TABLE users (
+  2      id         UUID         PRIMARY KEY,
+  3      name       VARCHAR(50)  NOT NULL,
+  4      email      VARCHAR(254) NOT NULL UNIQUE,
+  5      created_at TIMESTAMPTZ  NOT NULL
+  6  );</code></pre></details><details><summary>internal/domain/user/user.go · 9行目</summary><p><a href="../../internal/domain/user/user.go">元ファイルを開く</a></p><pre><code>  9  const maxNameLength = 50
+ 10  
+ 11  // User はユーザーエンティティ。フィールドを非公開にし、不正な状態で生成できないようにする。
+ 12  type User struct {
+ 13  	id        ID
+ 14  	name      string
+ 15  	email     Email
+ 16  	createdAt time.Time
+ 17  }
+ 18  
+ 19  // New は不変条件を検証してユーザーを生成する。
+ 20  func New(name string, email Email, now time.Time) (*User, error) {
+ 21  	name = strings.TrimSpace(name)
+ 22  	if err := validateName(name); err != nil {
+ 23  		return nil, err
+ 24  	}
+ 25  
+ 26  	return &amp;User{id: NewID(), name: name, email: email, createdAt: now}, nil
+ 27  }
+ 28  
+ 29  // Reconstruct は永続化層からの復元専用。検証済みのデータであることを前提とする。
+ 30  func Reconstruct(id ID, name string, email Email, createdAt time.Time) *User {
+ 31  	return &amp;User{id: id, name: name, email: email, createdAt: createdAt}
+ 32  }
+ 33  
+ 34  // ID はユーザー ID を返す。
+ 35  func (u *User) ID() ID { return u.id }
+ 36  
+ 37  // Name は名前を返す。
+ 38  func (u *User) Name() string { return u.name }
+ 39  
+ 40  // Email はメールアドレスを返す。
+ 41  func (u *User) Email() Email { return u.email }
+ 42  
+ 43  // CreatedAt は作成日時を返す。
+ 44  func (u *User) CreatedAt() time.Time { return u.createdAt }
+ 45  
+ 46  func validateName(name string) error {
+ 47  	if name == &quot;&quot; || utf8.RuneCountInString(name) &gt; maxNameLength {
+ 48  		return ErrInvalidName
+ 49  	}
+ 50  
+ 51  	return nil
+ 52  }</code></pre></details><details><summary>internal/domain/user/email.go · 8行目</summary><p><a href="../../internal/domain/user/email.go">元ファイルを開く</a></p><pre><code>  8  // Email は検証済みのメールアドレスを表す値オブジェクト。
+  9  type Email string
+ 10  
+ 11  // NewEmail はメールアドレスを検証して Email に変換する。
+ 12  func NewEmail(s string) (Email, error) {
+ 13  	addr, err := mail.ParseAddress(s)
+ 14  	if err != nil || addr.Address != s {
+ 15  		return &quot;&quot;, ErrInvalidEmail
+ 16  	}
+ 17  
+ 18  	return Email(strings.ToLower(s)), nil
+ 19  }
+ 20  
+ 21  func (e Email) String() string { return string(e) }</code></pre></details><details><summary>internal/domain/user/id.go · 3行目</summary><p><a href="../../internal/domain/user/id.go">元ファイルを開く</a></p><pre><code>  3  import &quot;uuid&quot;
+  4  
+  5  // ID は UUID 形式のユーザー識別子。
+  6  type ID string
+  7  
+  8  // NewID は新しい ID をランダムに生成する。
+  9  func NewID() ID {
+ 10  	return ID(uuid.New().String())
+ 11  }
+ 12  
+ 13  // ParseID は文字列を検証して ID に変換する。大文字などの表記揺れは小文字のハイフン区切りにそろえる。
+ 14  func ParseID(s string) (ID, error) {
+ 15  	u, err := uuid.Parse(s)
+ 16  	if err != nil {
+ 17  		return &quot;&quot;, ErrInvalidID
+ 18  	}
+ 19  
+ 20  	return ID(u.String()), nil
+ 21  }
+ 22  
+ 23  func (id ID) String() string { return string(id) }</code></pre></details></section><section id="runtime"><h2>07 · 起動・接続プール・終了</h2><div class="table"><table><thead><tr><th>項目</th><th>現実装</th></tr></thead><tbody><tr><td>設定</td><td>APP_ADDRは既定 :8080、DATABASE_URLは必須、LOG_LEVELは既定 info</td></tr><tr><td>ログ</td><td>slogのJSONHandler → stdout。不正なlevelはinfoへフォールバック</td></tr><tr><td>DB接続</td><td>database/sql + pgx/v5/stdlib。Open後のPingは5秒のtimeout</td></tr><tr><td>接続プール</td><td>最大接続25、最大idle25、接続寿命5分</td></tr><tr><td>DI</td><td>TxManager → UserRepository → UserUsecase → UserHandler → Router。各実装を手書きで生成</td></tr><tr><td>HTTP timeout</td><td>ReadHeader 5秒 / Read 10秒 / Write 10秒 / Idle 60秒</td></tr><tr><td>終了</td><td>SIGINT / SIGTERM → Shutdownを最大10秒待つ → deferでDBを閉じる</td></tr><tr><td>ローカルDB</td><td>postgres:16-alpine、既定公開ポート5432、db-data volume、pg_isready healthcheck</td></tr><tr><td>マイグレーション</td><td>make migrate-upで別途実施。API起動時に自動適用する処理はない</td></tr></tbody></table></div><details><summary>cmd/api/main.go · 23行目</summary><p><a href="../../cmd/api/main.go">元ファイルを開く</a></p><pre><code> 23  	readHeaderTimeout = 5 * time.Second
+ 24  	readTimeout       = 10 * time.Second
+ 25  	writeTimeout      = 10 * time.Second
+ 26  	idleTimeout       = 60 * time.Second
+ 27  	shutdownTimeout   = 10 * time.Second
+ 28  )
+ 29  
+ 30  func main() {
+ 31  	if err := run(); err != nil {
+ 32  		slog.Error(&quot;server exited&quot;, &quot;error&quot;, err)
+ 33  		os.Exit(1)
+ 34  	}
+ 35  }
+ 36  
+ 37  func run() error {
+ 38  	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+ 39  	defer stop()
+ 40  
+ 41  	cfg, err := config.Load()
+ 42  	if err != nil {
+ 43  		return err
+ 44  	}
+ 45  
+ 46  	slog.SetDefault(logger.New(cfg.LogLevel))
+ 47  
+ 48  	db, err := database.Open(ctx, cfg.DatabaseURL)
+ 49  	if err != nil {
+ 50  		return err
+ 51  	}
+ 52  	defer db.Close()
+ 53  
+ 54  	// --- DI: 依存の組み立てはここだけで行う ---
+ 55  	txManager := repository.NewTxManager(db)
+ 56  	userRepo := repository.NewUserRepository(db)
+ 57  	userHandler := handler.NewUserHandler(usecase.NewUserUsecase(userRepo, txManager))
+ 58  
+ 59  	srv := &amp;http.Server{
+ 60  		Addr:              cfg.Addr,
+ 61  		Handler:           handler.NewRouter(userHandler),
+ 62  		ReadHeaderTimeout: readHeaderTimeout,
+ 63  		ReadTimeout:       readTimeout,
+ 64  		WriteTimeout:      writeTimeout,
+ 65  		IdleTimeout:       idleTimeout,
+ 66  	}
+ 67  
+ 68  	errCh := make(chan error, 1)
+ 69  
+ 70  	go func() {
+ 71  		slog.Info(&quot;server started&quot;, &quot;addr&quot;, cfg.Addr)
+ 72  
+ 73  		if err := srv.ListenAndServe(); err != nil &amp;&amp; !errors.Is(err, http.ErrServerClosed) {
+ 74  			errCh &lt;- err
+ 75  		}
+ 76  
+ 77  		close(errCh)
+ 78  	}()
+ 79  
+ 80  	select {
+ 81  	case err := &lt;-errCh:
+ 82  		return err
+ 83  	case &lt;-ctx.Done():
+ 84  	}
+ 85  
+ 86  	slog.Info(&quot;shutting down&quot;)
+ 87  
+ 88  	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+ 89  	defer cancel()
+ 90  
+ 91  	if err := srv.Shutdown(shutdownCtx); err != nil {
+ 92  		return fmt.Errorf(&quot;shutdown server: %w&quot;, err)
+ 93  	}
+ 94  
+ 95  	return nil
+ 96  }</code></pre></details><details><summary>internal/infra/database/database.go · 9行目</summary><p><a href="../../internal/infra/database/database.go">元ファイルを開く</a></p><pre><code>  9  	_ &quot;github.com/jackc/pgx/v5/stdlib&quot; // database/sql 用 PostgreSQL ドライバ
+ 10  )
+ 11  
+ 12  const (
+ 13  	maxOpenConns    = 25
+ 14  	maxIdleConns    = 25
+ 15  	connMaxLifetime = 5 * time.Minute
+ 16  	pingTimeout     = 5 * time.Second
+ 17  )
+ 18  
+ 19  // Open は PostgreSQL に接続し、疎通を確認した *sql.DB を返す。
+ 20  func Open(ctx context.Context, dsn string) (*sql.DB, error) {
+ 21  	db, err := sql.Open(&quot;pgx&quot;, dsn)
+ 22  	if err != nil {
+ 23  		return nil, fmt.Errorf(&quot;open db: %w&quot;, err)
+ 24  	}
+ 25  
+ 26  	db.SetMaxOpenConns(maxOpenConns)
+ 27  	db.SetMaxIdleConns(maxIdleConns)
+ 28  	db.SetConnMaxLifetime(connMaxLifetime)
+ 29  
+ 30  	ctx, cancel := context.WithTimeout(ctx, pingTimeout)
+ 31  	defer cancel()
+ 32  
+ 33  	if err := db.PingContext(ctx); err != nil {
+ 34  		_ = db.Close()
+ 35  		return nil, fmt.Errorf(&quot;ping db: %w&quot;, err)
+ 36  	}
+ 37  
+ 38  	return db, nil
+ 39  }</code></pre></details><details><summary>internal/infra/config/config.go · 18行目</summary><p><a href="../../internal/infra/config/config.go">元ファイルを開く</a></p><pre><code> 18  // Load は環境変数から設定を読み込む。
+ 19  func Load() (Config, error) {
+ 20  	cfg := Config{
+ 21  		Addr:        getenv(&quot;APP_ADDR&quot;, &quot;:8080&quot;),
+ 22  		DatabaseURL: os.Getenv(&quot;DATABASE_URL&quot;),
+ 23  		LogLevel:    getenv(&quot;LOG_LEVEL&quot;, &quot;info&quot;),
+ 24  	}
+ 25  	if cfg.DatabaseURL == &quot;&quot; {
+ 26  		return Config{}, ErrMissingDatabaseURL
+ 27  	}
+ 28  
+ 29  	return cfg, nil
+ 30  }
+ 31  
+ 32  func getenv(key, fallback string) string {
+ 33  	if v, ok := os.LookupEnv(key); ok &amp;&amp; v != &quot;&quot; {
+ 34  		return v
+ 35  	}
+ 36  
+ 37  	return fallback
+ 38  }</code></pre></details><details><summary>internal/infra/logger/logger.go · 8行目</summary><p><a href="../../internal/infra/logger/logger.go">元ファイルを開く</a></p><pre><code>  8  // New は JSON 形式の構造化ロガーを返す。level は debug / info / warn / error。
+  9  func New(level string) *slog.Logger {
+ 10  	var l slog.Level
+ 11  	if err := l.UnmarshalText([]byte(level)); err != nil {
+ 12  		l = slog.LevelInfo
+ 13  	}
+ 14  
+ 15  	return slog.New(slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{Level: l}))
+ 16  }</code></pre></details><details><summary>compose.yaml · 1行目</summary><p><a href="../../compose.yaml">元ファイルを開く</a></p><pre><code>  1  services:
+  2    db:
+  3      image: postgres:16-alpine
+  4      environment:
+  5        POSTGRES_USER: app
+  6        POSTGRES_PASSWORD: app
+  7        POSTGRES_DB: app
+  8      ports:
+  9        - &quot;${DB_PORT:-5432}:5432&quot;
+ 10      volumes:
+ 11        - db-data:/var/lib/postgresql/data
+ 12      healthcheck:
+ 13        test: [&quot;CMD-SHELL&quot;, &quot;pg_isready -U app -d app&quot;]
+ 14        interval: 2s
+ 15        timeout: 3s
+ 16        retries: 15
+ 17  
+ 18  volumes:
+ 19    db-data:</code></pre></details></section><section id="scope"><h2>08 · 実装範囲と検証の読み方</h2><p>この成果物は2026年10月2日のローカルコードを調査したものです。Goはgo.modの1.27.1、直接依存はgin v1.12.0とpgx v5.7.2です。Composeが定義するのはローカルDBのみです。本番のクラウド、ロードバランサー、認証、キャッシュ、キュー、外部サービスの配置はこのプロジェクトに実装されていません。</p><p>domainとusecaseのテーブル駆動テストがあります。手書きfakeTxManagerはcallbackを呼ぶだけで、実DBのCommit・Rollbackや並行競合は再現しません。make checkはbuild → vet → test → lint、make testはrace付きです。</p><p>図のJSONとHTMLのハッシュ、9項目のshowcase検証結果はdeliveryレシートに記録しています。Chromeによる画面検査の結果はvisual-checkレシートを確認してください。自動検証と目視確認は別の検証です。</p><p><a href="project-architecture.json">編集可能な図の仕様</a> · <a href="project-architecture.delivery.json">配布レシート</a> · <a href="project-architecture.visual-check.json">画面検査レシート</a></p><details><summary>go.mod · 1行目</summary><p><a href="../../go.mod">元ファイルを開く</a></p><pre><code>  1  module example.com/go-clean
+  2  
+  3  go 1.27.1
+  4  
+  5  require (
+  6  	github.com/gin-gonic/gin v1.12.0
+  7  	github.com/jackc/pgx/v5 v5.7.2
+  8  )</code></pre></details><details><summary>internal/usecase/fake_test.go · 64行目</summary><p><a href="../../internal/usecase/fake_test.go">元ファイルを開く</a></p><pre><code> 64  func (fakeTxManager) Do(ctx context.Context, fn func(ctx context.Context) error) error {
+ 65  	return fn(ctx)
+ 66  }</code></pre></details><details><summary>Makefile · 28行目</summary><p><a href="../../Makefile">元ファイルを開く</a></p><pre><code> 28  
+ 29  test: ## テストを実行（race 検出付き）
+ 30  	go test -race ./...
+ 31  
+ 32  lint: $(GOLANGCI_LINT) ## golangci-lint（依存方向チェックを含む）
+ 33  	$(GOLANGCI_LINT) run ./...
+ 34  
+ 35  fmt: $(GOLANGCI_LINT) ## コードを整形
+ 36  	$(GOLANGCI_LINT) fmt ./...
+ 37  	$(GOLANGCI_LINT) run --fix --enable-only whitespace ./...
+ 38  
+ 39  check: $(GOLANGCI_LINT) ## 完了前の検証一式（build → vet → test → lint）
+ 40  	go build ./...
+ 41  	go vet ./...
+ 42  	go test ./...
+ 43  	$(GOLANGCI_LINT) run ./...
+ 44  
+ 45  db-up: ## PostgreSQL を起動
+ 46  	docker compose up -d --wait db
+ 47  
+ 48  db-down: ## PostgreSQL を停止
+ 49  	docker compose down
+ 50  
+ 51  migrate-up: ## マイグレーションを適用</code></pre></details></section></article></main><footer>ローカルコードの引用を内蔵。元ファイルへのリンクは、docs/diagramsの配置を維持した場合に利用できます。</footer></html>

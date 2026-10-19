@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "go-clean — HTTP から永続化まで",
+    "locale": "ja",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1370,
+      790
+    ]
+  },
+  "components": [
+    {
+      "id": "api-consumer",
+      "type": "external",
+      "label": "API クライアント",
+      "sublabel": "HTTP / JSON",
+      "pos": [
+        25.2,
+        300
+      ],
+      "size": [
+        183.6,
+        90
+      ]
+    },
+    {
+      "id": "http-adapter",
+      "type": "backend",
+      "label": "HTTP 境界",
+      "sublabel": "Gin · UserHandler · DTO",
+      "pos": [
+        257.40000000000003,
+        300
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "POST /users · GET /users/:id"
+    },
+    {
+      "id": "user-application",
+      "type": "backend",
+      "label": "UserUsecase",
+      "sublabel": "Create / Get · 入出力の変換",
+      "pos": [
+        540.0,
+        300
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "HTTP・SQL を import しない"
+    },
+    {
+      "id": "postgres-adapter",
+      "type": "backend",
+      "label": "永続化アダプター",
+      "sublabel": "UserRepository · conn(ctx, db)",
+      "pos": [
+        855.0,
+        300
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "INSERT · SELECT · SELECT EXISTS"
+    },
+    {
+      "id": "postgres-storage",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "users · UUID / email UNIQUE",
+      "pos": [
+        1143.0,
+        300
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "postgres:16-alpine · :5432"
+    },
+    {
+      "id": "composition-root",
+      "type": "backend",
+      "label": "起動・手書き DI",
+      "sublabel": "cmd/api/main.go",
+      "pos": [
+        257.40000000000003,
+        55
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "http.Server · SIGINT / SIGTERM"
+    },
+    {
+      "id": "technical-foundation",
+      "type": "backend",
+      "label": "技術基盤",
+      "sublabel": "config / database / logger",
+      "pos": [
+        855.0,
+        55
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "*sql.DB を main が注入"
+    },
+    {
+      "id": "user-domain",
+      "type": "backend",
+      "label": "User 集約",
+      "sublabel": "User / Email / ID / errors",
+      "pos": [
+        540.0,
+        605
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "標準ライブラリのみ · JSON タグなし"
+    },
+    {
+      "id": "transaction-adapter",
+      "type": "backend",
+      "label": "TxManager",
+      "sublabel": "Do(ctx, fn) · context に *sql.Tx",
+      "pos": [
+        855.0,
+        605
+      ],
+      "size": [
+        183.6,
+        90
+      ],
+      "tag": "入れ子は既存 Tx に合流"
+    }
+  ],
+  "connections": [
+    {
+      "id": "http-request",
+      "to": "http-adapter",
+      "label": "HTTP",
+      "variant": "emphasis",
+      "from": "api-consumer"
+    },
+    {
+      "id": "invoke-user",
+      "to": "user-application",
+      "label": "Create / Get",
+      "from": "http-adapter"
+    },
+    {
+      "id": "invoke-repository-port",
+      "to": "postgres-adapter",
+      "label": "port 呼出",
+      "from": "user-application"
+    },
+    {
+      "id": "execute-user-sql",
+      "to": "postgres-storage",
+      "label": "SQL / pgx",
+      "from": "postgres-adapter"
+    },
+    {
+      "id": "assemble-server",
+      "to": "http-adapter",
+      "label": "DI・起動",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "from": "composition-root",
+      "labelAt": [
+        349.2,
+        159
+      ]
+    },
+    {
+      "id": "initialize-foundation",
+      "to": "technical-foundation",
+      "label": "設定・接続・ログ初期化",
+      "variant": "dashed",
+      "from": "composition-root"
+    },
+    {
+      "id": "validate-domain",
+      "to": "user-domain",
+      "label": "生成・検証",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "from": "user-application",
+      "labelAt": [
+        631.8000000000001,
+        404
+      ]
+    },
+    {
+      "id": "transaction-port",
+      "to": "transaction-adapter",
+      "label": "Do(ctx, fn)",
+      "fromSide": "right",
+      "toSide": "top",
+      "from": "user-application"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "呼び出しと依存方向",
+      "items": [
+        "実線＝実行時の呼び出し。破線＝起動時の初期化・配線。",
+        "import は handler → usecase → domain。repository → usecase / domain。",
+        "usecase が port を定義し、main がその実装と同じ *sql.DB を注入する。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "作成・取得と整合性",
+      "items": [
+        "作成：Email / User を検証 → Tx 内で EXISTS・INSERT → Commit → 201。",
+        "取得：ParseID → SELECT → Reconstruct → UserOutput → DTO → 200。",
+        "競合作成は email UNIQUE が防ぎ、SQLSTATE 23505 をドメインエラーへ変換。"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "HTTP と実行基盤",
+      "items": [
+        "JSON は最大 1 MiB、未知フィールドを拒否。400 / 404 / 409、未知エラーは 500。",
+        "/healthz は router 内で 200 を返す。DB への Ping は起動時に実施。",
+        "接続プール 25 / 25・寿命 5 分。HTTP 5 / 10 / 10 / 60 秒、停止猶予 10 秒。"
+      ]
+    }
+  ]
+}
