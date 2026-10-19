@@ -2,6 +2,8 @@
 
 パターンの設定値や構造の意味を具体例で説明し、利用できる実装をZIPで配布するリポジトリです。
 
+公開先は https://yukihito-jokyu.github.io/pattern/ です。
+
 説明は`docs/<分野>/<分類>/<パターン>/index.md`、実装は`patterns/`の同じ相対パスに置きます。説明用PNGは文書側の`images/`、運用文書は`docs/project/`に置きます。
 
 ## ローカルで読む
@@ -30,7 +32,7 @@ tests/search/                   # 検索処理のテスト
 tests/browser/                  # 掲載サイト共通の画面・画像・ZIP取得・検索のテスト
 tests/fixtures/                 # 公開しない検証用サンプル
 .agents/skills/pattern-maintenance/ # パターン追加・更新用スキル
-.github/workflows/ci.yml        # PRとmainへのpushで検証
+.github/workflows/ci.yml        # PRとmainへのpushで検証、mainの検証成功後に公開
 docusaurus.config.ts            # サイト設定
 sidebars.ts                     # 自動生成サイドバー
 ```
@@ -59,4 +61,16 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-ブラウザー検証はサンプルを一時サイトに追加し、`/preview/`で配信します。実用サイトにサンプルは混ぜません。検証規約は[検証と配布](docs/project/verification.md)を参照してください。`build/`と`static/downloads/patterns/`は生成物なので直接編集・コミットしません。
+ブラウザー検証はサンプルを一時サイトに追加し、公開先と同じ`/pattern/`で配信します。実用サイトにサンプルは混ぜません。検証規約は[検証と配布](docs/project/verification.md)を参照してください。`build/`と`static/downloads/patterns/`は生成物なので直接編集・コミットしません。
+
+## GitHub Pagesへ公開する
+
+リポジトリのSettings → Pages → Build and deployment → Sourceを`GitHub Actions`に設定します。このリポジトリでは設定済みです。
+
+変更をmainへ反映すると、[CI](.github/workflows/ci.yml)がサイトと配布パターンを検証します。両方のジョブが成功した場合だけ、サイト検証ジョブで生成した`build/`をGitHub Pagesへ公開します。PRでは検証のみ行います。公開処理の権限はdeployジョブに限定し、同時公開を防ぎます。
+
+サイトの`url`は`https://yukihito-jokyu.github.io`、`baseUrl`は`/pattern/`です。`trailingSlash: false`で文書を`.html`として出力します。Pagesでは拡張子なしの文書URLからも参照できます。この指定では文書内のZIPリンクに末尾の`/`が付かず、ファイルを取得できます。別の場所へ配信する場合は設定を変更してください。`SITE_BASE_URL`でパスを上書きできます。
+
+公開前は`npm run build`と`npm run serve`で、表示されたURLの`/pattern/`を確認します。公開後はGitHub Actionsのdeployジョブと`github-pages`環境のURLを確認し、トップページ、文書URLへの直接アクセス、画像表示、検索、ZIPダウンロードを実サイトでも確認します。失敗時は該当ジョブのログを確認し、修正をmainへ反映するか、原因が一時的な場合は同じワークフローを再実行します。
+
+設定と公開方式は[Docusaurusの公開設定](https://docusaurus.io/docs/deployment)と[GitHub Pagesのカスタムワークフロー](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)に従います。

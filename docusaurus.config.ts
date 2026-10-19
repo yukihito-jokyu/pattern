@@ -5,8 +5,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'pattern',
   tagline: '設定・構成の説明と実装のパターン集',
-  url: 'http://localhost:3000',
-  baseUrl: process.env.SITE_BASE_URL || '/',
+  url: 'https://yukihito-jokyu.github.io',
+  baseUrl: process.env.SITE_BASE_URL || '/pattern/',
+  trailingSlash: false,
   future: {v4: true},
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
