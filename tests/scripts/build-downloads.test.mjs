@@ -12,6 +12,8 @@ test('実データ・隠し設定を収録し、依存関係と生成物を除�
   await put(root, 'patterns/sample/basic/hello/.gitignore', 'build/\n');
   await put(root, 'patterns/sample/basic/hello/node_modules/unwanted.js', 'excluded');
   await put(root, 'patterns/sample/basic/hello/build/unwanted.js', 'excluded');
+  await put(root, 'patterns/sample/basic/hello/test-results/trace.zip', 'excluded');
+  await put(root, 'patterns/sample/basic/hello/playwright-report/index.html', 'excluded');
   assert.equal(cli('build-downloads.mjs', root).status, 0);
   const files = unzipSync(await readFile(path.join(root, zip)));
   assert.deepEqual(Object.keys(files).sort(), ['hello/.gitignore', 'hello/README.md', 'hello/hello.mjs', 'hello/hello.test.mjs']);

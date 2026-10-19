@@ -4,7 +4,7 @@ import {parseArgs} from 'node:util';
 import {pathToFileURL} from 'node:url';
 
 export const namePattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-export const ignored = new Set(['node_modules', 'build', 'dist', '.git', '.cache', '.docusaurus', 'coverage', '__pycache__', '.venv', '.DS_Store', '.gitkeep']);
+export const ignored = new Set(['node_modules', 'build', 'dist', '.git', '.cache', '.docusaurus', 'coverage', 'test-results', 'playwright-report', '__pycache__', '.venv', '.DS_Store', '.gitkeep']);
 export const exists = async (file) => lstat(file).then(() => true, (e) => {if (e.code === 'ENOENT') return false; throw e;});
 
 export async function filesIn(directory) {

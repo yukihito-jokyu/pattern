@@ -2,6 +2,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {mkdtemp, cp, symlink, rm} from 'node:fs/promises';
 import {spawn, spawnSync} from 'node:child_process';
+import {ignored} from '../../scripts/lib/project.mjs';
 import {repository, fixture} from './temporary-project.mjs';
 
 const temp = await mkdtemp(path.join(os.tmpdir(), 'pattern-browser-'));
@@ -17,7 +18,7 @@ async function cleanup() {
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => {cleanup().then(() => process.exit());});
 try {
   for (const name of ['package.json', 'docusaurus.config.ts', 'sidebars.ts', 'tsconfig.json', 'src', 'plugins', 'scripts', 'docs', 'patterns']) {
-    await cp(path.join(repository, name), path.join(temp, name), {recursive: true});
+    await cp(path.join(repository, name), path.join(temp, name), {recursive: true, filter: file => !ignored.has(path.basename(file))});
   }
   await cp(path.join(fixture, 'docs'), path.join(temp, 'docs'), {recursive: true});
   await cp(path.join(fixture, 'patterns'), path.join(temp, 'patterns'), {recursive: true});
