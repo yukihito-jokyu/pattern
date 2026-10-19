@@ -6,6 +6,7 @@ import {mkdir, mkdtemp, readFile, writeFile, rm} from 'node:fs/promises';
 import {unzipSync} from 'fflate';
 import {buildDownloads} from './build-downloads.mjs';
 import {main} from './lib/project.mjs';
+import {readPatternCI} from './pattern-ci.mjs';
 
 export async function runVerification(directory, command, timeout) {
   return new Promise(resolve => {
@@ -55,10 +56,13 @@ export async function verifyPatterns(root, {id, command, timeout = 120000} = {})
 }
 
 main(import.meta.url, async () => {
-  const {values: options, positionals: command} = parseArgs({
+  const {values: options, positionals} = parseArgs({
     allowPositionals: true,
-    options: {root: {type: 'string', default: process.cwd()}, id: {type: 'string'}, 'timeout-ms': {type: 'string', default: '120000'}},
+    options: {root: {type: 'string', default: process.cwd()}, id: {type: 'string'}, ci: {type: 'boolean', default: false}, 'timeout-ms': {type: 'string', default: '120000'}},
   });
+  if (options.ci && positionals.length) throw new Error('--ciと実行コマンドは同時に指定できません。');
+  if (options.ci && !/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/.test(options.id ?? '')) throw new Error('--idで検証対象を指定してください。');
+  const command = options.ci ? (await readPatternCI(options.root, options.id)).command : positionals;
   const results = await verifyPatterns(options.root, {id: options.id, command, timeout: Number(options['timeout-ms'])});
   for (const result of results) console.log(`${result.id}: ${result.state}\n${result.detail}`);
   if (results.some(result => result.state !== '成功')) process.exitCode = 1;
