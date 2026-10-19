@@ -3,8 +3,8 @@ import {readFile} from 'node:fs/promises';
 import {unzipSync} from 'fflate';
 
 test('文書から対応ZIPをダウンロードし、内容まで確認する', async ({page}) => {
-  await page.goto('/preview/docs/sample/basic/hello');
-  await expect(page.getByRole('link', {name: '実装をダウンロード'})).toHaveAttribute('href', /^\/preview\//);
+  await page.goto('/pattern/docs/sample/basic/hello');
+  await expect(page.getByRole('link', {name: '実装をダウンロード'})).toHaveAttribute('href', /^\/pattern\//);
   const downloadEvent = page.waitForEvent('download');
   await page.getByRole('link', {name: '実装をダウンロード'}).click();
   const download = await downloadEvent;
