@@ -108,7 +108,7 @@ USER_ID="$(printf '%s' "$CREATED_USER" | python3 -c 'import json,sys; print(json
 curl -i "http://localhost:8080/users/$USER_ID"
 ```
 
-作成は201と`id`・`name`・`email`・`created_at`を返し、名前はTaro、メールはtaro@example.comになります。取得は200で同じユーザーを返します。同じメールで再作成すると409です。終了時はAPIをCtrl+Cで止め、`make db-down`でDBを停止します。ボリュームのデータは残ります。
+作成は201と`id`・`name`・`email`・`created_at`を返し、名前はTaro、メールはtaro@example.comになります。取得は200で同じユーザーを返します。`created_at`はUTC・マイクロ秒精度に統一し、作成直後とDBから取得した後で同じ値を返します。同じメールで再作成すると409です。終了時はAPIをCtrl+Cで止め、`make db-down`でDBを停止します。ボリュームのデータは残ります。
 
 ## 検証
 

@@ -97,6 +97,22 @@ func (h *UserHandler) Create(c *gin.Context) {
 
 ここでは名前やメールの正しさを判断しません。HTTPのリクエストを読むことと、結果をHTTPへ戻すことを担当します。DBや業務ルールが変わっても、HTTPの変換と切り分けて確認できるためです。
 
+応答の日時形式は`internal/adapter/handler/dto.go`の`newUserResponse`でそろえます。
+
+```go
+func newUserResponse(out *usecase.UserOutput) userResponse {
+	// 作成直後もDBからの取得後も、UTC・マイクロ秒精度で同じ日時を返す。
+	return userResponse{
+		ID:        out.ID,
+		Name:      out.Name,
+		Email:     out.Email,
+		CreatedAt: out.CreatedAt.UTC().Truncate(time.Microsecond),
+	}
+}
+```
+
+Goの時刻にはナノ秒の端数を持てますが、PostgreSQLの`TIMESTAMPTZ`はマイクロ秒精度です。作成直後の時刻をそのまま返すと、保存後に取得した時刻と端数が異なる場合があります。そこでHTTP応答へ変換するときにUTCへそろえ、マイクロ秒より小さい端数を切り捨てます。例えば`.123456789`秒は`.123456`秒として返り、作成応答と取得応答が一致します。秒をまたぐ丸めは行いません。精度は[PostgreSQLの日時型](https://www.postgresql.org/docs/current/datatype-datetime.html)、切り捨ては[GoのTime.Truncate](https://pkg.go.dev/time#Time.Truncate)で確認できます。
+
 ## 2. 名前・メールのルールをdomainで守る
 
 `internal/domain/user/user.go`は、名前の前後の空白を除き、空の名前と50文字を超える名前を拒否します。
@@ -1747,9 +1763,9 @@ healthz、作成・取得、名前とメールの正規化、重複409、入力�
 | 設定台帳・setup | 全対象の照合、設定反映、未確認変更の拒否、失敗時復元 | 318項目を照合。15テスト成功。初期状態と設定変更済みのZIPの両方で確認 |
 | ZIP単体のGo検証 | build・vet・テスト・lintとrace検出が成功 | モジュール名・接続数・待ち時間・lint等を変更後、すべて成功。lintは0 issues。禁止importの検出も成功 |
 | DBとAPI | 設定変更後も作成・取得と各エラー応答が一致 | DBの資格情報・DB名・公開ポートとAPIポートを変更して成功。READMEの作成・取得例、マイグレーションの巻き戻し・再適用も成功 |
-| サイト・ZIP | 説明の表示、検索、取得、必要ファイルの収録 | 共通テスト35件・E2E 5件成功。実ページで導線・折りたたみ・検索・PC/モバイル表示・ZIP内容を確認 |
+| サイト・ZIP | 説明の表示、検索、取得、必要ファイルの収録 | 共通テスト45件・E2E 6件成功。実ページで導線・折りたたみ・検索・PC/モバイル表示・ZIP内容を確認 |
 
-CIは`ci.json`に指定した`bash scripts/verify-ci.sh`をZIP展開先で実行します。依存導入、設定確認、Goテスト、DB・API確認をこのスクリプトにまとめ、パターンごとのジョブは共通ワークフローに追加しません。2026-10-19、macOS上でこの入口からの一括検証も成功し、API・検証DB・ボリュームの終了と削除を確認しました。Ubuntu上のGitHub Actions実行、人間による説明・成果物確認、同時実行時の競合、DB障害、公開運用は未確認です。自動テストの成功とは分けて扱います。
+CIは`ci.json`に指定した`bash scripts/verify-ci.sh`をZIP展開先で実行します。依存導入、設定確認、Goテスト、DB・API確認をこのスクリプトにまとめ、パターンごとのジョブは共通ワークフローに追加しません。2026-10-19、macOS上でこの入口からの一括検証も成功し、API・検証DB・ボリュームの終了と削除を確認しました。Ubuntu上の検証は共通CIで実行し、最新の実行結果は[GitHub Actions](https://github.com/yukihito-jokyu/pattern/actions)で確認します。人間による説明・成果物確認、同時実行時の競合、DB障害、公開運用は未確認です。自動テストの成功とは分けて扱います。
 
 ## 参考資料
 
