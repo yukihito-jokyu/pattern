@@ -1,0 +1,49 @@
+{
+  "name": "docusaurus-basic",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "serve": "docusaurus serve",
+    "typecheck": "tsc --noEmit",
+    "setup": "node scripts/setup.mjs",
+    "test:setup": "node --test tests/setup.test.mjs",
+    "test:search": "node --test tests/search.test.mjs",
+    "test:build": "node --test tests/build.test.mjs",
+    "test:e2e": "playwright test",
+    "test": "npm run test:setup && npm run test:search && npm run test:build && npm run test:e2e"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@mdx-js/react": "3.1.1",
+    "prism-react-renderer": "2.4.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "yaml": "2.9.1",
+    "@docusaurus/utils-validation": "3.10.2",
+    "@docusaurus/plugin-content-docs": "3.10.2",
+    "@docusaurus/theme-classic": "3.10.2",
+    "@docusaurus/plugin-content-blog": "3.10.2",
+    "@docusaurus/plugin-content-pages": "3.10.2",
+    "@docusaurus/plugin-sitemap": "3.10.2",
+    "@docusaurus/plugin-svgr": "3.10.2",
+    "@docusaurus/plugin-google-analytics": "3.10.2",
+    "@docusaurus/plugin-google-gtag": "3.10.2",
+    "@docusaurus/plugin-google-tag-manager": "3.10.2",
+    "picomatch": "2.3.2"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "typescript": "6.0.3"
+  }
+}

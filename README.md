@@ -1,6 +1,6 @@
 # pattern
 
-パターンの設定値や構造の意味を具体例で説明し、利用できる実装をZIPで配布するリポジトリです。現在は管理基盤を整備した段階で、実用パターンはまだありません。
+パターンの設定値や構造の意味を具体例で説明し、利用できる実装をZIPで配布するリポジトリです。
 
 説明は`docs/<分野>/<分類>/<パターン>/index.md`、実装は`patterns/`の同じ相対パスに置きます。説明用PNGは文書側の`images/`、運用文書は`docs/project/`に置きます。
 
@@ -24,10 +24,10 @@ static/downloads/patterns/      # ビルド時に生成するZIP（Git管理対�
 src/pages/                      # サイトの入口
 src/theme/SearchBar/            # 検索UI
 plugins/site-search/            # 検索データ生成と検索処理
-scripts/                        # 配置・文書検証、ZIP生成、個別検証
-tests/scripts/                  # スクリプトと生成物のテスト
+scripts/                        # プロジェクト全体の配置・文書検証、ZIP生成、検証補助
+tests/scripts/                  # 共通スクリプトと生成物のテスト
 tests/search/                   # 検索処理のテスト
-tests/browser/                  # 画面・画像・ZIP取得・検索のテスト
+tests/browser/                  # 掲載サイト共通の画面・画像・ZIP取得・検索のテスト
 tests/fixtures/                 # 公開しない検証用サンプル
 .agents/skills/pattern-maintenance/ # パターン追加・更新用スキル
 .github/workflows/ci.yml        # PRとmainへのpushで検証

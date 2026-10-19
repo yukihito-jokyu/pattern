@@ -1,0 +1,26 @@
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "strict": true,
+    "resolveJsonModule": true,
+    "ignoreDeprecations": "6.0",
+    "types": [
+      "node",
+      "@docusaurus/module-type-aliases",
+      "@docusaurus/theme-classic"
+    ]
+  },
+  "include": [
+    "docusaurus.config.ts",
+    "sidebars.ts",
+    "src/**/*",
+    "plugins/**/*.d.ts",
+    "playwright.config.ts",
+    "tests/browser/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    ".docusaurus"
+  ]
+}

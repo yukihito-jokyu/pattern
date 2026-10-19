@@ -31,3 +31,36 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  docusaurus-basic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run downloads:build
+      - name: Extract standalone pattern
+        run: unzip static/downloads/patterns/web/documentation/docusaurus-basic.zip -d "$RUNNER_TEMP/pattern-verification"
+      - run: npm ci
+        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - run: npm run setup -- check
+        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - run: npm run typecheck
+        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - run: npm run build
+        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - run: npx playwright install --with-deps chromium
+        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - run: npm test
+        working-directory: ${{ runner.temp }}/pattern-verification/docusaurus-basic
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: docusaurus-basic-browser-results
+          path: ${{ runner.temp }}/pattern-verification/docusaurus-basic/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
