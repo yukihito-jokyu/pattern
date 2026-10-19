@@ -1,0 +1,10 @@
+/bin/
+.env
+setup-answers*.json
+coverage.out
+
+# 個人の設定（チームで共有する設定は .vscode/settings.json と .claude/settings.json）
+.claude/settings.local.json
+.DS_Store
+
+.venv/
