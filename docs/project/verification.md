@@ -16,10 +16,12 @@ sidebar_position: 3
 | ファイル | 入力と確認・出力 |
 | --- | --- |
 | `scripts/check-dir.mjs` | 文書と実装の3階層の対応・命名・README・実ファイル |
-| `scripts/check-docs.mjs` | Markdownのメタデータ・未記入欄・PNG参照・対応ZIPの指定 |
+| `scripts/check-docs.mjs` | Markdownのメタデータ・未記入欄・PNG参照・対応ZIP・一覧の紹介設定 |
 | `scripts/build-downloads.mjs` | 配置確認後、必要なファイルからパターンごとのZIPを生成 |
 | `scripts/verify-patterns.mjs` | ZIPを別の場所に展開し、明示された検証コマンドを実行 |
 | `scripts/pattern-ci.mjs` | 各パターンの`ci.json`を検証し、CIの実行対象一覧をJSONで出力 |
+
+IDの命名・3階層の検証と文書・実装・ZIPのパス生成は、`scripts/lib/patterns.mjs`を共通の定義として使います。個別のコマンドで正規表現やZIPのURL規則を作り直しません。トップページは`plugins/pattern-list/`が文書の紹介情報を読み、掲載対象と画像をページへ渡します。
 
 ルートから実行します。サイトビルドは配置確認、文書確認、ZIP生成、Docusaurusビルドの順です。途中失敗は後続を止め、非0の終了コードを返します。
 
