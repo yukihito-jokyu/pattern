@@ -1,0 +1,511 @@
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.v2.14.jsonschema.json
+# golangci-lint v2 形式。依存方向のルールは docs/architecture.md と対応している。
+version: "2"
+
+linters:
+  default: standard  # errcheck / govet / ineffassign / staticcheck / unused
+  enable:
+    - asciicheck  # 識別子に ASCII 以外を使わない
+    - bodyclose  # HTTP レスポンスの Body を閉じる
+    - canonicalheader  # HTTP ヘッダー名を正規形で書く
+    - containedctx  # 構造体に context を持たせない
+    - copyloopvar  # 不要な v := v
+    - depguard  # 依存方向（docs/architecture.md）
+    - dogsled  # 捨てる戻り値（_）を並べすぎない
+    - dupl  # 重複コード
+    - dupword  # 同じ単語の連続
+    - durationcheck  # Duration どうしを掛けない
+    - embeddedstructfieldcheck  # 埋め込みフィールドの後に空行
+    - err113  # エラーは定義済みのものを返す
+    - errname  # ErrXxx / XxxError の命名
+    - errorlint  # %w ラップと errors.Is の徹底
+    - exhaustive  # 列挙型の switch を網羅する
+    - fatcontext  # ループ内で ctx を上書きし続けない
+    - forbidigo  # fmt.Print / log.Print を禁止し slog に統一
+    - forcetypeassert  # ok を受け取らない型アサーション
+    - funcorder  # 型 → コンストラクタ → 公開 → 非公開の並び順
+    - gochecknoinits  # init を使わず main で DI する
+    - gocognit  # 関数の複雑さの上限
+    - goconst  # 繰り返す文字列は定数に
+    - gocritic  # 同じ意味の書き方を 1 つに揃える
+    - godox  # TODO / FIXME を残さない
+    - gomoddirectives  # go.mod の replace などを制限
+    - gomodguard_v2  # 外部モジュールは許可したものだけ
+    - gosec  # セキュリティ
+    - gosmopolitan  # 文字列リテラルは英語
+    - iface  # interface の重複・未使用メソッド
+    - inamedparam  # interface のメソッド引数に名前を付ける
+    - interfacebloat  # interface のメソッド数の上限
+    - intrange  # for i := range n
+    - iotamixing  # iota の const ブロックに別の定数を混ぜない
+    - ireturn  # コンストラクタは struct を返す
+    - lll  # 行長の上限
+    - makezero  # 長さ付き make に append しない
+    - mirror  # 不要な []byte / string 変換
+    - misspell
+    - mnd  # マジックナンバー
+    - modernize  # 新しい言語機能・標準ライブラリで書く
+    - musttag  # JSON にする構造体にタグを付ける
+    - nestif  # if のネストを浅く
+    - nilerr  # err を握りつぶさない
+    - nilnil  # return nil, nil を書かない
+    - noctx  # HTTP リクエストに context を渡す
+    - nolintlint  # nolint に対象と理由を書く
+    - nonamedreturns  # 名前付きの戻り値を使わない
+    - nosprintfhostport  # host:port は net.JoinHostPort で組み立てる
+    - paralleltest  # テストで t.Parallel() を呼ぶ
+    - perfsprint  # 不要な fmt.Sprintf
+    - reassign  # 他パッケージの変数を書き換えない
+    - recvcheck  # レシーバをポインタか値に揃える
+    - revive  # 命名と書き方の統一
+    - rowserrcheck  # rows.Err() を確認する
+    - sloglint  # log/slog の書き方
+    - sqlclosecheck  # Rows / Stmt を閉じる
+    - tagalign  # 構造体タグの順序と位置を揃える
+    - tagliatelle  # JSON タグは snake_case
+    - testableexamples  # Example に Output コメントを書く
+    - thelper  # テストヘルパーで t.Helper() を呼ぶ
+    - tparallel  # t.Parallel() の呼び方を揃える
+    - unconvert  # 不要な型変換
+    - unqueryvet  # SELECT * / N+1 / トランザクションの閉じ忘れ
+    - usestdlibvars  # http.MethodGet などの定数を使う
+    - usetesting  # テストでは t.Setenv / t.Context などを使う
+    - whitespace  # ブロック先頭・末尾の不要な空行
+    - wrapcheck  # 外部パッケージのエラーは包んで返す
+    - wsl_v5  # ブロックや return の前後の空行
+
+  settings:
+    depguard:
+      rules:
+        domain:
+          list-mode: strict
+          files:
+            - "**/internal/domain/**"
+          allow:
+            - $gostd
+            - example.com/go-clean/internal/domain
+          deny:
+            - pkg: database/sql
+              desc: "domain は永続化を知らない"
+            - pkg: net/http
+              desc: "domain は HTTP を知らない"
+
+        usecase:
+          list-mode: strict
+          files:
+            - "**/internal/usecase/**"
+          allow:
+            - $gostd
+            - example.com/go-clean/internal/domain
+            - example.com/go-clean/internal/usecase
+          deny:
+            - pkg: database/sql
+              desc: "usecase は port(interface) 経由で永続化する"
+            - pkg: net/http
+              desc: "usecase は HTTP を知らない"
+
+        nolog:
+          list-mode: lax
+          files:
+            - "**/internal/domain/**"
+            - "**/internal/usecase/**"
+            - "**/internal/adapter/**"
+            - "!**/internal/adapter/handler/**"
+          deny:
+            - pkg: log/slog
+              desc: "ログは handler の writeError でだけ出す。エラーは %w で包んで返す"
+
+        nodir:
+          list-mode: lax
+          files:
+            - $all
+          deny:
+            - pkg: example.com/go-clean/pkg
+              desc: "pkg/ ディレクトリを作らない。置き場所は層で決める"
+            - pkg: example.com/go-clean/internal/helper
+              desc: "helper パッケージを作らない。置き場所は層で決める"
+            - pkg: example.com/go-clean/internal/shared
+              desc: "shared パッケージを作らない。置き場所は層で決める"
+
+        adapter:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/**"
+          deny:
+            - pkg: example.com/go-clean/internal/adapter
+              desc: "adapter 同士は依存しない（つなぐのは cmd の DI）"
+            - pkg: example.com/go-clean/internal/infra
+              desc: "adapter は infra に依存しない（必要なものは cmd から注入で受け取る）"
+
+        handler:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/handler/**"
+          deny:
+            - pkg: database/sql
+              desc: "handler は DB を直接触らない"
+
+        repository:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/repository/**"
+          deny:
+            - pkg: net/http
+              desc: "repository は HTTP を知らない"
+            - pkg: github.com/gin-gonic/gin
+              desc: "repository は HTTP を知らない"
+
+        infra:
+          list-mode: lax
+          files:
+            - "**/internal/infra/**"
+          deny:
+            - pkg: example.com/go-clean/internal/domain
+              desc: "infra は技術的な土台のみ。ビジネスロジックに依存しない"
+            - pkg: example.com/go-clean/internal/usecase
+              desc: "infra は技術的な土台のみ。ビジネスロジックに依存しない"
+            - pkg: example.com/go-clean/internal/adapter
+              desc: "infra は adapter に依存しない"
+
+    copyloopvar:
+      check-alias: true
+
+    dupl:
+      threshold: 75
+
+    embeddedstructfieldcheck:
+      empty-line: true
+
+    errcheck:
+      check-blank: true  # _ に代入して捨てるエラーも検出する
+
+    exhaustive:
+      check:
+        - switch
+        - map
+      default-signifies-exhaustive: true
+
+    forbidigo:
+      analyze-types: true  # 型で判定する（r.db が *sql.DB かどうか）
+      forbid:
+        - pattern: ^fmt\.Print.*$
+          msg: ログは log/slog を使う
+        - pattern: ^log\.(Print|Fatal|Panic).*$
+          msg: ログは log/slog を使う
+        - pattern: ^print(ln)?$
+          msg: ログは log/slog を使う
+        - pattern: ^sql\.DB\.(Exec|Query|QueryRow)Context$
+          msg: repository は conn(ctx, r.db) 経由で DB にアクセスする（トランザクションに自動で参加するため）
+        - pattern: ^gin\.H$
+          msg: レスポンスは dto.go の構造体で返す
+        - pattern: ^gin\.Context\.(Bind|ShouldBind|MustBind)\w*$
+          msg: リクエストの JSON は decodeJSON で読む（未知のフィールドの拒否とサイズの上限のため）
+        - pattern: ^gin\.Default$
+          msg: gin.New を使う（ログとパニック回復は自前のミドルウェアで行う）
+        - pattern: ^time\.Now$
+          msg: 現在時刻は usecase の now フィールドから受け取る
+        - pattern: ^context\.(Background|TODO)$
+          msg: 呼び出し元から受け取った ctx を使う
+        - pattern: ^os\.(Getenv|LookupEnv|Environ)$
+          msg: 環境変数は infra/config でだけ読む
+        - pattern: ^sql\.Open$
+          msg: DB 接続は infra/database でだけ作る
+        - pattern: ^http\.DefaultClient$
+          msg: http.Client は cmd で作ってコンストラクタで受け取る
+        - pattern: ^usecase\.New\w+$
+          msg: usecase の生成（DI）は cmd/api/main.go でだけ行う
+        - pattern: ^user\.User$  # 集約を足したら、そのエンティティのパターンと exclusions の 1 行を足す
+          msg: 他の集約は ID だけで参照する（user.User）
+        - pattern: ^usecase\.\w+Usecase\.[A-Z]\w*$  # XxxUsecase のメソッド呼び出し（フィールドは小文字なので対象外）
+          msg: usecase から他の usecase を呼ばない。必要なデータは port から取り、共通の処理は domain へ寄せる
+
+    funcorder:
+      function: true  # 公開関数を非公開関数より前に置く
+
+    gocognit:
+      min-complexity: 15
+
+    gocritic:
+      enabled-tags:
+        - style
+        - diagnostic
+      enabled-checks:  # performance タグのうち、読みやすさも上がるもの
+        - appendCombine
+        - equalFold
+        - preferFprint
+      disabled-checks:
+        - unnamedResult  # nonamedreturns と逆のルールなので無効にする
+        - sloppyReassign  # defer で参照する名前付き err を := で隠してしまう
+
+    godox:
+      keywords:
+        - TODO
+        - BUG
+        - FIXME
+        - HACK
+        - XXX
+
+    gomoddirectives:
+      go-debug-forbidden: true
+      toolchain-forbidden: true  # Go のバージョンは go ディレクティブだけで決める
+      tool-forbidden: true  # ツールは Makefile で固定する
+
+    gomodguard_v2:
+      allowed:
+        - module: github.com/jackc/pgx/v5
+        - module: github.com/gin-gonic/gin
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+
+    iface:
+      enable:
+        - identical
+        - unused
+        - unusedmethod
+
+    ireturn:
+      allow:
+        - error
+        - empty
+        - stdlib
+
+    lll:
+      line-length: 120
+      tab-width: 4  # golines の tab-len と揃える
+
+    misspell:
+      locale: US
+
+    nestif:
+      min-complexity: 4
+
+    nilnil:
+      detect-opposite: true  # エラーと一緒に有効な値を返さない
+
+    nolintlint:
+      allow-unused: false
+      require-explanation: true
+      require-specific: true
+
+    perfsprint:
+      err-error: true
+
+    reassign:
+      patterns:
+        - ".*"
+
+    revive:
+      rules:
+        - name: argument-limit
+          arguments:
+            - 5
+        - name: blank-imports
+        - name: bool-literal-in-expr
+        - name: call-to-gc
+        - name: confusing-naming
+        - name: context-as-argument
+        - name: deep-exit
+        - name: defer
+        - name: early-return
+          arguments:
+            - allow-jump
+        - name: empty-block
+        - name: enforce-map-style
+          arguments:
+            - literal
+        - name: enforce-slice-style
+          arguments:
+            - literal
+        - name: error-return
+        - name: exported
+          arguments:
+            - check-private-receivers
+        - name: filename-format
+          arguments:
+            - "^[_a-z][_a-z0-9]*\\.go$"
+        - name: forbidden-call-in-wg-go
+        - name: function-result-limit
+          arguments:
+            - 3
+        - name: get-return
+        - name: identical-ifelseif-branches
+        - name: identical-ifelseif-conditions
+        - name: identical-switch-branches
+        - name: identical-switch-conditions
+        - name: if-return
+        - name: import-alias-naming
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: inefficient-map-lookup
+        - name: marshal-receiver
+        - name: modifies-value-receiver
+        - name: multiline-if-init
+        - name: nested-structs
+        - name: package-directory-mismatch
+        - name: package-naming
+        - name: receiver-naming
+          arguments:
+            - max-length: 2
+        - name: redundant-import-alias
+        - name: redundant-test-main-exit
+        - name: struct-tag
+        - name: superfluous-else
+        - name: time-date
+        - name: time-equal
+        - name: time-naming
+        - name: unconditional-recursion
+        - name: unexported-naming
+        - name: unexported-return
+        - name: unnecessary-if
+        - name: unnecessary-stmt
+        - name: unsecure-url-scheme
+        - name: unused-parameter
+        - name: unused-receiver
+        - name: use-any
+        - name: use-slices-concat
+        - name: use-slices-sort
+        - name: useless-fallthrough
+        - name: var-declaration
+        - name: var-naming
+
+    sloglint:
+      kv-only: true
+      key-naming-case: snake
+      static-msg: true
+      context: scope
+      forbidden-keys:
+        - time
+        - level
+        - msg
+        - source
+      msg-style: lowercased
+
+    staticcheck:
+      checks:
+        - all  # v1 の staticcheck / stylecheck / gosimple を含む
+        - -ST1000  # パッケージコメントは必須にしない
+
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+        use-field-name: true  # タグ名をフィールド名の snake_case と一致させる
+
+    unqueryvet:
+      check-n1: true
+      check-tx-leaks: true
+
+    unused:
+      field-writes-are-uses: false  # 書き込むだけのフィールドも未使用とみなす
+
+    usestdlibvars:
+      time-month: true
+      time-layout: true
+      crypto-hash: true
+      default-rpc-path: true
+      sql-isolation-level: true
+      tls-signature-scheme: true
+      constant-kind: true
+      time-date-month: true
+
+    usetesting:
+      context-background: true
+      context-todo: true
+      os-temp-dir: true
+
+    wrapcheck:
+      ignore-package-globs:
+        - example.com/go-clean/*
+
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+      case-max-lines: 3  # 4 行以上の case の後に空行
+      enable:
+        - assign-expr  # 式の直後に代入を詰めない
+
+  exclusions:
+    generated: lax
+    # comments プリセットは使わない（公開識別子のドキュメントコメントを必須にするため）
+    presets:
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
+          - err113
+          - forbidigo  # Example テストでは fmt.Println を使う
+          - goconst
+          - gosmopolitan  # テストのケース名は日本語で書く
+      - path-except: internal/adapter/repository/  # conn 経由のルールは repository だけに適用する
+        linters:
+          - forbidigo
+        text: conn\(ctx, r\.db\)
+      - path: internal/adapter/repository/tx\.go  # パニック中のロールバック失敗は返す先がないのでログに残す
+        linters: [depguard]
+        text: ログは handler の writeError
+      - path-except: internal/(domain|usecase|adapter/repository)/
+        linters: [forbidigo]
+        text: 現在時刻は usecase の now
+      - path: internal/usecase/
+        linters: [forbidigo]
+        text: 現在時刻は usecase の now
+        source: 'now:\s+time\.Now'  # コンストラクタで now の既定値を入れる行だけは許す
+      - path: cmd/
+        linters: [forbidigo]
+        text: 呼び出し元から受け取った ctx|http\.Client は cmd|usecase の生成
+      - path: internal/infra/config/
+        linters: [forbidigo]
+        text: 環境変数は infra/config
+      - path: internal/infra/database/
+        linters: [forbidigo]
+        text: DB 接続は infra/database
+      - path-except: internal/domain/  # 他の集約の参照は domain だけで止める
+        linters: [forbidigo]
+        text: 他の集約は ID だけで参照する
+      - path: internal/domain/user/  # 自分の集約のエンティティは使ってよい
+        linters: [forbidigo]
+        text: ID だけで参照する（user\.User）
+      - path-except: internal/usecase/  # usecase を呼ばないルールは usecase の中だけに適用する
+        linters:
+          - forbidigo
+        text: usecase から他の usecase を呼ばない
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+
+formatters:
+  enable:
+    - gofmt  # rewrite-rules による書き換えだけに使う
+    - gofumpt  # gofmt より厳しい整形
+    - goimports
+    - golines  # 長い行の自動折り返し
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+        - pattern: a[b:len(a)]
+          replacement: a[b:]
+    gofumpt:
+      extra:
+        group-params: true  # 同じ型が続く引数をまとめる
+    goimports:
+      local-prefixes:
+        - example.com/go-clean
+    golines:
+      max-len: 120
+      tab-len: 4
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

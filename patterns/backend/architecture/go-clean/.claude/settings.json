@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make check)",
+      "Bash(make test)",
+      "Bash(make lint)",
+      "Bash(make fmt)",
+      "Bash(make build)",
+      "Bash(make tools)",
+      "Bash(make help)",
+      "Bash(make migrate-new:*)",
+      "Bash(go build:*)",
+      "Bash(go vet:*)",
+      "Bash(go test:*)"
+    ],
+    "deny": [
+      "Bash(golangci-lint:*)",
+      "Bash(go get:*)",
+      "Bash(go mod edit -go:*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  }
+}
