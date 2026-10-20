@@ -1,0 +1,366 @@
+--- a/docs/cli.md
++++ b/docs/cli.md
+@@ -12,6 +12,7 @@
+ 
+ | Flag | Description |
+ |---|---|
++| `--due <string>` | Due date in YYYY-MM-DD format |
+ | `--json` | Write the output as JSON |
+ 
+ ## go-cli task complete
+--- a/internal/adapter/taskstore/taskstore.go
++++ b/internal/adapter/taskstore/taskstore.go
+@@ -30,6 +30,7 @@
+ 	ID        int       `json:"id"`
+ 	Title     string    `json:"title"`
+ 	Done      bool      `json:"done"`
++	Due       time.Time `json:"due,omitzero"`
+ 	CreatedAt time.Time `json:"created_at"`
+ }
+ 
+@@ -94,12 +95,12 @@
+ 
+ // toRecord converts Task to record.
+ func toRecord(t task.Task) record {
+-	return record{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}
++	return record{ID: t.ID, Title: t.Title, Done: t.Done, Due: t.Due, CreatedAt: t.CreatedAt}
+ }
+ 
+ // toTask converts record to Task.
+ func toTask(r record) task.Task {
+-	return task.Task{ID: r.ID, Title: r.Title, Done: r.Done, CreatedAt: r.CreatedAt}
++	return task.Task{ID: r.ID, Title: r.Title, Done: r.Done, Due: r.Due, CreatedAt: r.CreatedAt}
+ }
+ 
+ // writeFileAtomic writes data to a temporary file in the same directory and renames it over path, so a crash never leaves a half-written file.
+--- a/internal/adapter/taskstore/taskstore_test.go
++++ b/internal/adapter/taskstore/taskstore_test.go
+@@ -28,12 +28,13 @@
+ 		{
+ 			name: "reads_tasks",
+ 			content: `{"version": 1, "tasks": [` +
+-				`{"id": 1, "title": "Buy milk", "done": true, "created_at": "2026-01-02T03:04:05Z"}]}`,
++				`{"id": 1, "title": "Buy milk", "done": true, "due": "2026-01-31T00:00:00Z", "created_at": "2026-01-02T03:04:05Z"}]}`,
+ 			want: []task.Task{
+ 				{
+ 					ID:        1,
+ 					Title:     "Buy milk",
+ 					Done:      true,
++					Due:       time.Date(2026, time.January, 31, 0, 0, 0, 0, time.UTC),
+ 					CreatedAt: time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC),
+ 				},
+ 			},
+@@ -83,6 +84,7 @@
+ 					ID:        1,
+ 					Title:     "Buy milk",
+ 					Done:      true,
++					Due:       time.Date(2026, time.January, 31, 0, 0, 0, 0, time.UTC),
+ 					CreatedAt: time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC),
+ 				},
+ 			},
+@@ -93,6 +95,7 @@
+       "id": 1,
+       "title": "Buy milk",
+       "done": true,
++      "due": "2026-01-31T00:00:00Z",
+       "created_at": "2026-01-02T03:04:05Z"
+     }
+   ]
+--- a/internal/command/taskcmd/add.go
++++ b/internal/command/taskcmd/add.go
+@@ -2,6 +2,7 @@
+ 
+ import (
+ 	"context"
++	"flag"
+ 	"fmt"
+ 	"io"
+ 
+@@ -12,6 +13,7 @@
+ // addOptions holds the arguments and flags of task add.
+ type addOptions struct {
+ 	title string
++	due   string
+ }
+ 
+ // addOutput is the result of task add.
+@@ -26,6 +28,9 @@
+ 		Name:    "add",
+ 		Summary: "Add a task",
+ 		Args:    []cli.Arg{{Name: "title", Value: &opts.title}},
++		Flags: func(fs *flag.FlagSet) {
++			fs.StringVar(&opts.due, "due", "", "Due date in YYYY-MM-DD format")
++		},
+ 		Run: func(ctx context.Context) (cli.Output, error) {
+ 			return runAdd(ctx, svc, opts)
+ 		},
+@@ -34,7 +39,11 @@
+ 
+ // runAdd runs task add.
+ func runAdd(ctx context.Context, svc *task.Service, opts addOptions) (addOutput, error) {
+-	added, err := svc.Add(ctx, opts.title)
++	due, err := task.ParseDue(opts.due)
++	if err != nil {
++		return addOutput{}, err
++	}
++	added, err := svc.Add(ctx, opts.title, due)
+ 	if err != nil {
+ 		return addOutput{}, err
+ 	}
+--- a/internal/command/taskcmd/add_test.go
++++ b/internal/command/taskcmd/add_test.go
+@@ -31,6 +31,11 @@
+ 			want: apptest.Result{Code: 0, Stdout: "Added task 1: Buy milk\n"},
+ 		},
+ 		{
++			name: "adds_a_task_with_due",
++			args: []string{"task", "add", "Buy milk", "--due", "2026-01-31"},
++			want: apptest.Result{Code: 0, Stdout: "Added task 1: Buy milk\n"},
++		},
++		{
+ 			name: "writes_json",
+ 			args: []string{"task", "add", "Buy milk", "--json"},
+ 			want: apptest.Result{Code: 0, Stdout: `{
+@@ -38,6 +43,20 @@
+     "id": 1,
+     "title": "Buy milk",
+     "done": false,
++    "created_at": "2026-01-02T03:04:05Z"
++  }
++}
++`},
++		},
++		{
++			name: "writes_json_with_due",
++			args: []string{"task", "add", "Buy milk", "--due", "2026-01-31", "--json"},
++			want: apptest.Result{Code: 0, Stdout: `{
++  "task": {
++    "id": 1,
++    "title": "Buy milk",
++    "done": false,
++    "due": "2026-01-31T00:00:00Z",
+     "created_at": "2026-01-02T03:04:05Z"
+   }
+ }
+@@ -55,6 +74,15 @@
+ 			want: apptest.Result{Code: 2, Stderr: "go-cli: invalid input: want 1 argument(s), got 0\n" +
+ 				"Run 'go-cli task add --help' for usage.\n"},
+ 		},
++		{
++			name: "rejects_an_invalid_due",
++			args: []string{"task", "add", "Buy milk", "--due", "2026/01/31"},
++			want: apptest.Result{
++				Code: 2,
++				Stderr: "go-cli: invalid input: due must be a date in YYYY-MM-DD format: \"2026/01/31\"\n" +
++					"Run 'go-cli task add --help' for usage.\n",
++			},
++		},
+ 	}
+ 	for _, tt := range tests {
+ 		t.Run(tt.name, func(t *testing.T) {
+--- a/internal/command/taskcmd/list.go
++++ b/internal/command/taskcmd/list.go
+@@ -52,7 +52,7 @@
+ func (o listOutput) WriteText(w io.Writer) error {
+ 	rows := make([][]string, 0, len(o.Tasks))
+ 	for _, v := range o.Tasks {
+-		rows = append(rows, []string{strconv.Itoa(v.ID), v.status(), v.Title})
++		rows = append(rows, []string{strconv.Itoa(v.ID), v.status(), v.due(), v.Title})
+ 	}
+-	return cli.WriteTable(w, []string{"ID", "STATUS", "TITLE"}, rows)
++	return cli.WriteTable(w, []string{"ID", "STATUS", "DUE", "TITLE"}, rows)
+ }
+--- a/internal/command/taskcmd/list_test.go
++++ b/internal/command/taskcmd/list_test.go
+@@ -17,7 +17,7 @@
+ 		{
+ 			name: "prints_only_the_header_without_tasks",
+ 			args: []string{"task", "list"},
+-			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  TITLE\n"},
++			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  DUE  TITLE\n"},
+ 		},
+ 		{
+ 			name: "lists_tasks",
+@@ -27,8 +27,8 @@
+ 				{"task", "complete", "1"},
+ 			},
+ 			args: []string{"task", "list"},
+-			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  TITLE\n" +
+-				"2   open    Write report\n"},
++			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  DUE  TITLE\n" +
++				"2   open    -    Write report\n"},
+ 		},
+ 		{
+ 			name: "lists_tasks_with_all",
+@@ -38,9 +38,20 @@
+ 				{"task", "complete", "1"},
+ 			},
+ 			args: []string{"task", "list", "--all"},
+-			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  TITLE\n" +
+-				"1   done    Buy milk\n" +
+-				"2   open    Write report\n"},
++			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  DUE  TITLE\n" +
++				"1   done    -    Buy milk\n" +
++				"2   open    -    Write report\n"},
++		},
++		{
++			name: "lists_tasks_with_due",
++			setup: [][]string{
++				{"task", "add", "Buy milk", "--due", "2026-01-31"},
++				{"task", "add", "Write report"},
++			},
++			args: []string{"task", "list"},
++			want: apptest.Result{Code: 0, Stdout: "ID  STATUS  DUE         TITLE\n" +
++				"1   open    2026-01-31  Buy milk\n" +
++				"2   open    -           Write report\n"},
+ 		},
+ 		{
+ 			name:  "writes_json",
+@@ -64,6 +75,23 @@
+ 			want: apptest.Result{Code: 0, Stdout: "{\n  \"tasks\": []\n}\n"},
+ 		},
+ 		{
++			name:  "writes_json_with_due",
++			setup: [][]string{{"task", "add", "Buy milk", "--due", "2026-01-31"}},
++			args:  []string{"task", "list", "--json"},
++			want: apptest.Result{Code: 0, Stdout: `{
++  "tasks": [
++    {
++      "id": 1,
++      "title": "Buy milk",
++      "done": false,
++      "due": "2026-01-31T00:00:00Z",
++      "created_at": "2026-01-02T03:04:05Z"
++    }
++  ]
++}
++`},
++		},
++		{
+ 			name: "rejects_an_unknown_flag",
+ 			args: []string{"task", "list", "--done"},
+ 			want: apptest.Result{Code: 2, Stderr: "go-cli: invalid input: flag provided but not defined: -done\n" +
+--- a/internal/command/taskcmd/view.go
++++ b/internal/command/taskcmd/view.go
+@@ -11,12 +11,13 @@
+ 	ID        int       `json:"id"`
+ 	Title     string    `json:"title"`
+ 	Done      bool      `json:"done"`
++	Due       time.Time `json:"due,omitzero"`
+ 	CreatedAt time.Time `json:"created_at"`
+ }
+ 
+ // toTaskView converts Task to taskView.
+ func toTaskView(t task.Task) taskView {
+-	return taskView{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}
++	return taskView{ID: t.ID, Title: t.Title, Done: t.Done, Due: t.Due, CreatedAt: t.CreatedAt}
+ }
+ 
+ // status returns the text shown in the STATUS column.
+@@ -26,3 +27,11 @@
+ 	}
+ 	return "open"
+ }
++
++// due returns the text shown in the DUE column.
++func (v taskView) due() string {
++	if v.Due.IsZero() {
++		return "-"
++	}
++	return v.Due.Format(time.DateOnly)
++}
+--- a/internal/domain/task/service.go
++++ b/internal/domain/task/service.go
+@@ -21,8 +21,8 @@
+ 	return &Service{repo: repo, now: now}
+ }
+ 
+-// Add creates an open task with the given title.
+-func (s *Service) Add(ctx context.Context, title string) (Task, error) {
++// Add creates an open task with the given title and due date.
++func (s *Service) Add(ctx context.Context, title string, due time.Time) (Task, error) {
+ 	trimmed := strings.TrimSpace(title)
+ 	err := validateTitle(trimmed)
+ 	if err != nil {
+@@ -32,7 +32,7 @@
+ 	if err != nil {
+ 		return Task{}, err
+ 	}
+-	created := Task{ID: nextID(tasks), Title: trimmed, CreatedAt: s.now().UTC().Truncate(time.Second)}
++	created := Task{ID: nextID(tasks), Title: trimmed, Due: due, CreatedAt: s.now().UTC().Truncate(time.Second)}
+ 	err = s.repo.Save(ctx, append(tasks, created))
+ 	if err != nil {
+ 		return Task{}, err
+--- a/internal/domain/task/task.go
++++ b/internal/domain/task/task.go
+@@ -15,6 +15,7 @@
+ 	ID        int
+ 	Title     string
+ 	Done      bool
++	Due       time.Time
+ 	CreatedAt time.Time
+ }
+ 
+@@ -36,6 +37,19 @@
+ 	return id, nil
+ }
+ 
++// ParseDue converts a command-line argument to the Due field of Task.
++// An empty string returns the zero value.
++func ParseDue(s string) (time.Time, error) {
++	if s == "" {
++		return time.Time{}, nil
++	}
++	due, err := time.Parse(time.DateOnly, s)
++	if err != nil {
++		return time.Time{}, fmt.Errorf("%w: due must be a date in YYYY-MM-DD format: %q", errkind.ErrInvalid, s)
++	}
++	return due, nil
++}
++
+ // validateTitle checks the Title field of Task.
+ func validateTitle(title string) error {
+ 	n := utf8.RuneCountInString(title)
+--- a/internal/domain/task/task_test.go
++++ b/internal/domain/task/task_test.go
+@@ -3,6 +3,7 @@
+ import (
+ 	"errors"
+ 	"testing"
++	"time"
+ 
+ 	"example.com/go-cli/internal/domain/task"
+ 	"example.com/go-cli/internal/errkind"
+@@ -32,3 +33,32 @@
+ 		})
+ 	}
+ }
++
++func TestParseDue(t *testing.T) {
++	t.Parallel()
++	tests := []struct {
++		name    string
++		s       string
++		want    time.Time
++		wantErr error
++	}{
++		{
++			name:    "accepts_a_date",
++			s:       "2026-01-31",
++			want:    time.Date(2026, time.January, 31, 0, 0, 0, 0, time.UTC),
++			wantErr: nil,
++		},
++		{name: "returns_zero_for_an_empty_string", s: "", want: time.Time{}, wantErr: nil},
++		{name: "rejects_another_format", s: "2026/01/31", want: time.Time{}, wantErr: errkind.ErrInvalid},
++		{name: "rejects_a_date_that_does_not_exist", s: "2026-02-30", want: time.Time{}, wantErr: errkind.ErrInvalid},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			t.Parallel()
++			got, err := task.ParseDue(tt.s)
++			if !got.Equal(tt.want) || !errors.Is(err, tt.wantErr) {
++				t.Errorf("ParseDue(%q) = %v, %v, want %v, %v", tt.s, got, err, tt.want, tt.wantErr)
++			}
++		})
++	}
++}

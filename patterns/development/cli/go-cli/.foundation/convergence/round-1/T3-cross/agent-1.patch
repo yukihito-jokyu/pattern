@@ -1,0 +1,242 @@
+--- a/README.md
++++ b/README.md
+@@ -19,6 +19,7 @@
+ | 名前 | 意味 | 既定値 |
+ |---|---|---|
+ | `GOCLI_DATA_DIR` | 業務データの JSON ファイルを置くディレクトリ | `$XDG_DATA_HOME/go-cli`、それも無ければ `$HOME/.local/share/go-cli` |
++| `GOCLI_TITLE_MAX` | タスクのタイトルの最大文字数（1 以上の整数） | `100` |
+ 
+ ## エージェントと一緒に使う
+ 
+--- a/internal/app/app.go
++++ b/internal/app/app.go
+@@ -33,7 +33,7 @@
+ 	if err != nil {
+ 		return nil, err
+ 	}
+-	tasks := task.NewService(taskstore.New(filepath.Join(cfg.dataDir, "tasks.json")), env.Now)
++	tasks := task.NewService(taskstore.New(filepath.Join(cfg.dataDir, "tasks.json")), env.Now, cfg.titleMax)
+ 	return &cli.App{
+ 		Name:    name,
+ 		Version: version(),
+--- a/internal/app/app_test.go
++++ b/internal/app/app_test.go
+@@ -26,6 +26,24 @@
+ 			args: []string{"task", "list"},
+ 			want: apptest.Result{Code: 1, Stderr: "go-cli: cannot find a data directory: set GOCLI_DATA_DIR or HOME\n"},
+ 		},
++		{
++			name: "rejects_a_title_max_that_is_not_a_number",
++			env:  map[string]string{"GOCLI_TITLE_MAX": "ten"},
++			args: []string{"task", "list"},
++			want: apptest.Result{
++				Code:   2,
++				Stderr: "go-cli: invalid input: GOCLI_TITLE_MAX must be a positive integer: \"ten\"\n",
++			},
++		},
++		{
++			name: "rejects_a_title_max_of_zero",
++			env:  map[string]string{"GOCLI_TITLE_MAX": "0"},
++			args: []string{"task", "list"},
++			want: apptest.Result{
++				Code:   2,
++				Stderr: "go-cli: invalid input: GOCLI_TITLE_MAX must be a positive integer: \"0\"\n",
++			},
++		},
+ 	}
+ 	for _, tt := range tests {
+ 		t.Run(tt.name, func(t *testing.T) {
+--- a/internal/app/config.go
++++ b/internal/app/config.go
+@@ -2,38 +2,73 @@
+ 
+ import (
+ 	"errors"
++	"fmt"
+ 	"path/filepath"
++	"strconv"
++
++	"example.com/go-cli/internal/errkind"
+ )
+ 
+ // config holds the settings read from environment variables.
+ type config struct {
+-	dataDir string
++	dataDir  string
++	titleMax int
+ }
+ 
+ // Environment variables that configure the CLI.
+ const (
+ 	// envDataDir overrides the directory that holds the data files.
+ 	envDataDir = "GOCLI_DATA_DIR"
+-	envXDGData = "XDG_DATA_HOME"
+-	envHome    = "HOME"
++	// envTitleMax overrides the maximum number of characters in a task title.
++	envTitleMax = "GOCLI_TITLE_MAX"
++	envXDGData  = "XDG_DATA_HOME"
++	envHome     = "HOME"
+ )
++
++// defaultTitleMax is the maximum number of characters in a task title when $GOCLI_TITLE_MAX is not set.
++const defaultTitleMax = 100
+ 
+ var errNoDataDir = errors.New("cannot find a data directory: set " + envDataDir + " or HOME")
+ 
+-// loadConfig reads the settings. The data directory is the first of
+-// $GOCLI_DATA_DIR, $XDG_DATA_HOME/go-cli and $HOME/.local/share/go-cli that is set.
++// loadConfig reads the settings.
+ func loadConfig(getenv func(key string) string) (config, error) {
++	dir, err := loadDataDir(getenv)
++	if err != nil {
++		return config{}, err
++	}
++	titleMax, err := loadTitleMax(getenv)
++	if err != nil {
++		return config{}, err
++	}
++	return config{dataDir: dir, titleMax: titleMax}, nil
++}
++
++// loadDataDir returns the first of $GOCLI_DATA_DIR, $XDG_DATA_HOME/go-cli and $HOME/.local/share/go-cli that is set.
++func loadDataDir(getenv func(key string) string) (string, error) {
+ 	dir := getenv(envDataDir)
+ 	if dir != "" {
+-		return config{dataDir: dir}, nil
++		return dir, nil
+ 	}
+ 	dir = getenv(envXDGData)
+ 	if dir != "" {
+-		return config{dataDir: filepath.Join(dir, name)}, nil
++		return filepath.Join(dir, name), nil
+ 	}
+ 	dir = getenv(envHome)
+ 	if dir != "" {
+-		return config{dataDir: filepath.Join(dir, ".local", "share", name)}, nil
++		return filepath.Join(dir, ".local", "share", name), nil
+ 	}
+-	return config{}, errNoDataDir
++	return "", errNoDataDir
+ }
++
++// loadTitleMax returns $GOCLI_TITLE_MAX as a positive integer, or defaultTitleMax when it is not set.
++func loadTitleMax(getenv func(key string) string) (int, error) {
++	value := getenv(envTitleMax)
++	if value == "" {
++		return defaultTitleMax, nil
++	}
++	n, err := strconv.Atoi(value)
++	if err != nil || n < 1 {
++		return 0, fmt.Errorf("%w: %s must be a positive integer: %q", errkind.ErrInvalid, envTitleMax, value)
++	}
++	return n, nil
++}
+--- a/internal/command/taskcmd/add_test.go
++++ b/internal/command/taskcmd/add_test.go
+@@ -1,6 +1,7 @@
+ package taskcmd_test
+ 
+ import (
++	"strings"
+ 	"testing"
+ 
+ 	"example.com/go-cli/internal/app/apptest"
+@@ -10,6 +11,7 @@
+ 	t.Parallel()
+ 	tests := []struct {
+ 		name  string
++		env   map[string]string
+ 		setup [][]string
+ 		args  []string
+ 		want  apptest.Result
+@@ -50,6 +52,25 @@
+ 				"Run 'go-cli task add --help' for usage.\n"},
+ 		},
+ 		{
++			name: "rejects_a_title_longer_than_100_characters_by_default",
++			args: []string{"task", "add", strings.Repeat("a", 101)},
++			want: apptest.Result{Code: 2, Stderr: "go-cli: invalid input: title must be 1 to 100 characters\n" +
++				"Run 'go-cli task add --help' for usage.\n"},
++		},
++		{
++			name: "accepts_a_title_up_to_the_title_max",
++			env:  map[string]string{"GOCLI_TITLE_MAX": "8"},
++			args: []string{"task", "add", "Buy milk"},
++			want: apptest.Result{Code: 0, Stdout: "Added task 1: Buy milk\n"},
++		},
++		{
++			name: "rejects_a_title_longer_than_the_title_max",
++			env:  map[string]string{"GOCLI_TITLE_MAX": "7"},
++			args: []string{"task", "add", "Buy milk"},
++			want: apptest.Result{Code: 2, Stderr: "go-cli: invalid input: title must be 1 to 7 characters\n" +
++				"Run 'go-cli task add --help' for usage.\n"},
++		},
++		{
+ 			name: "rejects_a_missing_title",
+ 			args: []string{"task", "add"},
+ 			want: apptest.Result{Code: 2, Stderr: "go-cli: invalid input: want 1 argument(s), got 0\n" +
+@@ -60,6 +81,9 @@
+ 		t.Run(tt.name, func(t *testing.T) {
+ 			t.Parallel()
+ 			h := apptest.New(t)
++			for key, value := range tt.env {
++				h.Setenv(key, value)
++			}
+ 			for _, args := range tt.setup {
+ 				h.Setup(args...)
+ 			}
+--- a/internal/domain/task/service.go
++++ b/internal/domain/task/service.go
+@@ -12,19 +12,21 @@
+ 
+ // Service runs the task use cases.
+ type Service struct {
+-	repo Repository
+-	now  func() time.Time
++	repo     Repository
++	now      func() time.Time
++	titleMax int
+ }
+ 
+-// NewService returns a Service that keeps tasks in repo and reads the current time from now.
+-func NewService(repo Repository, now func() time.Time) *Service {
+-	return &Service{repo: repo, now: now}
++// NewService returns a Service that keeps tasks in repo, reads the current time from now
++// and accepts titles of up to titleMax characters.
++func NewService(repo Repository, now func() time.Time, titleMax int) *Service {
++	return &Service{repo: repo, now: now, titleMax: titleMax}
+ }
+ 
+ // Add creates an open task with the given title.
+ func (s *Service) Add(ctx context.Context, title string) (Task, error) {
+ 	trimmed := strings.TrimSpace(title)
+-	err := validateTitle(trimmed)
++	err := validateTitle(trimmed, s.titleMax)
+ 	if err != nil {
+ 		return Task{}, err
+ 	}
+--- a/internal/domain/task/task.go
++++ b/internal/domain/task/task.go
+@@ -24,8 +24,6 @@
+ 	IncludeDone bool
+ }
+ 
+-const maxTitleLength = 100
+-
+ // ParseID converts a command-line argument to a task ID.
+ func ParseID(s string) (int, error) {
+ 	id, err := strconv.Atoi(s)
+@@ -35,10 +33,10 @@
+ 	return id, nil
+ }
+ 
+-func validateTitle(title string) error {
++func validateTitle(title string, maxLength int) error {
+ 	n := utf8.RuneCountInString(title)
+-	if n == 0 || n > maxTitleLength {
+-		return fmt.Errorf("%w: title must be 1 to %d characters", errkind.ErrInvalid, maxTitleLength)
++	if n == 0 || n > maxLength {
++		return fmt.Errorf("%w: title must be 1 to %d characters", errkind.ErrInvalid, maxLength)
+ 	}
+ 	return nil
+ }

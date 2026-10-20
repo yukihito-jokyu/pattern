@@ -1,0 +1,194 @@
+--- a/docs/cli.md
++++ b/docs/cli.md
+@@ -39,6 +39,18 @@
+ | `--all` | Include completed tasks |
+ | `--json` | Write the output as JSON |
+ 
++## go-cli task remove
++
++Remove a task
++
++```text
++go-cli task remove [flags] <id>
++```
++
++| Flag | Description |
++|---|---|
++| `--json` | Write the output as JSON |
++
+ ## Exit codes
+ 
+ | Code | Meaning |
+--- a/internal/cli/cli_test.go
++++ b/internal/cli/cli_test.go
+@@ -42,6 +42,7 @@
+   add       Add a task
+   complete  Mark a task as done
+   list      List open tasks
++  remove    Remove a task
+ 
+ Run 'go-cli task <subcommand> --help' for the flags of a subcommand.
+ `},
+--- /dev/null
++++ b/internal/command/taskcmd/remove.go
+@@ -0,0 +1,48 @@
++package taskcmd
++
++import (
++	"context"
++	"fmt"
++	"io"
++
++	"example.com/go-cli/internal/cli"
++	"example.com/go-cli/internal/domain/task"
++)
++
++type removeOptions struct {
++	id string
++}
++
++type removeOutput struct {
++	Task taskView `json:"task"`
++}
++
++func newRemove(svc *task.Service) *cli.Command {
++	var opts removeOptions
++	return &cli.Command{
++		Name:    "remove",
++		Summary: "Remove a task",
++		Args:    []cli.Arg{{Name: "id", Value: &opts.id}},
++		Run: func(ctx context.Context) (cli.Output, error) {
++			return runRemove(ctx, svc, opts)
++		},
++	}
++}
++
++func runRemove(ctx context.Context, svc *task.Service, opts removeOptions) (removeOutput, error) {
++	id, err := task.ParseID(opts.id)
++	if err != nil {
++		return removeOutput{}, err
++	}
++	removed, err := svc.Remove(ctx, id)
++	if err != nil {
++		return removeOutput{}, err
++	}
++	return removeOutput{Task: toTaskView(removed)}, nil
++}
++
++// WriteText implements cli.Output.
++func (o removeOutput) WriteText(w io.Writer) error {
++	_, err := fmt.Fprintf(w, "Removed task %d: %s\n", o.Task.ID, o.Task.Title)
++	return err
++}
+--- /dev/null
++++ b/internal/command/taskcmd/remove_test.go
+@@ -0,0 +1,72 @@
++package taskcmd_test
++
++import (
++	"testing"
++
++	"example.com/go-cli/internal/app/apptest"
++)
++
++func TestRemove(t *testing.T) {
++	t.Parallel()
++	tests := []struct {
++		name  string
++		setup [][]string
++		args  []string
++		want  apptest.Result
++	}{
++		{
++			name:  "removes_a_task",
++			setup: [][]string{{"task", "add", "Buy milk"}},
++			args:  []string{"task", "remove", "1"},
++			want:  apptest.Result{Code: 0, Stdout: "Removed task 1: Buy milk\n"},
++		},
++		{
++			name:  "writes_json",
++			setup: [][]string{{"task", "add", "Buy milk"}},
++			args:  []string{"task", "remove", "1", "--json"},
++			want: apptest.Result{Code: 0, Stdout: `{
++  "task": {
++    "id": 1,
++    "title": "Buy milk",
++    "done": false,
++    "created_at": "2026-01-02T03:04:05Z"
++  }
++}
++`},
++		},
++		{
++			name: "rejects_an_id_that_is_not_a_number",
++			args: []string{"task", "remove", "one"},
++			want: apptest.Result{
++				Code: 2,
++				Stderr: "go-cli: invalid input: task ID must be a positive integer: \"one\"\n" +
++					"Run 'go-cli task remove --help' for usage.\n",
++			},
++		},
++		{
++			name:  "reports_a_missing_task",
++			setup: [][]string{{"task", "add", "Buy milk"}},
++			args:  []string{"task", "remove", "2"},
++			want:  apptest.Result{Code: 3, Stderr: "go-cli: not found: task 2\n"},
++		},
++		{
++			name:  "reports_a_removed_task_as_missing",
++			setup: [][]string{{"task", "add", "Buy milk"}, {"task", "remove", "1"}},
++			args:  []string{"task", "remove", "1"},
++			want:  apptest.Result{Code: 3, Stderr: "go-cli: not found: task 1\n"},
++		},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			t.Parallel()
++			h := apptest.New(t)
++			for _, args := range tt.setup {
++				h.Setup(args...)
++			}
++			got := h.Run(tt.args...)
++			if got != tt.want {
++				t.Errorf("Run(%q) = %+v, want %+v", tt.args, got, tt.want)
++			}
++		})
++	}
++}
+--- a/internal/command/taskcmd/taskcmd.go
++++ b/internal/command/taskcmd/taskcmd.go
+@@ -15,6 +15,7 @@
+ 			newAdd(svc),
+ 			newComplete(svc),
+ 			newList(svc),
++			newRemove(svc),
+ 		},
+ 	}
+ }
+--- a/internal/domain/task/service.go
++++ b/internal/domain/task/service.go
+@@ -74,6 +74,24 @@
+ 	return matched, nil
+ }
+ 
++// Remove deletes the task with the given ID and returns the task as it was before removal.
++func (s *Service) Remove(ctx context.Context, id int) (Task, error) {
++	tasks, err := s.repo.Load(ctx)
++	if err != nil {
++		return Task{}, err
++	}
++	i, err := indexOf(tasks, id)
++	if err != nil {
++		return Task{}, err
++	}
++	removed := tasks[i]
++	err = s.repo.Save(ctx, slices.Delete(tasks, i, i+1))
++	if err != nil {
++		return Task{}, err
++	}
++	return removed, nil
++}
++
+ func indexOf(tasks []Task, id int) (int, error) {
+ 	i := slices.IndexFunc(tasks, func(t Task) bool { return t.ID == id })
+ 	if i < 0 {
