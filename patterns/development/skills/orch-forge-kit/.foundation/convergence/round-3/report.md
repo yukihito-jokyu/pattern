@@ -1,0 +1,510 @@
+# 収束テスト ラウンド 3 のレポート
+
+このファイルは convergence.py diff が生成する。揺れの分類（R1〜R7）と対処は convergence-report.md に書く。
+
+基準: files ≥ 1.0、names ≥ 0.8、content ≥ 0.0、check は全員通過、保護ファイルの変更なし
+
+## 指標
+
+| 課題 | files | names | content | check | 保護 | 基準 |
+|---|---|---|---|---|---|---|
+| T1-add | 1.000 | 1.000 | 0.953 | 全員通過 | — | 満たす |
+| T2-change | 1.000 | 1.000 | 0.967 | 全員通過 | — | 満たす |
+| T3-cross | 1.000 | 0.778 | 0.966 | 全員通過 | — | 満たさない |
+| H1-holdout | 0.905 | 0.551 | 0.933 | 全員通過 | — | 満たさない |
+
+## T1-add
+
+### 一部のエージェントだけが作った・変えたファイル
+
+なし（全員が同じファイルの集合を変えた）
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 1 個）
+
+なし
+
+### 内容の類似度が低いファイル
+
+#### `tests/test_score.py`（agent-1 と agent-3、類似度 0.815）
+
+```diff
+--- agent-1/tests/test_score.py
++++ agent-3/tests/test_score.py
+@@ -48,18 +48,18 @@
+ 
+     def test_denials(self) -> None:
+         data = support.orch_charter()
+-        goals, chosen = data["goals"], data["metrics"]
+-        assert isinstance(goals, list) and isinstance(chosen, list)
+-        goals.append({"id": "G5", "statement": "許された操作だけで進める", "metrics": ["denials"]})
+-        chosen.append({"id": "denials", "threshold": 0.0, "priority": "should"})
++        goals, choices = data["goals"], data["metrics"]
++        assert isinstance(goals, list) and isinstance(choices, list)
++        goals.append({"id": "G5", "statement": "許していない操作に頼らない", "metrics": ["denials"]})
++        choices.append({"id": "denials", "threshold": 0.0, "priority": "should"})
+         where = support.approved_layout(self, data)
+-        scores = support.scored_slot(where, layout.make_slot("baseline", 1), stream="delegated")
+-        found = {item.id: item for item in scores.metrics}
+-        self.assertEqual((found["denials"].value, found["denials"].met), (0.0, True))
++        scores = support.scored_slot(where, layout.make_slot("baseline", 1), stream="delegated", met=True)
++        found = {item.id: item for item in scores.metrics}["denials"]
++        self.assertEqual((found.value, found.met), (0.0, True))
+         where = support.approved_layout(self, data)
+-        scores = support.scored_slot(where, layout.make_slot("baseline", 1), stream="main-edit")
+-        found = {item.id: item for item in scores.metrics}
+-        self.assertEqual((found["denials"].value, found["denials"].met), (1.0, False))
++        scores = support.scored_slot(where, layout.make_slot("baseline", 1), stream="main-edit", met=True)
++        found = {item.id: item for item in scores.metrics}["denials"]
++        self.assertEqual((found.value, found.met), (1.0, False))
+ 
+ 
+ if __name__ == "__main__":
+```
+
+#### `kit/claude/skills/forge-goals/references/metric-catalog.md`（agent-1 と agent-2、類似度 0.983）
+
+```diff
+--- agent-1/kit/claude/skills/forge-goals/references/metric-catalog.md
++++ agent-2/kit/claude/skills/forge-goals/references/metric-catalog.md
+@@ -130,8 +130,8 @@
+ 
+ | 項目 | 内容 |
+ |---|---|
+-| 分かること | スキルの手順が、評価の環境で許された操作だけで進むか（拒まれるほど、手順が環境に合っていない） |
+-| 求め方 | 実行の記録の result の permission_denials の件数を、実行ごとに平均する。result の無い実行は0回と数える |
++| 分かること | スキルの手順が、評価の環境で許した操作だけで進められるか（拒まれるほど手順が環境に合っていない） |
++| 求め方 | 実行の記録の result の permission_denials の件数を、実行ごとに平均する |
+ | 測り方 | machine |
+ | 向き | 低いほど良い |
+ | 既定の閾値 | 10.000 |
+```
+
+#### `kit/.forge/forge_kit/catalog.py`（agent-1 と agent-2、類似度 0.987）
+
+```diff
+--- agent-1/kit/.forge/forge_kit/catalog.py
++++ agent-2/kit/.forge/forge_kit/catalog.py
+@@ -170,9 +170,8 @@
+         default_threshold=10.0,
+         max_value=None,
+         recommended=False,
+-        tells="スキルの手順が、評価の環境で許された操作だけで進むか（拒まれるほど、手順が環境に合っていない）",
+-        computes="実行の記録の result の permission_denials の件数を、実行ごとに平均する。"
+-        "result の無い実行は0回と数える",
++        tells="スキルの手順が、評価の環境で許した操作だけで進められるか（拒まれるほど手順が環境に合っていない）",
++        computes="実行の記録の result の permission_denials の件数を、実行ごとに平均する",
+         requires="",
+     ),
+ )
+```
+
+
+## T2-change
+
+### 一部のエージェントだけが作った・変えたファイル
+
+なし（全員が同じファイルの集合を変えた）
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 1 個）
+
+なし
+
+### 内容の類似度が低いファイル
+
+#### `kit/.forge/templates/prompts/builder.md`（agent-1 と agent-2、類似度 0.909）
+
+```diff
+--- agent-1/kit/.forge/templates/prompts/builder.md
++++ agent-2/kit/.forge/templates/prompts/builder.md
+@@ -14,11 +14,12 @@
+ 
+ ## 検査コマンド
+ 
+-charter で決めた、このリポジトリの検査コマンドです。リポジトリのルートで実行します。
+-
+ `${check_command}`
+ 
+-上が `—` なら、charter で検査コマンドは決まっていません。リポジトリの `CLAUDE.md`、`AGENTS.md`、`README.md` に検査のコマンドが書かれていればそれを使い、書かれていなければ手順に検査のコマンドを書きません（コマンドを推測で作りません）。そうでなければ、下書きの手順で検査を回すところに、このコマンドをそのまま書きます。リポジトリの文書に別のコマンドが書かれていても、このコマンドを使います。
++charter で決めた、リポジトリのルートで回す検査のコマンドです。上が `—` なら、charter では検査コマンドが決まっていません。
++
++- 決まっているとき: スキルとサブエージェントの手順で検査を回す所には、このコマンドを変えずに書く
++- `—` のとき: 4 で読んだリポジトリの文書に書かれた検査のコマンドを使う。文書に無いコマンドを作って書かない
+ 
+ ## 人から直してほしいと言われたこと
+ 
+```
+
+#### `tests/test_building.py`（agent-1 と agent-2、類似度 0.942）
+
+```diff
+--- agent-1/tests/test_building.py
++++ agent-2/tests/test_building.py
+@@ -67,11 +67,11 @@
+         building.build(self.where, "")
+         self.assertIn("\n`python3 check.py`\n", fsops.read_text(self.where.builder_prompt_path))
+         data = support.orch_charter(support.NEW_SKILL)
+-        environment, goals, metrics = data["environment"], data["goals"], data["metrics"]
+-        assert isinstance(environment, dict) and isinstance(goals, list) and isinstance(metrics, list)
++        environment = data["environment"]
++        assert isinstance(environment, dict)
+         environment["check_command"] = ""
+-        goals[0]["metrics"] = ["acceptance", "completion"]
+-        data["metrics"] = [metric for metric in metrics if metric["id"] != "check_pass"]
++        data["goals"] = [{"id": "G1", "statement": "依頼を満たす", "metrics": ["completion"]}]
++        data["metrics"] = [{"id": "completion", "threshold": 1.0, "priority": "must"}]
+         support.approve(self.where, data)
+         building.build(self.where, "")
+         self.assertIn(f"\n`{render.MISSING}`\n", fsops.read_text(self.where.builder_prompt_path))
+```
+
+
+## T3-cross
+
+### 一部のエージェントだけが作った・変えたファイル
+
+なし（全員が同じファイルの集合を変えた）
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 2 個）
+
+- agent-1: `del`
+- agent-2: `del`
+
+### 内容の類似度が低いファイル
+
+#### `tests/test_building.py`（agent-1 と agent-3、類似度 0.908）
+
+```diff
+--- agent-1/tests/test_building.py
++++ agent-3/tests/test_building.py
+@@ -4,7 +4,7 @@
+ 
+ import unittest
+ 
+-from forge_kit import building, bundle, designing, fsops, layout, workspace
++from forge_kit import building, bundle, designing, fsops, layout, render, workspace
+ from forge_kit.errors import InvalidFileError, StageError
+ from tests import support
+ 
+@@ -64,11 +64,15 @@
+         self.assertTrue((self.where.draft_dir / layout.SKILLS_DIR / support.NEW_SKILL).is_dir())
+ 
+     def test_note(self) -> None:
+-        designing.design_approve(self.where, "検査は make check で回して", support.TODAY)
+         building.build(self.where, "")
+-        self.assertIn("検査は make check で回して", fsops.read_text(self.where.builder_prompt_path))
++        self.assertIn(
++            f"気をつけてほしいと言ったこと\n\n{render.MISSING}\n", fsops.read_text(self.where.builder_prompt_path)
++        )
++        designing.design_approve(self.where, "既存の検査コマンドを使って", support.TODAY)
++        building.build(self.where, "")
++        self.assertIn("\n既存の検査コマンドを使って\n", fsops.read_text(self.where.builder_prompt_path))
+         building.build(self.where, "報告に費用を足して")
+-        self.assertIn("検査は make check で回して", fsops.read_text(self.where.builder_prompt_path))
++        self.assertIn("\n既存の検査コマンドを使って\n", fsops.read_text(self.where.builder_prompt_path))
+ 
+ 
+ if __name__ == "__main__":
+```
+
+#### `tests/test_contracts.py`（agent-1 と agent-3、類似度 0.897）
+
+```diff
+--- agent-1/tests/test_contracts.py
++++ agent-3/tests/test_contracts.py
+@@ -38,11 +38,13 @@
+         self.assertEqual(set(contracts.CAUSES), {*contracts.BUNDLE_CAUSES, *contracts.OBSERVATION_CAUSES})
+ 
+     def test_parse_design_approval(self) -> None:
+-        approval = contracts.DesignApproval("0" * 64, "2026-10-20", "検査は make check で回して")
++        old = {"sha256": "0" * 64, "approved_on": "2026-10-20"}
++        self.assertEqual(contracts.parse_design_approval(old, "design-approval.json").note, "")
++        approval = contracts.DesignApproval("0" * 64, "2026-10-20", "既存の検査コマンドを使って")
+         data = json.loads(json.dumps(contracts.to_data(approval)))
+         self.assertEqual(contracts.parse_design_approval(data, "design-approval.json"), approval)
+-        del data["note"]
+-        self.assertEqual(contracts.parse_design_approval(data, "design-approval.json").note, "")
++        with self.assertRaises(InvalidFileError):
++            contracts.parse_design_approval({**old, "note": 1}, "design-approval.json")
+ 
+ 
+ if __name__ == "__main__":
+```
+
+#### `tests/test_designing.py`（agent-1 と agent-2、類似度 0.913）
+
+```diff
+--- agent-1/tests/test_designing.py
++++ agent-2/tests/test_designing.py
+@@ -52,11 +52,12 @@
+         designing.design_new(self.where, "")
+         support.act_designer(self.where)
+         designing.design_check(self.where)
+-        fsops.write_text(self.where.builder_prompt_path, "前の承認で書いたプロンプト\n")
+-        designing.design_approve(self.where, "検査は make check で回して", support.TODAY)
++        designing.design_approve(self.where, "", support.TODAY)
+         approval = workspace.load_design_approval(self.where)
+-        self.assertEqual(approval.note if approval else "", "検査は make check で回して")
+-        self.assertFalse(self.where.builder_prompt_path.exists())
++        self.assertEqual(approval.note if approval else None, "")
++        designing.design_approve(self.where, " 検査を先に回す手順にして ", support.TODAY)
++        approval = workspace.load_design_approval(self.where)
++        self.assertEqual(approval.note if approval else None, " 検査を先に回す手順にして ")
+ 
+ 
+ if __name__ == "__main__":
+```
+
+#### `kit/.forge/templates/prompts/builder.md`（agent-1 と agent-3、類似度 0.923）
+
+```diff
+--- agent-1/kit/.forge/templates/prompts/builder.md
++++ agent-3/kit/.forge/templates/prompts/builder.md
+@@ -12,11 +12,11 @@
+ 4. リポジトリ `${repo}`: `CLAUDE.md`、`AGENTS.md`、`README.md`、検査のコマンド、ディレクトリ構造。スキルとサブエージェントの手順を、このリポジトリの決まりとコマンドに合わせるために読む。`.forge/` と `.claude/skills/forge-*` と `.claude/agents/forge-*` は読まない
+ 5. 骨組み: `${draft_dir}`
+ 
+-## 設計を承認した人からのメモ
++## 人が設計の承認で気をつけてほしいと言ったこと
+ 
+ ${note}
+ 
+-上が `—` なら、メモはありません。そうでなければ、設計を承認した人が構築役に気をつけてほしいことです。下書きを書くときも直すときも、このメモに従います。メモが設計と食い違う所は、設計のとおりにします。
++上が `—` なら、メモはありません。そうでなければ、下書きを書くときも直すときも、このメモに気をつけます。メモが承認された設計かバンドルの決まりと食い違うときは、設計とバンドルの決まりに従います（検査は設計とバンドルの決まりで行うため）。
+ 
+ ## 人から直してほしいと言われたこと
+ 
+```
+
+#### `kit/claude/skills/forge-build/SKILL.md`（agent-1 と agent-2、類似度 0.967）
+
+```diff
+--- agent-1/kit/claude/skills/forge-build/SKILL.md
++++ agent-2/kit/claude/skills/forge-build/SKILL.md
+@@ -63,7 +63,7 @@
+ 
+ ## 人に確かめること
+ 
+-- 設計の確認：`design.md` の役・手順・人に確かめる場面・報告を見せ、AskUserQuestion で「承認する（推奨）／メモを添えて承認する／直したい」を聞く。承認するなら、`承認なら:` のコマンドから ` --note '<構築役へのメモ>'` を消して実行する。メモを添えて承認するなら、構築役に気をつけてほしいことを文章で聞き、返ってきた文をそのまま `承認なら:` のコマンドの `<構築役へのメモ>` に入れて実行する（文の中の `'` は `’` に置き換える）。メモは構築役のプロンプトに入る。直したいなら、直してほしいことを文章で聞き、返ってきた文をそのまま `直すなら:` のコマンドの `<直してほしいこと>` に入れて実行する（文の中の `'` は `’` に置き換える）。既定: 人が答えられないときは、承認せずに止まる
++- 設計の確認：`design.md` の役・手順・人に確かめる場面・報告を見せ、AskUserQuestion で「承認する（推奨）／メモを残して承認する／直したい」を聞く。承認するなら、`承認なら:` のコマンドの `'<構築役へのメモ>'` を `''` にして実行する。メモを残して承認するなら、構築役に気をつけてほしいことを一言、文章で聞き、返ってきた文をそのまま `<構築役へのメモ>` に入れて実行する。メモは `build` が構築役のプロンプトに入れるので、あなたが構築役に伝え直さない。役や手順を変えたいと言われたら、メモにせず「直したい」として扱う。直したいなら、直してほしいことを文章で聞き、返ってきた文をそのまま `直すなら:` のコマンドの `<直してほしいこと>` に入れて実行する。メモと直してほしいことの文の中の `'` は `’` に置き換える。既定: 人が答えられないときは、承認せずに止まる
+ - 下書きの確認：`bundle-check.md` のファイル・サブエージェント・手順の一覧と、下書きの SKILL.md の全文を見せ、AskUserQuestion で「入れる（推奨）／直したい」を聞く。入れるなら `承認なら:` のコマンドを実行する。直したいなら、設計の確認と同じく文章で聞き、`直すなら:` のコマンドに入れて実行する。既定: 人が答えられないときは、入れずに止まる
+ - `WARN` の行と、上の表に無いエラー：内容を人に見せ、判断を仰ぐ。既定: 人が答えられないときは止まる
+ 
+@@ -78,7 +78,7 @@
+ 
+ ## してはいけないこと
+ 
+-- 設計と下書きを、自分で書いたり直したりすること。直すのは設計役と構築役で、人の言葉は `--feedback` で渡す
++- 設計と下書きを、自分で書いたり直したりすること。直すのは設計役と構築役で、人の言葉は `--feedback` と `--note` で渡す
+ - 人の答えを待たずに `design-approve` や `install` を実行すること
+ - `.claude/` に、自分でファイルを写すこと。入れるのは `install` だけである
+ - charter を書き換えること。charter を変えるときは `/forge-goals` に戻る
+```
+
+
+## H1-holdout
+
+### 一部のエージェントだけが作った・変えたファイル
+
+| ファイル | agent-1 | agent-2 | agent-3 |
+|---|---|---|---|
+| `docs/design/adr/0012-executor-effort-in-charter.md` | ✓ | – | – |
+| `docs/design/adr/0012-executor-effort.md` | – | ✓ | ✓ |
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 5 個）
+
+- agent-1: `Adjust`, `CLAUDE_CODE_EFFORT_LEVEL`, `EFFORT_LEVELS`, `Opus`, `adjust`, `config`, `modelSettings`
+- agent-2: `Adjust`, `EFFORTS`, `adjust`, `config`
+- agent-3: `EFFORT_LEVELS`, `modelSettings`
+
+### 内容の類似度が低いファイル
+
+#### `docs/design/adr/0012-executor-effort.md`（agent-2 と agent-3、類似度 0.333）
+
+```diff
+--- agent-2/docs/design/adr/0012-executor-effort.md
++++ agent-3/docs/design/adr/0012-executor-effort.md
+@@ -1,38 +1,43 @@
+ # 0012 実行役の推論の強さを charter の executor.effort で決める
+ 
+ - 状態：採用
+-- 関係するルール：OPS-05、PROC-02、PROC-06
++- 関係するルール：OPS-05、PROC-06
+ 
+ ## 背景
+ 
+-実行役（`claude -p`）の条件は、人が承認した charter の `executor` に書く（[ADR 0006](0006-no-permission-widening.md)、OPS-02）。モデルは `executor.model` で固定できるが、推論の強さ（effort）は charter に書く場所が無かった。そのため、実行役の推論の強さは、評価を回す人の設定（`effortLevel`）とモデルの既定で決まり、同じ charter でも回す人によって評価の条件が変わりうる。
++評価の実行役（`claude -p`）の条件は、人が承認した charter の `executor` に全部書く（OPS-05、[ADR 0006](0006-no-permission-widening.md)）。今の `executor` で決められるのは、モデル、許すツール、費用と時間の上限、並行の数である。
+ 
+-Claude Code の `--effort` は、そのセッションの推論の強さを `low`・`medium`・`high`・`xhigh`・`max` から決め、設定の `effortLevel` より優先する。付けなければ、設定かモデルの既定の強さになる（[research.md](../research.md) の「Claude Code のヘッドレス実行（claude -p）」）。
++Claude Code には、セッションの推論の強さ（effort level）を決める `--effort` がある。値は `low`、`medium`、`high`、`xhigh`、`max`、`ultracode` で、指定しなければ設定（`effortLevel`、`modelSettings`）かモデルの既定になる（[research.md](../research.md) の「Claude Code のヘッドレス実行（claude -p）」）。推論の強さは費用・時間・結果に響くのに、charter で決められず、評価の条件が利用者の設定次第で変わっていた。
+ 
+ ## 選択肢
+ 
+ | 選択肢 | 良い点 | 悪い点 |
+ |---|---|---|
+-| charter に項目を足さず、評価を回す人の設定に任せる | charter の形を変えない | 評価の条件が charter に残らず、人が承認していない条件で評価が動く |
+-| `executor.effort` を足し、空なら `--effort` を付けない | 推論の強さを人が承認した条件にできる。空のままなら今と同じ動き | charter の形が変わり、古い charter の書き直しと承認のやり直しが要る |
+-| `executor.effort` を足し、既定の強さを決めて必ず付ける | 評価の条件が常に charter で決まる | 依頼に無い既定を決めることになり、モデルごとの既定（`medium` や `high`）とずれる |
++| `executor.effort` を足し、空を許す。空なら `--effort` を入れない。`SCHEMA_VERSION` を 2 に上げる | `model` と同じ扱いで読み手が迷わない。決めていなければ今までと同じ条件で動く | 版 1 の charter は直して承認し直す必要がある |
++| `executor.effort` を省けるキーにし、版を上げない | 古い charter をそのまま使える | charter のキーを黙って変えることになり、PROC-06 に反する |
++| 既定値を `high` などに固定する | 評価の条件が利用者の設定に左右されない | 人が決めていない値が評価の条件に入る。本番の開発者の設定と食い違う |
+ 
+ ## 決定
+ 
+-- charter の `executor` に `effort` を足す。値は空文字か、`low`・`medium`・`high`・`xhigh`・`max` のどれかにする。`ultracode` は受け付けない
+-- `execute.command` は、`effort` が空でなければ `--effort <effort>` を `--model` の後、`--allowedTools` の前に足す。空なら引数ごと入れず、Claude Code の既定のままにする
+-- `charter-new` のひな形の `effort` は空文字にする
+-- `charter.SCHEMA_VERSION` を 2 に上げる（PROC-06）
++- charter の `executor` に `effort`（文字列）を足す。値は空か、`low`・`medium`・`high`・`xhigh`・`max` のどれかにする。`ultracode` は受け付けない
++- `execute.command` は、`effort` が空でなければ `--effort <値>` を `--model` の後、`--allowedTools` の前に入れる。空なら引数ごと入れず、Claude Code の既定に任せる
++- `charter.SCHEMA_VERSION` を 2 に上げる
+ 
+ ## 理由
+ 
+-`--model` と同じく「空なら付けない」にすれば、項目を空にした charter は今までと同じ条件で評価が動く。値を受け付ける範囲を依頼の5つに限れば、`ultracode` のように実行役の振る舞い（ワークフローの起動）まで変える値が charter に入らない。
++決めていないときに Claude Code の既定に任せる形は、`executor.model` と同じである。人が決めた値だけを評価の条件に入れられる。`ultracode` は推論の強さに加えて ultracode（ワークフローの仕組み）を有効にし、推論の強さを決める項目の範囲を超えるので、選べる値から外す。
++
++## 移行の手順
++
++版 1 の charter.json は `schema_version` の検査で落ちる。次の順で直す。
++
++1. `schema_version` を `2` にする
++2. `executor` に `"effort": ""` を足す。推論の強さを決めるなら、空の代わりに `low`・`medium`・`high`・`xhigh`・`max` のどれかを書く
++3. `python3 .forge/forge.py charter-check --target <id>` を通し、`/forge-goals <id>` で人の承認を取り直す（中身が変わり、承認のハッシュが合わなくなるため）
++4. 評価の途中なら、準備の後に charter が変わったため、`execute` が止まる。作業領域を消して `prepare` からやり直す
+ 
+ ## 影響
+ 
+-- 移行の手順：版 1 の charter は検査で落ちる。次の順で直す
+-  1. `.forge/targets/<id>/charter.json` の `schema_version` を `2` にする
+-  2. `executor` に `"effort": ""` を足す（推論の強さを固定するなら、`""` の代わりに `low`・`medium`・`high`・`xhigh`・`max` のどれかを書く）
+-  3. `/forge-goals` で `charter-check` を通し、人に見せて `charter-approve` で承認し直す（中身が変わったので、前の承認は `stale` になる）
+-- モデルが対応していない強さを書いた場合、Claude Code は対応する中で一番近い下の強さで動かす（`xhigh` に対応しないモデルでは `high`）。charter の検査ではモデルとの組み合わせを確かめない
+-- `rules.md` の OPS-05 の引数の表に `--effort` の行が無い。`rules.md` は保護ファイルのため、この変更では直さず、ルールの変更（PROC-04）として別に提案する
++- 人が読む charter（charter.md）と報告の「実行の条件」に推論の強さが出る
++- rules.md の OPS-05 の引数の表には `--effort` の行が無い。表を直すには PROC-04 の順で変える
++- Claude Code が `--effort` の値を増やしても、`charter.EFFORT_LEVELS` に足すまで charter では選べない。足すときは charter-schema.md と forge-goals の表も一緒に変える
+```
+
+#### `tests/test_execute.py`（agent-1 と agent-3、類似度 0.891）
+
+```diff
+--- agent-1/tests/test_execute.py
++++ agent-3/tests/test_execute.py
+@@ -14,11 +14,8 @@
+ 
+ class ExecuteTest(unittest.TestCase):
+     def test_command(self) -> None:
+-        data = support.orch_charter()
+-        executor = data["executor"]
+-        assert isinstance(executor, dict)
+-        executor["effort"] = "high"
+-        args = execute.command(charter.parse(data, "charter.json").executor, "/dev-orch 依頼", Path("/w/system.md"))
++        model = charter.parse(support.orch_charter(), "charter.json")
++        args = execute.command(model.executor, "/dev-orch 依頼", Path("/w/system.md"))
+         expected = [
+             "claude",
+             "-p",
+@@ -35,8 +32,6 @@
+             "1.0",
+             "--append-system-prompt-file",
+             "/w/system.md",
+-            "--effort",
+-            "high",
+             "--allowedTools",
+             "Bash(python3 check.py)",
+         ]
+@@ -47,11 +42,10 @@
+         data = support.orch_charter()
+         executor = data["executor"]
+         assert isinstance(executor, dict)
+-        executor.update({"model": "sonnet", "allowed_tools": []})
++        executor.update({"model": "sonnet", "effort": "high", "allowed_tools": []})
+         args = execute.command(charter.parse(data, "charter.json").executor, "p", Path("/s.md"))
+-        self.assertEqual(args[-2:], ["--model", "sonnet"])
++        self.assertEqual(args[-4:], ["--model", "sonnet", "--effort", "high"])
+         self.assertNotIn("--allowedTools", args)
+-        self.assertNotIn("--effort", args)
+ 
+     def test_execute(self) -> None:
+         where = support.approved_layout(self, support.orch_charter())
+```
+
+#### `docs/design/research.md`（agent-1 と agent-2、類似度 0.964）
+
+```diff
+--- agent-1/docs/design/research.md
++++ agent-2/docs/design/research.md
+@@ -43,7 +43,7 @@
+ 
+ ## Claude Code のヘッドレス実行（claude -p）2.1.296
+ 
+-- 確認方法：https://code.claude.com/docs/en/headless.md、https://code.claude.com/docs/en/cli-reference.md、https://code.claude.com/docs/en/agent-sdk/typescript.md、https://code.claude.com/docs/en/model-config.md を取得して読んだ。`claude --help` に `--effort <level>`（low, medium, high, xhigh, max）があることを確かめた。あわせて実機で試した（下の「実機の試験」）
++- 確認方法：https://code.claude.com/docs/en/headless.md、https://code.claude.com/docs/en/cli-reference.md、https://code.claude.com/docs/en/agent-sdk/typescript.md、https://code.claude.com/docs/en/model-config.md を取得して読んだ。あわせて実機で試した（下の「実機の試験」）
+ - 確認の状態：確認済み
+ - 公式の推奨：
+   - `claude -p` は `--bare` を付けなければ、対話のセッションと同じくスキルとサブエージェントを読み込む
+@@ -54,8 +54,7 @@
+   - `--permission-prompts none` で、人の答えが要るツール（`AskUserQuestion`）を外し、確認が要る操作を拒否する（v2.1.259 以降。[Turn off permission prompts in unattended runs](https://code.claude.com/docs/en/headless#turn-off-permission-prompts-in-unattended-runs)）
+   - `--permission-mode acceptEdits` で、作業ディレクトリの中の編集を確認なしで許す。v2.1.302 以降、モードを指定しない `-p` は Manual モードで始まる
+   - `--append-system-prompt-file` で、既定のシステムプロンプトに文を足せる
+-  - `--effort` で、そのセッションの推論の強さ（effort）を `low`・`medium`・`high`・`xhigh`・`max`・`ultracode` のどれかに決める。`ultracode` は `xhigh` に加えて ultracode（ワークフローの起動を Claude に任せる機能）をオンにする。設定の `effortLevel` と `modelSettings` より優先し、保存されない（[CLI flags](https://code.claude.com/docs/en/cli-reference#cli-flags)）
+-  - 使える段階はモデルで変わる。モデルが対応しない段階を指定すると、対応する段階のうち指定以下で最も高いものになる（Opus 4.6 の `xhigh` は `high`）。`--effort` を渡さなければ、環境変数 `CLAUDE_CODE_EFFORT_LEVEL`、設定（`modelSettings`、`effortLevel`）、モデルの既定の順で決まる（[Adjust effort level](https://code.claude.com/docs/en/model-config#adjust-effort-level)）
++  - `--effort` で、そのセッションの推論の強さを `low`・`medium`・`high`・`xhigh`・`max`（と `ultracode`）から決める。設定の `effortLevel` より優先し、保存されない。付けなければ、設定かモデルの既定の強さになる。モデルが対応しない強さは、対応する中で一番近い下の強さになる（[CLI flags](https://code.claude.com/docs/en/cli-reference#cli-flags)、[Adjust effort level](https://code.claude.com/docs/en/model-config#adjust-effort-level)。`claude --help` にも `--effort <level>` がある）
+   - プロンプトに `/<スキル名> <引数>` を書くとスキルを呼べる
+ - 実機の試験（2026-10-20、2.1.296、haiku）：`disable-model-invocation: true` のスキルが Agent ツールでカスタムサブエージェントを1つ起動する小さなリポジトリで、`claude -p "/orch" --output-format stream-json --verbose --permission-mode acceptEdits --permission-prompts none --max-budget-usd 0.5` を実行した。結果は次のとおり
+   - スキルは `/orch` で呼ばれ、サブエージェントがファイルを書いた（終了コード 0、$0.011、6.5 秒）
+@@ -68,12 +67,12 @@
+   - 実行の記録は stream-json で保存し、文書にある項目（Agent の `tool_use`、`parent_tool_use_id`、`task_started` の `spawn_depth`、`result` の項目）だけから指標を求める（[ADR 0009](adr/0009-measure-from-documented-stream-fields.md)）
+   - 実行役には `--permission-mode acceptEdits` と `--permission-prompts none` を付け、`--max-budget-usd` で1回の費用に上限を付ける（OPS-05、[ADR 0006](adr/0006-no-permission-widening.md)）
+   - 人に聞く場面の扱いは、`--append-system-prompt-file` で渡すひな形（`executor-system.md`）に書く
+-  - 実行役の推論の強さは charter の `executor.effort`（`low`・`medium`・`high`・`xhigh`・`max` か空）で決め、空でなければ `--effort` で渡す。空なら渡さず、Claude Code の既定に任せる（[ADR 0012](adr/0012-executor-effort-in-charter.md)）
++  - 推論の強さは charter の `executor.effort` で決め、空でなければ `--effort` で渡す。空なら付けず、Claude Code の既定のままにする（[ADR 0012](adr/0012-executor-effort.md)）
+ - 採用しないもの：
+-  - `--effort ultracode`（推論の強さのほかに ultracode をオンにし、評価の条件に charter で決めていない機能が入るため）
+   - `subagent_stats`（文書に無く、版で変わりうるため）
+   - `--forward-subagent-text`（指標と採点に要るのは `tool_use` と最後の返答で、サブエージェントの文章は出力を大きくするだけのため）
+   - `--bare`（スキルとサブエージェントの自動の読み込みが止まるため）
++  - `--effort ultracode`（推論の強さだけでなく、ワークフローの起動まで実行役の振る舞いを変えるため。[ADR 0012](adr/0012-executor-effort.md)）
+ - ツールにできないこと：`claude -p` の中では人の承認を挟めない → 人に聞く場面は、生成するスキルの「## 人に確かめること」に人が答えられないときの既定の答えを書かせ（バンドルの決まり B05）、実行役はその既定で進める
+ 
+ ## Claude Code の CLAUDE.md の読み込み 2.1.296
+```
+
+#### `tests/test_report.py`（agent-1 と agent-2、類似度 0.969）
+
+```diff
+--- agent-1/tests/test_report.py
++++ agent-2/tests/test_report.py
+@@ -21,7 +21,7 @@
+         self.assertIn("| delegation | must | 0.800 | 1.000 | 1.000 | 1.000 |", text)
+         self.assertIn("改善のラウンドは行っていない", text)
+         self.assertIn("Bash(python3 check.py)", text)
+-        self.assertIn("推論の強さ: Claude Code の既定", text)
++        self.assertIn("- 推論の強さ: Claude Code の既定", text)
+         self.assertIn("## 6. 人に判断してほしいこと\n\n- なし", text)
+         final = layout.make_slot("final", 0)
+         for run in workspace.load_plan(where, final).runs:
+```
+
+#### `tests/test_charter.py`（agent-1 と agent-2、類似度 0.978）
+
+```diff
+--- agent-1/tests/test_charter.py
++++ agent-2/tests/test_charter.py
+@@ -71,12 +71,13 @@
+         data = support.orch_charter()
+         executor = data["executor"]
+         assert isinstance(executor, dict)
++        self.assertEqual(charter.parse(data, "charter.json").executor.effort, "")
+         executor["effort"] = "xhigh"
+         self.assertEqual(charter.parse(data, "charter.json").executor.effort, "xhigh")
+         executor["effort"] = "ultracode"
+         with self.assertRaises(InvalidFileError) as caught:
+             charter.parse(data, "charter.json")
+-        self.assertIn("executor.effort は空か", caught.exception.message)
++        self.assertIn("executor.effort は空か low, medium, high, xhigh, max のどれか", caught.exception.message)
+ 
+ 
+ if __name__ == "__main__":
+```

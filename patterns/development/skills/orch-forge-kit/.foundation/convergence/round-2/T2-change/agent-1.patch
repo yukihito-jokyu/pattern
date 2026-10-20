@@ -1,0 +1,70 @@
+--- a/kit/.forge/forge_kit/building.py
++++ b/kit/.forge/forge_kit/building.py
+@@ -69,6 +69,7 @@
+         "design_md": str(where.design_md_path),
+         "rules_md": str(where.bundle_rules_path),
+         "draft_dir": str(where.draft_dir),
++        "check_command": model.environment.check_command or render.MISSING,
+         "feedback": feedback or render.MISSING,
+     }
+     fsops.write_text(where.builder_prompt_path, prompts.render("builder", values))
+--- a/kit/.forge/forge_kit/prompts.py
++++ b/kit/.forge/forge_kit/prompts.py
+@@ -30,7 +30,9 @@
+     ),
+     "builder": (
+         "builder.md",
+-        frozenset({"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "feedback"}),
++        frozenset(
++            {"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "check_command", "feedback"}
++        ),
+     ),
+     "executor": ("executor.md", frozenset({"skill_name", "task_prompt"})),
+     "executor-system": ("executor-system.md", frozenset({"skill_name"})),
+--- a/kit/.forge/templates/prompts/builder.md
++++ b/kit/.forge/templates/prompts/builder.md
+@@ -11,6 +11,12 @@
+ 3. バンドルの決まり: `${rules_md}`。下書きは全部の決まりを満たす（満たさないと検査で落ちる）
+ 4. リポジトリ `${repo}`: `CLAUDE.md`、`AGENTS.md`、`README.md`、検査のコマンド、ディレクトリ構造。スキルとサブエージェントの手順を、このリポジトリの決まりとコマンドに合わせるために読む。`.forge/` と `.claude/skills/forge-*` と `.claude/agents/forge-*` は読まない
+ 5. 骨組み: `${draft_dir}`
++
++## 検査コマンド
++
++charter の検査コマンド: `${check_command}`
++
++上が `—` なら、charter で検査コマンドは決まっていません。そのときは、読むもの4でリポジトリの文書に書かれている検査のコマンドだけを使い、書かれていないコマンドを推測して手順に書きません。そうでなければ、スキルとサブエージェントの手順で検査を回す所に、このコマンドをそのまま書きます。このコマンドはリポジトリのルートで実行します。リポジトリの文書に別の検査のコマンドがあっても、このコマンドを使います。
+ 
+ ## 人から直してほしいと言われたこと
+ 
+--- a/tests/test_building.py
++++ b/tests/test_building.py
+@@ -4,7 +4,7 @@
+ 
+ import unittest
+ 
+-from forge_kit import building, bundle, designing, fsops, layout, workspace
++from forge_kit import building, bundle, designing, fsops, layout, render, workspace
+ from forge_kit.errors import InvalidFileError, StageError
+ from tests import support
+ 
+@@ -63,6 +63,20 @@
+         self.assertIn("報告に費用を足して", fsops.read_text(self.where.builder_prompt_path))
+         self.assertTrue((self.where.draft_dir / layout.SKILLS_DIR / support.NEW_SKILL).is_dir())
+ 
++    def test_check_command(self) -> None:
++        building.build(self.where, "")
++        self.assertIn("charter の検査コマンド: `python3 check.py`", fsops.read_text(self.where.builder_prompt_path))
++        data = support.orch_charter(support.NEW_SKILL)
++        goals, metrics, environment = data["goals"], data["metrics"], data["environment"]
++        assert isinstance(goals, list) and isinstance(metrics, list) and isinstance(environment, dict)
++        goals[0]["metrics"].remove("check_pass")
++        data["metrics"] = [choice for choice in metrics if choice["id"] != "check_pass"]
++        environment["check_command"] = ""
++        support.approve(self.where, data)
++        building.build(self.where, "")
++        prompt = fsops.read_text(self.where.builder_prompt_path)
++        self.assertIn(f"charter の検査コマンド: `{render.MISSING}`", prompt)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

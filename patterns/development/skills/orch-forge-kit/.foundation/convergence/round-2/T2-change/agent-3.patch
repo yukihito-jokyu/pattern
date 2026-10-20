@@ -1,0 +1,77 @@
+--- a/kit/.forge/forge_kit/building.py
++++ b/kit/.forge/forge_kit/building.py
+@@ -62,6 +62,7 @@
+     for path in (where.bundle_check_path, where.bundle_check_md_path):
+         fsops.remove_tree(path)
+     fsops.write_text(where.visible_charter_path, views.render_charter(model, "approved", include_holdout=False))
++    check_command = model.environment.check_command
+     values = {
+         "skill_name": model.target.skill_name,
+         "repo": str(where.root),
+@@ -69,6 +70,7 @@
+         "design_md": str(where.design_md_path),
+         "rules_md": str(where.bundle_rules_path),
+         "draft_dir": str(where.draft_dir),
++        "check_command": check_command if check_command.strip() else render.MISSING,
+         "feedback": feedback or render.MISSING,
+     }
+     fsops.write_text(where.builder_prompt_path, prompts.render("builder", values))
+--- a/kit/.forge/forge_kit/prompts.py
++++ b/kit/.forge/forge_kit/prompts.py
+@@ -30,7 +30,9 @@
+     ),
+     "builder": (
+         "builder.md",
+-        frozenset({"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "feedback"}),
++        frozenset(
++            {"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "check_command", "feedback"}
++        ),
+     ),
+     "executor": ("executor.md", frozenset({"skill_name", "task_prompt"})),
+     "executor-system": ("executor-system.md", frozenset({"skill_name"})),
+--- a/kit/.forge/templates/prompts/builder.md
++++ b/kit/.forge/templates/prompts/builder.md
+@@ -11,6 +11,12 @@
+ 3. バンドルの決まり: `${rules_md}`。下書きは全部の決まりを満たす（満たさないと検査で落ちる）
+ 4. リポジトリ `${repo}`: `CLAUDE.md`、`AGENTS.md`、`README.md`、検査のコマンド、ディレクトリ構造。スキルとサブエージェントの手順を、このリポジトリの決まりとコマンドに合わせるために読む。`.forge/` と `.claude/skills/forge-*` と `.claude/agents/forge-*` は読まない
+ 5. 骨組み: `${draft_dir}`
++
++## charter で決めた検査コマンド
++
++`${check_command}`
++
++上が `—` なら、charter で検査コマンドは決まっていません。そのときは、4 で読んだリポジトリの文書に書かれた検査のコマンドだけを手順に書き、文書に無いコマンドを推測で書きません。そうでなければ、変更を確かめる手順（SKILL.md とサブエージェントの本文）には、上のコマンドをリポジトリのルートで実行すると、コマンドを変えずに書きます。
+ 
+ ## 人から直してほしいと言われたこと
+ 
+--- a/tests/test_building.py
++++ b/tests/test_building.py
+@@ -4,7 +4,7 @@
+ 
+ import unittest
+ 
+-from forge_kit import building, bundle, designing, fsops, layout, workspace
++from forge_kit import building, bundle, designing, fsops, layout, render, workspace
+ from forge_kit.errors import InvalidFileError, StageError
+ from tests import support
+ 
+@@ -63,6 +63,19 @@
+         self.assertIn("報告に費用を足して", fsops.read_text(self.where.builder_prompt_path))
+         self.assertTrue((self.where.draft_dir / layout.SKILLS_DIR / support.NEW_SKILL).is_dir())
+ 
++    def test_check_command(self) -> None:
++        building.build(self.where, "")
++        self.assertIn("\n`python3 check.py`\n", fsops.read_text(self.where.builder_prompt_path))
++        data = support.orch_charter(support.NEW_SKILL)
++        environment = data["environment"]
++        assert isinstance(environment, dict)
++        environment["check_command"] = ""
++        data["goals"] = [{"id": "G1", "statement": "依頼を満たす", "metrics": ["acceptance"]}]
++        data["metrics"] = [{"id": "acceptance", "threshold": 1.0, "priority": "must"}]
++        support.approve(self.where, data)
++        building.build(self.where, "")
++        self.assertIn(f"\n`{render.MISSING}`\n", fsops.read_text(self.where.builder_prompt_path))
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

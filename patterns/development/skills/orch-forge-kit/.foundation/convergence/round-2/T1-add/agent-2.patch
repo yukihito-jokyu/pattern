@@ -1,0 +1,85 @@
+--- a/kit/.forge/forge_kit/catalog.py
++++ b/kit/.forge/forge_kit/catalog.py
+@@ -162,6 +162,19 @@
+         computes="メインのセッションが Agent ツールでサブエージェントを起動した回数を、実行ごとに平均する",
+         requires="",
+     ),
++    Metric(
++        id="denials",
++        name="権限で拒まれた操作の回数",
++        method="machine",
++        direction="lower",
++        default_threshold=10.0,
++        max_value=None,
++        recommended=False,
++        tells="スキルの手順が、評価の環境で許された操作の範囲で進められるか（拒まれるほど手順が環境に合っていない）",
++        computes="実行の記録の result の permission_denials の件数を、実行ごとに平均する。"
++        "result の無い実行は0件と数える",
++        requires="",
++    ),
+ )
+ 
+ # 2人以上の実行を比べて初めて計算できる指標
+--- a/kit/.forge/forge_kit/score.py
++++ b/kit/.forge/forge_kit/score.py
+@@ -56,6 +56,7 @@
+     "cost_usd": lambda runs: _known([run.facts.cost_usd for run in runs]),
+     "duration_sec": lambda runs: _known([run.facts.duration_sec for run in runs]),
+     "launches": lambda runs: metrics.mean([float(len(run.facts.launches)) for run in runs]),
++    "denials": lambda runs: metrics.mean([float(len(run.facts.denials)) for run in runs]),
+ }
+ 
+ 
+--- a/kit/claude/skills/forge-goals/references/metric-catalog.md
++++ b/kit/claude/skills/forge-goals/references/metric-catalog.md
+@@ -3,7 +3,7 @@
+ # 指標の一覧
+ 
+ charter の `metrics` に書ける指標である。`machine` は補助 CLI が実行の記録と差分から機械で数え、`grader` は採点役が判定する。
+-値は 0〜1 の割合（量の指標 `cost_usd`、`duration_sec`、`launches` を除く）で、課題ごとに求めてから平均する。
++値は 0〜1 の割合（量の指標 `cost_usd`、`duration_sec`、`launches`、`denials` を除く）で、課題ごとに求めてから平均する。
+ 
+ ## `check_pass` 検査の通過率（推奨）
+ 
+@@ -126,6 +126,17 @@
+ | 既定の閾値 | 10.000 |
+ | 前提 | — |
+ 
++## `denials` 権限で拒まれた操作の回数
++
++| 項目 | 内容 |
++|---|---|
++| 分かること | スキルの手順が、評価の環境で許された操作の範囲で進められるか（拒まれるほど手順が環境に合っていない） |
++| 求め方 | 実行の記録の result の permission_denials の件数を、実行ごとに平均する。result の無い実行は0件と数える |
++| 測り方 | machine |
++| 向き | 低いほど良い |
++| 既定の閾値 | 10.000 |
++| 前提 | — |
++
+ ## 独自の指標（`custom_<番号>`）
+ 
+ 一覧に無い観点は `custom_1` のような id にし、`criterion` に、採点役が「満たした / 満たしていない」で判定できる1文を書く。
+--- a/tests/test_score.py
++++ b/tests/test_score.py
+@@ -24,6 +24,21 @@
+         self.assertEqual({item.id: item.value for item in scores.metrics}["delegation"], 0.0)
+         self.assertFalse(scores.all_must_met)
+ 
++    def test_denials(self) -> None:
++        data = support.orch_charter()
++        goals, chosen = data["goals"], data["metrics"]
++        assert isinstance(goals, list) and isinstance(chosen, list)
++        goals.append({"id": "G5", "statement": "評価の環境で拒まれずに進める", "metrics": ["denials"]})
++        chosen.append({"id": "denials", "threshold": 0.0, "priority": "should"})
++        where = support.approved_layout(self, data)
++        scores = support.scored_slot(where, layout.make_slot("baseline", 1), stream="delegated")
++        found = {item.id: item for item in scores.metrics}
++        self.assertEqual((found["denials"].value, found["denials"].met), (0.0, True))
++        where = support.approved_layout(self, data)
++        scores = support.scored_slot(where, layout.make_slot("baseline", 1), stream="main-edit")
++        found = {item.id: item for item in scores.metrics}
++        self.assertEqual((found["denials"].value, found["denials"].met), (1.0, False))
++
+     def test_holdout_is_separate(self) -> None:
+         where = support.approved_layout(self, support.orch_charter())
+         scores = support.scored_slot(where, layout.make_slot("final", 0))

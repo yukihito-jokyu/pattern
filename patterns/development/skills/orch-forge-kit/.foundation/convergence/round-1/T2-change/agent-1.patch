@@ -1,0 +1,62 @@
+--- a/kit/.forge/forge_kit/building.py
++++ b/kit/.forge/forge_kit/building.py
+@@ -69,6 +69,7 @@
+         "design_md": str(where.design_md_path),
+         "rules_md": str(where.bundle_rules_path),
+         "draft_dir": str(where.draft_dir),
++        "check_command": model.environment.check_command.strip() or render.MISSING,
+         "feedback": feedback or render.MISSING,
+     }
+     fsops.write_text(where.builder_prompt_path, prompts.render("builder", values))
+--- a/kit/.forge/forge_kit/prompts.py
++++ b/kit/.forge/forge_kit/prompts.py
+@@ -30,7 +30,9 @@
+     ),
+     "builder": (
+         "builder.md",
+-        frozenset({"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "feedback"}),
++        frozenset(
++            {"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "check_command", "feedback"}
++        ),
+     ),
+     "executor": ("executor.md", frozenset({"skill_name", "task_prompt"})),
+     "executor-system": ("executor-system.md", frozenset({"skill_name"})),
+--- a/kit/.forge/templates/prompts/builder.md
++++ b/kit/.forge/templates/prompts/builder.md
+@@ -11,6 +11,13 @@
+ 3. バンドルの決まり: `${rules_md}`。下書きは全部の決まりを満たす（満たさないと検査で落ちる）
+ 4. リポジトリ `${repo}`: `CLAUDE.md`、`AGENTS.md`、`README.md`、検査のコマンド、ディレクトリ構造。スキルとサブエージェントの手順を、このリポジトリの決まりとコマンドに合わせるために読む。`.forge/` と `.claude/skills/forge-*` と `.claude/agents/forge-*` は読まない
+ 5. 骨組み: `${draft_dir}`
++
++## 検査コマンド
++
++charter で決めた検査コマンド: `${check_command}`
++
++- 上が `—` でなければ、検査を回す手順（サブエージェントに渡すプロンプトを含む）に、このコマンドをそのまま書く。リポジトリの文書に別のコマンドがあっても、charter のコマンドを使う
++- 上が `—` なら、charter で検査コマンドは決まっていない。検査を回す手順には、読むものの4でリポジトリから見つけた検査のコマンドだけを書く。見つからなければ、コマンドを推測で作らず、手順に検査のコマンドを書かない
+ 
+ ## 人から直してほしいと言われたこと
+ 
+--- a/tests/test_building.py
++++ b/tests/test_building.py
+@@ -63,6 +63,20 @@
+         self.assertIn("報告に費用を足して", fsops.read_text(self.where.builder_prompt_path))
+         self.assertTrue((self.where.draft_dir / layout.SKILLS_DIR / support.NEW_SKILL).is_dir())
+ 
++    def test_check_command(self) -> None:
++        building.build(self.where, "")
++        line = "charter で決めた検査コマンド: "
++        self.assertIn(line + "`python3 check.py`", fsops.read_text(self.where.builder_prompt_path))
++        data = support.orch_charter(support.NEW_SKILL)
++        environment = data["environment"]
++        assert isinstance(environment, dict)
++        environment["check_command"] = ""
++        data["goals"] = [{"id": "G1", "statement": "依頼を満たす", "metrics": ["completion"]}]
++        data["metrics"] = [{"id": "completion", "threshold": 1.0, "priority": "must"}]
++        support.approve(self.where, data)
++        building.build(self.where, "")
++        self.assertIn(line + "`—`", fsops.read_text(self.where.builder_prompt_path))
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

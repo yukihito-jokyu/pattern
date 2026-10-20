@@ -1,0 +1,3 @@
+{"type": "system", "subtype": "init", "cwd": "/repo", "session_id": "s1", "tools": ["Agent", "Read", "Write", "Edit", "Bash"]}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "u1", "name": "Agent", "input": {"description": "在庫を減らす関数を足す", "subagent_type": "dev-orch-implementer", "prompt": "依頼を進めてください"}}]}, "parent_tool_use_id": null, "session_id": "s1"}
+{"type": "system", "subtype": "task_started", "tool_use_id": "u1", "spawn_depth": 1, "session_id": "s1"}
