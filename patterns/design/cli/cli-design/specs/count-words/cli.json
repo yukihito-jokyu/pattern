@@ -1,0 +1,86 @@
+{
+  "name": "count-words",
+  "version": "1.0.0",
+  "summary": "Count words in files",
+  "storage": "none",
+  "commands": [
+    {
+      "path": [],
+      "summary": "Count words in files",
+      "args": [
+        {
+          "name": "file",
+          "type": "file",
+          "values": [],
+          "required": true,
+          "variadic": true,
+          "summary": "File to read, or - to read stdin"
+        }
+      ],
+      "options": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "values": [],
+          "default": 20,
+          "required": false,
+          "repeatable": false,
+          "summary": "Maximum number of words to show"
+        },
+        {
+          "name": "min-length",
+          "type": "integer",
+          "values": [],
+          "default": 1,
+          "required": false,
+          "repeatable": false,
+          "summary": "Minimum length of a word to count"
+        },
+        {
+          "name": "output",
+          "type": "file",
+          "values": [],
+          "default": null,
+          "required": false,
+          "repeatable": false,
+          "summary": "File to write the output to"
+        }
+      ],
+      "output": {
+        "kind": "list",
+        "type": "word_count"
+      },
+      "exit_codes": [0, 1, 2, 3]
+    }
+  ],
+  "types": [
+    {
+      "name": "word_count",
+      "fields": [
+        {
+          "name": "count",
+          "type": "integer",
+          "values": [],
+          "list": false,
+          "nullable": false
+        },
+        {
+          "name": "word",
+          "type": "string",
+          "values": [],
+          "list": false,
+          "nullable": false
+        }
+      ]
+    }
+  ],
+  "env": [
+    {
+      "name": "COUNT_WORDS_MIN_LENGTH",
+      "type": "integer",
+      "values": [],
+      "default": 1,
+      "summary": "Minimum length of a word to count"
+    }
+  ]
+}

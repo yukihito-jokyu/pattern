@@ -1,0 +1,193 @@
+{
+  "round": 1,
+  "thresholds": {
+    "files": 1.0,
+    "names": 0.8,
+    "content": 0.0
+  },
+  "tasks": [
+    {
+      "id": "T1-add",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "specs/bookmarks/cli.json",
+          "specs/bookmarks/cli.md"
+        ],
+        "agent-2": [
+          "specs/bookmarks/cli.json",
+          "specs/bookmarks/cli.md"
+        ],
+        "agent-3": [
+          "specs/bookmarks/cli.json",
+          "specs/bookmarks/cli.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 2,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "specs/bookmarks/cli.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "specs/bookmarks/cli.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T2-change",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "specs/notes/cli.json",
+          "specs/notes/cli.md"
+        ],
+        "agent-2": [
+          "specs/notes/cli.json",
+          "specs/notes/cli.md"
+        ],
+        "agent-3": [
+          "specs/notes/cli.json",
+          "specs/notes/cli.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "specs/notes/cli.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "specs/notes/cli.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T3-cross",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "specs/notes/cli.json",
+          "specs/notes/cli.md"
+        ],
+        "agent-2": [
+          "specs/notes/cli.json",
+          "specs/notes/cli.md"
+        ],
+        "agent-3": [
+          "specs/notes/cli.json",
+          "specs/notes/cli.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 3,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "specs/notes/cli.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "specs/notes/cli.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    }
+  ]
+}

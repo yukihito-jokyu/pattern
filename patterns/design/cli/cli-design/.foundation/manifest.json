@@ -1,0 +1,197 @@
+{
+  "name": "cli-design",
+  "status": "ready",
+  "mode": "new",
+  "domain": [
+    "cli-library"
+  ],
+  "language": "ja",
+  "stack": [
+    {
+      "name": "CLI 仕様の形式（cli.json、この基盤で定義）",
+      "version": "1",
+      "role": "spec-format",
+      "pinned": false
+    },
+    {
+      "name": "Go flag",
+      "version": "go1.27.3",
+      "role": "cli-parser",
+      "pinned": true
+    },
+    {
+      "name": "Python argparse",
+      "version": "3.14.8",
+      "role": "cli-parser",
+      "pinned": true
+    },
+    {
+      "name": "Node.js util.parseArgs",
+      "version": "v24.22.0",
+      "role": "cli-parser",
+      "pinned": true
+    },
+    {
+      "name": "Rust std::env::args",
+      "version": "1.99.1",
+      "role": "cli-parser",
+      "pinned": true
+    }
+  ],
+  "tools": [
+    {
+      "role": "runtime",
+      "language": "python",
+      "name": "Python（検査ツールの実行環境。.python-version）",
+      "version": "3.14",
+      "pinned": true
+    },
+    {
+      "role": "other",
+      "language": "python",
+      "name": "uv（Python の起動）",
+      "version": "0.13.3",
+      "pinned": false
+    },
+    {
+      "role": "formatter",
+      "language": "json",
+      "name": "tools/clispec fmt",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "json",
+      "name": "tools/clispec check",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "structure",
+      "language": "json",
+      "name": "tools/clispec check（配置・互換性）",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "python",
+      "name": "tools/clispec conform（適合テスト）と unittest",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "build",
+      "language": "make",
+      "name": "make",
+      "version": "3.81",
+      "pinned": false
+    },
+    {
+      "role": "other",
+      "language": "markdown",
+      "name": "tools/clispec gen（リファレンスの生成）",
+      "version": "1",
+      "pinned": false
+    }
+  ],
+  "skills": {
+    "impl": "cli-design",
+    "review": "cli-design-review"
+  },
+  "commands": {
+    "check": "make check",
+    "fix": "make fix"
+  },
+  "protected": [
+    "Makefile",
+    ".editorconfig",
+    ".gitignore",
+    ".python-version",
+    "tools/**",
+    "specs/*/released/**",
+    ".claude/settings.json",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md",
+    "ci.json",
+    ".ci/**"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": []
+  },
+  "guard": {
+    "rule": "TOOL-03",
+    "include": [
+      "**/*.py",
+      "specs/**/*.json"
+    ],
+    "exclude": [
+      ".foundation/**"
+    ],
+    "suppressions": [
+      {
+        "pattern": "#\\s*noqa",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*type:\\s*ignore",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "unittest\\.skip",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "skipTest\\(",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "expectedFailure",
+        "rule": "TOOL-03"
+      }
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {
+        "glob": "specs/*/cli.json",
+        "command": "make -s after-edit FILE={file}"
+      }
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 1800,
+    "runner": [
+      "claude",
+      "-p",
+      "{prompt}",
+      "--output-format",
+      "json",
+      "--permission-mode",
+      "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools",
+      "Skill",
+      "Bash(make check)",
+      "Bash(make fix)",
+      "Bash(make *)",
+      "Bash(git diff *)",
+      "Bash(git status *)"
+    ],
+    "ignore": [
+      "**/__pycache__/**"
+    ],
+    "thresholds": {
+      "files": 1.0,
+      "names": 0.8,
+      "content": 0.0
+    }
+  }
+}

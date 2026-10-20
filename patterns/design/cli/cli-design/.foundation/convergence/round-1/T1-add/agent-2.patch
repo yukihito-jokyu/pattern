@@ -1,0 +1,403 @@
+--- /dev/null
++++ b/specs/bookmarks/cli.json
+@@ -0,0 +1,232 @@
++{
++  "name": "bookmarks",
++  "version": "1.0.0",
++  "summary": "Manage bookmarks",
++  "storage": "data",
++  "commands": [
++    {
++      "path": ["bookmark", "create"],
++      "summary": "Create a bookmark",
++      "args": [],
++      "options": [
++        {
++          "name": "tag",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": false,
++          "repeatable": true,
++          "summary": "Tag of the bookmark"
++        },
++        {
++          "name": "title",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": true,
++          "repeatable": false,
++          "summary": "Title of the bookmark"
++        },
++        {
++          "name": "url",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": true,
++          "repeatable": false,
++          "summary": "Url of the bookmark"
++        }
++      ],
++      "output": {
++        "kind": "object",
++        "type": "bookmark"
++      },
++      "exit_codes": [0, 1, 2]
++    },
++    {
++      "path": ["bookmark", "delete"],
++      "summary": "Delete a bookmark",
++      "args": [
++        {
++          "name": "id",
++          "type": "integer",
++          "values": [],
++          "required": true,
++          "variadic": false,
++          "summary": "ID of the bookmark"
++        }
++      ],
++      "options": [],
++      "output": {
++        "kind": "object",
++        "type": "bookmark"
++      },
++      "exit_codes": [0, 1, 2, 3]
++    },
++    {
++      "path": ["bookmark", "edit"],
++      "summary": "Edit a bookmark",
++      "args": [
++        {
++          "name": "id",
++          "type": "integer",
++          "values": [],
++          "required": true,
++          "variadic": false,
++          "summary": "ID of the bookmark"
++        }
++      ],
++      "options": [
++        {
++          "name": "tag",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": false,
++          "repeatable": true,
++          "summary": "New tag of the bookmark"
++        },
++        {
++          "name": "title",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": false,
++          "repeatable": false,
++          "summary": "New title of the bookmark"
++        },
++        {
++          "name": "url",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": false,
++          "repeatable": false,
++          "summary": "New url of the bookmark"
++        }
++      ],
++      "output": {
++        "kind": "object",
++        "type": "bookmark"
++      },
++      "exit_codes": [0, 1, 2, 3]
++    },
++    {
++      "path": ["bookmark", "list"],
++      "summary": "List bookmarks",
++      "args": [],
++      "options": [
++        {
++          "name": "limit",
++          "type": "integer",
++          "values": [],
++          "default": 20,
++          "required": false,
++          "repeatable": false,
++          "summary": "Maximum number of bookmarks to show"
++        },
++        {
++          "name": "sort",
++          "type": "enum",
++          "values": ["created_at", "id", "title", "updated_at", "url"],
++          "default": "id",
++          "required": false,
++          "repeatable": false,
++          "summary": "Field to sort the bookmarks by"
++        },
++        {
++          "name": "tag",
++          "type": "string",
++          "values": [],
++          "default": null,
++          "required": false,
++          "repeatable": true,
++          "summary": "Show only bookmarks with this tag"
++        }
++      ],
++      "output": {
++        "kind": "list",
++        "type": "bookmark"
++      },
++      "exit_codes": [0, 1, 2]
++    },
++    {
++      "path": ["bookmark", "view"],
++      "summary": "View a bookmark",
++      "args": [
++        {
++          "name": "id",
++          "type": "integer",
++          "values": [],
++          "required": true,
++          "variadic": false,
++          "summary": "ID of the bookmark"
++        }
++      ],
++      "options": [],
++      "output": {
++        "kind": "object",
++        "type": "bookmark"
++      },
++      "exit_codes": [0, 1, 2, 3]
++    }
++  ],
++  "types": [
++    {
++      "name": "bookmark",
++      "fields": [
++        {
++          "name": "id",
++          "type": "integer",
++          "values": [],
++          "list": false,
++          "nullable": false
++        },
++        {
++          "name": "created_at",
++          "type": "timestamp",
++          "values": [],
++          "list": false,
++          "nullable": false
++        },
++        {
++          "name": "tags",
++          "type": "string",
++          "values": [],
++          "list": true,
++          "nullable": false
++        },
++        {
++          "name": "title",
++          "type": "string",
++          "values": [],
++          "list": false,
++          "nullable": false
++        },
++        {
++          "name": "updated_at",
++          "type": "timestamp",
++          "values": [],
++          "list": false,
++          "nullable": false
++        },
++        {
++          "name": "url",
++          "type": "string",
++          "values": [],
++          "list": false,
++          "nullable": false
++        }
++      ]
++    }
++  ],
++  "env": [
++    {
++      "name": "BOOKMARKS_DATA_DIR",
++      "type": "directory",
++      "values": [],
++      "default": "$XDG_DATA_HOME/bookmarks",
++      "summary": "Directory for data files"
++    }
++  ]
++}
+--- /dev/null
++++ b/specs/bookmarks/cli.md
+@@ -0,0 +1,165 @@
++<!-- Code generated by tools/clispec gen from cli.json. DO NOT EDIT. -->
++
++# bookmarks 1.0.0
++
++Manage bookmarks
++
++Implementations print each help text below exactly, to stdout, and exit with 0 (`-h` and `--help`). See `docs/design/rules.md` OPS-05.
++
++## Usage
++
++```text
++Usage: bookmarks <noun> <verb> [options]
++
++Manage bookmarks
++
++Commands:
++  bookmark create  Create a bookmark
++  bookmark delete  Delete a bookmark
++  bookmark edit    Edit a bookmark
++  bookmark list    List bookmarks
++  bookmark view    View a bookmark
++
++Options:
++  -h, --help     Show help
++      --version  Show the version
++```
++
++## Commands
++
++### bookmarks bookmark create
++
++```text
++Usage: bookmarks bookmark create [options]
++
++Create a bookmark
++
++Options:
++  -h, --help         Show help
++      --json         Write the output as JSON
++      --tag TAG      Tag of the bookmark (repeatable)
++      --title TITLE  Title of the bookmark (required)
++      --url URL      Url of the bookmark (required)
++```
++
++- Output: one `bookmark`
++- Exit codes: 0, 1, 2
++
++### bookmarks bookmark delete
++
++```text
++Usage: bookmarks bookmark delete [options] <id>
++
++Delete a bookmark
++
++Arguments:
++  <id>  ID of the bookmark
++
++Options:
++  -h, --help  Show help
++      --json  Write the output as JSON
++```
++
++- Output: one `bookmark`
++- Exit codes: 0, 1, 2, 3
++
++### bookmarks bookmark edit
++
++```text
++Usage: bookmarks bookmark edit [options] <id>
++
++Edit a bookmark
++
++Arguments:
++  <id>  ID of the bookmark
++
++Options:
++  -h, --help         Show help
++      --json         Write the output as JSON
++      --tag TAG      New tag of the bookmark (repeatable)
++      --title TITLE  New title of the bookmark
++      --url URL      New url of the bookmark
++```
++
++- Output: one `bookmark`
++- Exit codes: 0, 1, 2, 3
++
++### bookmarks bookmark list
++
++```text
++Usage: bookmarks bookmark list [options]
++
++List bookmarks
++
++Options:
++  -h, --help         Show help
++      --json         Write the output as JSON
++      --limit LIMIT  Maximum number of bookmarks to show (default: 20)
++      --sort SORT    Field to sort the bookmarks by (one of: created_at, id, title, updated_at, url; default: id)
++      --tag TAG      Show only bookmarks with this tag (repeatable)
++```
++
++- Output: a list of `bookmark`
++- Exit codes: 0, 1, 2
++
++### bookmarks bookmark view
++
++```text
++Usage: bookmarks bookmark view [options] <id>
++
++View a bookmark
++
++Arguments:
++  <id>  ID of the bookmark
++
++Options:
++  -h, --help  Show help
++      --json  Write the output as JSON
++```
++
++- Output: one `bookmark`
++- Exit codes: 0, 1, 2, 3
++
++## Output types
++
++`--json` writes an object with every field in this order, or an array of such objects. Text output is a table whose header is the field names in upper case.
++
++### bookmark
++
++| Field | Type | Nullable |
++|---|---|---|
++| `id` | integer | no |
++| `created_at` | timestamp | no |
++| `tags` | list of string | no |
++| `title` | string | no |
++| `updated_at` | timestamp | no |
++| `url` | string | no |
++
++## Exit codes
++
++| Code | Meaning |
++|---|---|
++| 0 | Success |
++| 1 | Unexpected failure, such as a file that cannot be read or written |
++| 2 | Invalid usage, such as an unknown option or a value of the wrong type |
++| 3 | The specified item, file, or directory does not exist |
++
++## Environment variables
++
++| Name | Type | Default | Description |
++|---|---|---|---|
++| `BOOKMARKS_DATA_DIR` | directory | `$XDG_DATA_HOME/bookmarks` | Directory for data files |
++
++A value given by an option takes precedence over the environment variable, which takes precedence over the default.
++
++## Data directory
++
++The first of these that applies is used. It is created with permission 0700 if it does not exist.
++
++1. `BOOKMARKS_DATA_DIR`, if it is a non-empty absolute path
++2. Linux and macOS: `$XDG_DATA_HOME/bookmarks`, if `XDG_DATA_HOME` is a non-empty absolute path. Windows: `%LOCALAPPDATA%\bookmarks`
++3. Linux and macOS: `$HOME/.local/share/bookmarks`
++
++## Version
++
++`bookmarks --version` prints `bookmarks 1.0.0` and exits with 0.

@@ -1,0 +1,322 @@
+{
+  "name": "notes",
+  "version": "1.0.0",
+  "summary": "Manage notes and tags",
+  "storage": "data",
+  "commands": [
+    {
+      "path": ["note", "create"],
+      "summary": "Create a note",
+      "args": [],
+      "options": [
+        {
+          "name": "tag",
+          "type": "string",
+          "values": [],
+          "default": null,
+          "required": false,
+          "repeatable": true,
+          "summary": "Tag of the note"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "values": [],
+          "default": null,
+          "required": true,
+          "repeatable": false,
+          "summary": "Title of the note"
+        }
+      ],
+      "output": {
+        "kind": "object",
+        "type": "note"
+      },
+      "exit_codes": [0, 1, 2]
+    },
+    {
+      "path": ["note", "delete"],
+      "summary": "Delete a note",
+      "args": [
+        {
+          "name": "id",
+          "type": "integer",
+          "values": [],
+          "required": true,
+          "variadic": false,
+          "summary": "ID of the note"
+        }
+      ],
+      "options": [],
+      "output": {
+        "kind": "object",
+        "type": "note"
+      },
+      "exit_codes": [0, 1, 2, 3]
+    },
+    {
+      "path": ["note", "edit"],
+      "summary": "Edit a note",
+      "args": [
+        {
+          "name": "id",
+          "type": "integer",
+          "values": [],
+          "required": true,
+          "variadic": false,
+          "summary": "ID of the note"
+        }
+      ],
+      "options": [
+        {
+          "name": "clear-tags",
+          "type": "boolean",
+          "values": [],
+          "default": false,
+          "required": false,
+          "repeatable": false,
+          "summary": "Clear the tags of the note"
+        },
+        {
+          "name": "tag",
+          "type": "string",
+          "values": [],
+          "default": null,
+          "required": false,
+          "repeatable": true,
+          "summary": "New tag of the note"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "values": [],
+          "default": null,
+          "required": false,
+          "repeatable": false,
+          "summary": "New title of the note"
+        }
+      ],
+      "output": {
+        "kind": "object",
+        "type": "note"
+      },
+      "exit_codes": [0, 1, 2, 3]
+    },
+    {
+      "path": ["note", "list"],
+      "summary": "List notes",
+      "args": [],
+      "options": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "values": [],
+          "default": 20,
+          "required": false,
+          "repeatable": false,
+          "summary": "Maximum number of notes to show"
+        },
+        {
+          "name": "sort",
+          "type": "enum",
+          "values": ["created_at", "id", "title", "updated_at"],
+          "default": "id",
+          "required": false,
+          "repeatable": false,
+          "summary": "Field to sort the notes by"
+        },
+        {
+          "name": "tag",
+          "type": "string",
+          "values": [],
+          "default": null,
+          "required": false,
+          "repeatable": true,
+          "summary": "Show only notes with this tag"
+        }
+      ],
+      "output": {
+        "kind": "list",
+        "type": "note"
+      },
+      "exit_codes": [0, 1, 2]
+    },
+    {
+      "path": ["note", "view"],
+      "summary": "View a note",
+      "args": [
+        {
+          "name": "id",
+          "type": "integer",
+          "values": [],
+          "required": true,
+          "variadic": false,
+          "summary": "ID of the note"
+        }
+      ],
+      "options": [],
+      "output": {
+        "kind": "object",
+        "type": "note"
+      },
+      "exit_codes": [0, 1, 2, 3]
+    },
+    {
+      "path": ["tag", "create"],
+      "summary": "Create a tag",
+      "args": [
+        {
+          "name": "name",
+          "type": "string",
+          "values": [],
+          "required": true,
+          "variadic": false,
+          "summary": "Name of the tag"
+        }
+      ],
+      "options": [
+        {
+          "name": "color",
+          "type": "enum",
+          "values": ["blue", "green", "red"],
+          "default": null,
+          "required": false,
+          "repeatable": false,
+          "summary": "Color of the tag"
+        }
+      ],
+      "output": {
+        "kind": "object",
+        "type": "tag"
+      },
+      "exit_codes": [0, 1, 2, 4]
+    },
+    {
+      "path": ["tag", "delete"],
+      "summary": "Delete a tag",
+      "args": [
+        {
+          "name": "name",
+          "type": "string",
+          "values": [],
+          "required": true,
+          "variadic": false,
+          "summary": "Name of the tag"
+        }
+      ],
+      "options": [],
+      "output": {
+        "kind": "object",
+        "type": "tag"
+      },
+      "exit_codes": [0, 1, 2, 3]
+    },
+    {
+      "path": ["tag", "list"],
+      "summary": "List tags",
+      "args": [],
+      "options": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "values": [],
+          "default": 20,
+          "required": false,
+          "repeatable": false,
+          "summary": "Maximum number of tags to show"
+        },
+        {
+          "name": "sort",
+          "type": "enum",
+          "values": ["color", "created_at", "name"],
+          "default": "name",
+          "required": false,
+          "repeatable": false,
+          "summary": "Field to sort the tags by"
+        }
+      ],
+      "output": {
+        "kind": "list",
+        "type": "tag"
+      },
+      "exit_codes": [0, 1, 2]
+    }
+  ],
+  "types": [
+    {
+      "name": "note",
+      "fields": [
+        {
+          "name": "id",
+          "type": "integer",
+          "values": [],
+          "list": false,
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "values": [],
+          "list": false,
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": "string",
+          "values": [],
+          "list": true,
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "values": [],
+          "list": false,
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "values": [],
+          "list": false,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "values": [],
+          "list": false,
+          "nullable": false
+        },
+        {
+          "name": "color",
+          "type": "enum",
+          "values": ["blue", "green", "red"],
+          "list": false,
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "values": [],
+          "list": false,
+          "nullable": false
+        }
+      ]
+    }
+  ],
+  "env": [
+    {
+      "name": "NOTES_DATA_DIR",
+      "type": "directory",
+      "values": [],
+      "default": "$XDG_DATA_HOME/notes",
+      "summary": "Directory for data files"
+    }
+  ]
+}
