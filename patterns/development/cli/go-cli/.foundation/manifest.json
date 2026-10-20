@@ -1,0 +1,187 @@
+{
+  "name": "go-cli",
+  "status": "ready",
+  "mode": "new",
+  "domain": [
+    "cli-library"
+  ],
+  "language": "ja",
+  "stack": [
+    {
+      "name": "go",
+      "version": "1.27.2",
+      "role": "language",
+      "pinned": true
+    },
+    {
+      "name": "flag (Go 標準ライブラリ)",
+      "version": "1.27.2",
+      "role": "cli-parser",
+      "pinned": true
+    }
+  ],
+  "tools": [
+    {
+      "role": "runtime",
+      "language": "go",
+      "name": "go",
+      "version": "1.27.2",
+      "pinned": true
+    },
+    {
+      "role": "package-manager",
+      "language": "go",
+      "name": "go modules",
+      "version": "1.27.2",
+      "pinned": false
+    },
+    {
+      "role": "formatter",
+      "language": "go",
+      "name": "golangci-lint fmt (gofumpt, goimports)",
+      "version": "2.15.0 (gofumpt 0.12.0, goimports x/tools 0.52.0)",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "go",
+      "name": "golangci-lint",
+      "version": "2.15.0",
+      "pinned": false
+    },
+    {
+      "role": "typecheck",
+      "language": "go",
+      "name": "go build / go vet",
+      "version": "1.27.2",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "go",
+      "name": "go test",
+      "version": "1.27.2",
+      "pinned": false
+    },
+    {
+      "role": "build",
+      "language": "go",
+      "name": "make",
+      "version": "GNU Make 3.81",
+      "pinned": false
+    },
+    {
+      "role": "structure",
+      "language": "go",
+      "name": "tools/archcheck",
+      "version": "",
+      "pinned": false
+    },
+    {
+      "role": "other",
+      "language": "go",
+      "name": "tools/clidoc",
+      "version": "",
+      "pinned": false
+    }
+  ],
+  "skills": {
+    "impl": "impl",
+    "review": "review"
+  },
+  "commands": {
+    "check": "make check",
+    "fix": "make fix"
+  },
+  "protected": [
+    ".golangci.yml",
+    ".editorconfig",
+    ".gitignore",
+    "go.mod",
+    "go.sum",
+    "golangci-lint.mod",
+    "golangci-lint.sum",
+    "Makefile",
+    "tools/archcheck/**",
+    "tools/clidoc/**",
+    ".claude/settings.json",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": [
+      "/bin"
+    ]
+  },
+  "guard": {
+    "rule": "TOOL-03",
+    "include": [
+      "**/*.go"
+    ],
+    "exclude": [],
+    "suppressions": [
+      {
+        "pattern": "//\\s*nolint",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "//\\s*lint:(file-)?ignore",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#nosec",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "\\bt\\.Skip(Now|f)?\\(",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "^//go:build",
+        "rule": "TOOL-03"
+      }
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {
+        "glob": "**/*.go",
+        "command": "go tool -modfile=golangci-lint.mod golangci-lint fmt {file} && go tool -modfile=golangci-lint.mod golangci-lint run ./$(dirname {file})",
+        "timeout": 110
+      }
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 1800,
+    "runner": [
+      "claude",
+      "-p",
+      "{prompt}",
+      "--output-format",
+      "json",
+      "--permission-mode",
+      "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools",
+      "Skill",
+      "Bash(make check)",
+      "Bash(make fix)",
+      "Bash(make *)",
+      "Bash(go *)",
+      "Bash(git diff *)",
+      "Bash(git status *)"
+    ],
+    "ignore": [],
+    "thresholds": {
+      "files": 1.0,
+      "names": 0.8,
+      "content": 0.0
+    }
+  }
+}

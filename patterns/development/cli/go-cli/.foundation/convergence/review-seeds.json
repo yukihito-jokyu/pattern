@@ -1,0 +1,174 @@
+{
+  "prompt": "未コミットの変更をレビューして",
+  "probes": [
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "description": "タスクの状態の語を internal/cli に置き、view.go から使う",
+      "files": [
+        {
+          "path": "internal/cli/table.go",
+          "mode": "replace",
+          "content": "package cli\n\nimport (\n\t\"fmt\"\n\t\"io\"\n\t\"strings\"\n\t\"text/tabwriter\"\n)\n\n// Settings of the tabwriter that WriteTable uses.\nconst (\n\ttableMinWidth = 0\n\ttableTabWidth = 8\n\ttablePadding  = 2\n)\n\n// WriteTable writes header and rows as columns aligned with spaces.\n// Commands use it for every text output that lists several items.\nfunc WriteTable(w io.Writer, header []string, rows [][]string) error {\n\ttw := tabwriter.NewWriter(w, tableMinWidth, tableTabWidth, tablePadding, ' ', 0)\n\t_, err := io.WriteString(tw, strings.Join(header, \"\\t\")+\"\\n\")\n\tif err != nil {\n\t\treturn err\n\t}\n\tfor _, row := range rows {\n\t\t_, err = io.WriteString(tw, strings.Join(row, \"\\t\")+\"\\n\")\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\terr = tw.Flush()\n\tif err != nil {\n\t\treturn fmt.Errorf(\"flush table: %w\", err)\n\t}\n\treturn nil\n}\n\n// StatusText returns the word shown for the status of an item.\nfunc StatusText(done bool) string {\n\tif done {\n\t\treturn \"done\"\n\t}\n\treturn \"open\"\n}\n"
+        },
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"time\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// taskView is how one task appears in the output of the task commands.\ntype taskView struct {\n\tID        int       `json:\"id\"`\n\tTitle     string    `json:\"title\"`\n\tDone      bool      `json:\"done\"`\n\tCreatedAt time.Time `json:\"created_at\"`\n}\n\n// toTaskView converts Task to taskView.\nfunc toTaskView(t task.Task) taskView {\n\treturn taskView{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}\n}\n\n// status returns the text shown in the STATUS column.\nfunc (v taskView) status() string {\n\treturn cli.StatusText(v.Done)\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "ERR-04-a",
+      "rule": "ERR-04",
+      "description": "add の command でタイトルが空かを先に確かめる",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/add.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"strings\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// addOptions holds the arguments and flags of task add.\ntype addOptions struct {\n\ttitle string\n}\n\n// addOutput is the result of task add.\ntype addOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newAdd returns the task add command.\nfunc newAdd(svc *task.Service) *cli.Command {\n\tvar opts addOptions\n\treturn &cli.Command{\n\t\tName:    \"add\",\n\t\tSummary: \"Add a task\",\n\t\tArgs:    []cli.Arg{{Name: \"title\", Value: &opts.title}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runAdd(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runAdd runs task add.\nfunc runAdd(ctx context.Context, svc *task.Service, opts addOptions) (addOutput, error) {\n\tif strings.TrimSpace(opts.title) == \"\" {\n\t\treturn addOutput{}, fmt.Errorf(\"%w: title must be 1 to 100 characters\", errkind.ErrInvalid)\n\t}\n\tadded, err := svc.Add(ctx, opts.title)\n\tif err != nil {\n\t\treturn addOutput{}, err\n\t}\n\treturn addOutput{Task: toTaskView(added)}, nil\n}\n\n// WriteText implements cli.Output.\nfunc (o addOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Added task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "description": "Service に ID より前にタイトルを取るメソッドを足す",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "replace",
+          "content": "package task\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"slices\"\n\t\"strings\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Service runs the task use cases.\ntype Service struct {\n\trepo Repository\n\tnow  func() time.Time\n}\n\n// NewService returns a Service that keeps tasks in repo and reads the current time from now.\nfunc NewService(repo Repository, now func() time.Time) *Service {\n\treturn &Service{repo: repo, now: now}\n}\n\n// Add creates an open task with the given title.\nfunc (s *Service) Add(ctx context.Context, title string) (Task, error) {\n\ttrimmed := strings.TrimSpace(title)\n\terr := validateTitle(trimmed)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\tcreated := Task{ID: nextID(tasks), Title: trimmed, CreatedAt: s.now().UTC().Truncate(time.Second)}\n\terr = s.repo.Save(ctx, append(tasks, created))\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn created, nil\n}\n\n// Complete marks the task with the given ID as done.\n// Completing a done task changes nothing.\nfunc (s *Service) Complete(ctx context.Context, id int) (Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ti, err := indexOf(tasks, id)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks[i].Done = true\n\terr = s.repo.Save(ctx, tasks)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn tasks[i], nil\n}\n\n// List returns the tasks that match filter in ID order.\nfunc (s *Service) List(ctx context.Context, filter Filter) ([]Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tmatched := make([]Task, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tif t.Done && !filter.IncludeDone {\n\t\t\tcontinue\n\t\t}\n\t\tmatched = append(matched, t)\n\t}\n\treturn matched, nil\n}\n\n// Rename changes the title of the task with the given ID.\nfunc (s *Service) Rename(ctx context.Context, title string, id int) (Task, error) {\n\ttrimmed := strings.TrimSpace(title)\n\terr := validateTitle(trimmed)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ti, err := indexOf(tasks, id)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks[i].Title = trimmed\n\terr = s.repo.Save(ctx, tasks)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn tasks[i], nil\n}\n\n// indexOf returns the position of the task with the given ID in tasks.\nfunc indexOf(tasks []Task, id int) (int, error) {\n\ti := slices.IndexFunc(tasks, func(t Task) bool { return t.ID == id })\n\tif i < 0 {\n\t\treturn 0, fmt.Errorf(\"%w: task %d\", errkind.ErrNotFound, id)\n\t}\n\treturn i, nil\n}\n\n// nextID returns the ID for a new task, one more than the largest ID in tasks.\nfunc nextID(tasks []Task) int {\n\tmaxID := 0\n\tfor _, t := range tasks {\n\t\tmaxID = max(maxID, t.ID)\n\t}\n\treturn maxID + 1\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "description": "データファイルの名前を task-data.json にする",
+      "files": [
+        {
+          "path": "internal/app/app.go",
+          "mode": "replace",
+          "content": "// Package app builds the go-cli command tree and connects it to the process environment.\n//\n// It is the only package that knows every other package: it reads the configuration, creates the adapters and services, and registers every command group.\npackage app\n\nimport (\n\t\"context\"\n\t\"io\"\n\t\"path/filepath\"\n\t\"runtime/debug\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/adapter/taskstore\"\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/command/taskcmd\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// Env is the process environment the CLI runs in.\n// main passes the real one and tests pass fakes.\ntype Env struct {\n\tStdout io.Writer\n\tStderr io.Writer\n\tGetenv func(key string) string\n\tNow    func() time.Time\n}\n\n// name is the name of the CLI.\nconst name = \"go-cli\"\n\n// New builds the command tree.\n// It does not read or write any file.\nfunc New(env Env) (*cli.App, error) {\n\tcfg, err := loadConfig(env.Getenv)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\ttasks := task.NewService(taskstore.New(filepath.Join(cfg.dataDir, \"task-data.json\")), env.Now)\n\treturn &cli.App{\n\t\tName:    name,\n\t\tVersion: version(),\n\t\tGroups: []*cli.Group{\n\t\t\ttaskcmd.New(tasks),\n\t\t},\n\t}, nil\n}\n\n// Run builds the command tree, runs it with args (without the program name) and returns the exit code.\nfunc Run(ctx context.Context, args []string, env Env) int {\n\tstreams := cli.IO{Out: env.Stdout, Err: env.Stderr}\n\ta, err := New(env)\n\tif err != nil {\n\t\treturn cli.Fail(streams, name, err)\n\t}\n\treturn a.Run(ctx, args, streams)\n}\n\n// version returns the module version that go install recorded, or \"(devel)\" for a local build.\nfunc version() string {\n\tinfo, ok := debug.ReadBuildInfo()\n\tif !ok || info.Main.Version == \"\" {\n\t\treturn \"(devel)\"\n\t}\n\treturn info.Main.Version\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "OPS-06-a",
+      "rule": "OPS-06",
+      "description": "complete の文章を決まった形にしない",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions holds the arguments and flags of task complete.\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput is the result of task complete.\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete returns the task complete command.\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runComplete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runComplete runs task complete.\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tcompleted, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(completed)}, nil\n}\n\n// WriteText implements cli.Output.\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Task %d completed: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        },
+        {
+          "path": "internal/command/taskcmd/complete_test.go",
+          "mode": "replace",
+          "content": "package taskcmd_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestComplete(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname:  \"completes_a_task\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"complete\", \"1\"},\n\t\t\twant:  apptest.Result{Code: 0, Stdout: \"Task 1 completed: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"keeps_a_done_task_done\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}, {\"task\", \"complete\", \"1\"}},\n\t\t\targs:  []string{\"task\", \"complete\", \"1\"},\n\t\t\twant:  apptest.Result{Code: 0, Stdout: \"Task 1 completed: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"writes_json\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"complete\", \"1\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"task\": {\n    \"id\": 1,\n    \"title\": \"Buy milk\",\n    \"done\": true,\n    \"created_at\": \"2026-01-02T03:04:05Z\"\n  }\n}\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_id_that_is_not_a_number\",\n\t\t\targs: []string{\"task\", \"complete\", \"one\"},\n\t\t\twant: apptest.Result{\n\t\t\t\tCode: 2,\n\t\t\t\tStderr: \"go-cli: invalid input: task ID must be a positive integer: \\\"one\\\"\\n\" +\n\t\t\t\t\t\"Run 'go-cli task complete --help' for usage.\\n\",\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname:  \"reports_a_missing_task\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"complete\", \"2\"},\n\t\t\twant:  apptest.Result{Code: 3, Stderr: \"go-cli: not found: task 2\\n\"},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "description": "add のテストから終了コード2の件を消す",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/add_test.go",
+          "mode": "replace",
+          "content": "package taskcmd_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestAdd(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"adds_a_task\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy milk\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"numbers_tasks_in_order\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"add\", \"Write report\"},\n\t\t\twant:  apptest.Result{Code: 0, Stdout: \"Added task 2: Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"trims_spaces_around_the_title\",\n\t\t\targs: []string{\"task\", \"add\", \"  Buy milk  \"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"writes_json\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy milk\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"task\": {\n    \"id\": 1,\n    \"title\": \"Buy milk\",\n    \"done\": false,\n    \"created_at\": \"2026-01-02T03:04:05Z\"\n  }\n}\n`},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "TEST-04-a",
+      "rule": "TEST-04",
+      "description": "app のテストの期待値を Sprintf で組み立てる",
+      "files": [
+        {
+          "path": "internal/app/app_test.go",
+          "mode": "replace",
+          "content": "package app_test\n\nimport (\n\t\"fmt\"\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestRun(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname string\n\t\tenv  map[string]string\n\t\targs []string\n\t\twant apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"prints_the_version\",\n\t\t\tenv:  nil,\n\t\t\targs: []string{\"--version\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"go-cli version (devel)\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"reports_a_missing_data_directory\",\n\t\t\tenv:  map[string]string{\"GOCLI_DATA_DIR\": \"\", \"XDG_DATA_HOME\": \"\", \"HOME\": \"\"},\n\t\t\targs: []string{\"task\", \"list\"},\n\t\t\twant: apptest.Result{\n\t\t\t\tCode:   1,\n\t\t\t\tStderr: fmt.Sprintf(\"go-cli: cannot find a data directory: set %s or HOME\\n\", \"GOCLI_DATA_DIR\"),\n\t\t\t},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor key, value := range tt.env {\n\t\t\t\th.Setenv(key, value)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "TEST-05-a",
+      "rule": "TEST-05",
+      "description": "表に無いテストの件を足す",
+      "files": [
+        {
+          "path": "internal/domain/task/task_test.go",
+          "mode": "replace",
+          "content": "package task_test\n\nimport (\n\t\"errors\"\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n\t\"example.com/go-cli/internal/errkind\"\n)\n\nfunc TestParseID(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname    string\n\t\ts       string\n\t\twant    int\n\t\twantErr error\n\t}{\n\t\t{name: \"accepts_a_positive_integer\", s: \"12\", want: 12, wantErr: nil},\n\t\t{name: \"rejects_zero\", s: \"0\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_negative_integer\", s: \"-1\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_word\", s: \"one\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_an_empty_string\", s: \"\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_decimal\", s: \"1.5\", want: 0, wantErr: errkind.ErrInvalid},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\tgot, err := task.ParseID(tt.s)\n\t\t\tif got != tt.want || !errors.Is(err, tt.wantErr) {\n\t\t\t\tt.Errorf(\"ParseID(%q) = %d, %v, want %d, %v\", tt.s, got, err, tt.want, tt.wantErr)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "description": "エラーの種類を足し、終了コードの対応に足さない",
+      "files": [
+        {
+          "path": "internal/errkind/errkind.go",
+          "mode": "replace",
+          "content": "// Package errkind defines the kinds of errors that decide the exit code of the CLI.\n//\n// Other packages wrap one of these errors with fmt.Errorf(\"%w: detail\", errkind.ErrX).\npackage errkind\n\nimport \"errors\"\n\nvar (\n\t// ErrInvalid reports input that breaks a rule.\n\t// The CLI exits with code 2.\n\tErrInvalid = errors.New(\"invalid input\")\n\t// ErrNotFound reports that the requested item does not exist.\n\t// The CLI exits with code 3.\n\tErrNotFound = errors.New(\"not found\")\n\t// ErrConflict reports that the change conflicts with the saved data.\n\t// The CLI exits with code 4.\n\tErrConflict = errors.New(\"conflict\")\n)\n"
+        }
+      ]
+    },
+    {
+      "id": "PROC-06-a",
+      "rule": "PROC-06",
+      "description": "ADR なしで list の --all を --include-done に変える",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/list.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"flag\"\n\t\"io\"\n\t\"strconv\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// listOptions holds the arguments and flags of task list.\ntype listOptions struct {\n\tincludeDone bool\n}\n\n// listOutput is the result of task list.\ntype listOutput struct {\n\tTasks []taskView `json:\"tasks\"`\n}\n\n// newList returns the task list command.\nfunc newList(svc *task.Service) *cli.Command {\n\tvar opts listOptions\n\treturn &cli.Command{\n\t\tName:    \"list\",\n\t\tSummary: \"List open tasks\",\n\t\tFlags: func(fs *flag.FlagSet) {\n\t\t\tfs.BoolVar(&opts.includeDone, \"include-done\", false, \"Include completed tasks\")\n\t\t},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runList(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runList runs task list.\nfunc runList(ctx context.Context, svc *task.Service, opts listOptions) (listOutput, error) {\n\ttasks, err := svc.List(ctx, task.Filter{IncludeDone: opts.includeDone})\n\tif err != nil {\n\t\treturn listOutput{}, err\n\t}\n\tviews := make([]taskView, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tviews = append(views, toTaskView(t))\n\t}\n\treturn listOutput{Tasks: views}, nil\n}\n\n// WriteText implements cli.Output.\nfunc (o listOutput) WriteText(w io.Writer) error {\n\trows := make([][]string, 0, len(o.Tasks))\n\tfor _, v := range o.Tasks {\n\t\trows = append(rows, []string{strconv.Itoa(v.ID), v.status(), v.Title})\n\t}\n\treturn cli.WriteTable(w, []string{\"ID\", \"STATUS\", \"TITLE\"}, rows)\n}\n"
+        },
+        {
+          "path": "internal/command/taskcmd/list_test.go",
+          "mode": "replace",
+          "content": "package taskcmd_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestList(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"prints_only_the_header_without_tasks\",\n\t\t\targs: []string{\"task\", \"list\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"ID  STATUS  TITLE\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"lists_tasks\",\n\t\t\tsetup: [][]string{\n\t\t\t\t{\"task\", \"add\", \"Buy milk\"},\n\t\t\t\t{\"task\", \"add\", \"Write report\"},\n\t\t\t\t{\"task\", \"complete\", \"1\"},\n\t\t\t},\n\t\t\targs: []string{\"task\", \"list\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"ID  STATUS  TITLE\\n\" +\n\t\t\t\t\"2   open    Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"lists_tasks_with_include_done\",\n\t\t\tsetup: [][]string{\n\t\t\t\t{\"task\", \"add\", \"Buy milk\"},\n\t\t\t\t{\"task\", \"add\", \"Write report\"},\n\t\t\t\t{\"task\", \"complete\", \"1\"},\n\t\t\t},\n\t\t\targs: []string{\"task\", \"list\", \"--include-done\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"ID  STATUS  TITLE\\n\" +\n\t\t\t\t\"1   done    Buy milk\\n\" +\n\t\t\t\t\"2   open    Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"writes_json\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"list\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"tasks\": [\n    {\n      \"id\": 1,\n      \"title\": \"Buy milk\",\n      \"done\": false,\n      \"created_at\": \"2026-01-02T03:04:05Z\"\n    }\n  ]\n}\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"writes_an_empty_json_array_without_tasks\",\n\t\t\targs: []string{\"task\", \"list\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"{\\n  \\\"tasks\\\": []\\n}\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_unknown_flag\",\n\t\t\targs: []string{\"task\", \"list\", \"--done\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: flag provided but not defined: -done\\n\" +\n\t\t\t\t\"Run 'go-cli task list --help' for usage.\\n\"},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        },
+        {
+          "path": "docs/cli.md",
+          "mode": "replace",
+          "content": "<!-- Code generated by tools/clidoc. DO NOT EDIT. -->\n\n# go-cli command reference\n\n## go-cli task add\n\nAdd a task\n\n```text\ngo-cli task add [flags] <title>\n```\n\n| Flag | Description |\n|---|---|\n| `--json` | Write the output as JSON |\n\n## go-cli task complete\n\nMark a task as done\n\n```text\ngo-cli task complete [flags] <id>\n```\n\n| Flag | Description |\n|---|---|\n| `--json` | Write the output as JSON |\n\n## go-cli task list\n\nList open tasks\n\n```text\ngo-cli task list [flags]\n```\n\n| Flag | Description |\n|---|---|\n| `--include-done` | Include completed tasks |\n| `--json` | Write the output as JSON |\n\n## Exit codes\n\n| Code | Meaning |\n|---|---|\n| 0 | Success |\n| 1 | Unexpected failure, such as an unreadable data file |\n| 2 | Invalid input, such as an unknown flag or a value that breaks a rule |\n| 3 | The requested item does not exist |\n"
+        },
+        {
+          "path": "internal/cli/cli_test.go",
+          "mode": "replace",
+          "content": "package cli_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestRun(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"prints_the_commands_with_help\",\n\t\t\targs: []string{\"--help\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `Usage:\n  go-cli <command> <subcommand> [flags] [arguments]\n\nCommands:\n  task  Manage tasks\n\nFlags:\n  --help     Show help\n  --version  Show the version\n\nRun 'go-cli <command> --help' for the subcommands of a command.\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"prints_the_subcommands_with_help\",\n\t\t\targs: []string{\"task\", \"--help\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `Manage tasks\n\nUsage:\n  go-cli task <subcommand> [flags] [arguments]\n\nSubcommands:\n  add       Add a task\n  complete  Mark a task as done\n  list      List open tasks\n\nRun 'go-cli task <subcommand> --help' for the flags of a subcommand.\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"prints_the_flags_with_help\",\n\t\t\targs: []string{\"task\", \"list\", \"--help\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `List open tasks\n\nUsage:\n  go-cli task list [flags]\n\nFlags:\n  --help          Show help\n  --include-done  Include completed tasks\n  --json          Write the output as JSON\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"accepts_flags_before_arguments\",\n\t\t\targs: []string{\"task\", \"add\", \"--json\", \"Buy milk\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"task\": {\n    \"id\": 1,\n    \"title\": \"Buy milk\",\n    \"done\": false,\n    \"created_at\": \"2026-01-02T03:04:05Z\"\n  }\n}\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"treats_arguments_after_double_dash_as_positional\",\n\t\t\targs: []string{\"task\", \"add\", \"--\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: --json\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_a_missing_command\",\n\t\t\targs: []string{},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: missing command\\n\" +\n\t\t\t\t\"Run 'go-cli --help' for usage.\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_unknown_command\",\n\t\t\targs: []string{\"unknown\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: unknown command \\\"unknown\\\"\\n\" +\n\t\t\t\t\"Run 'go-cli --help' for usage.\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_a_missing_subcommand\",\n\t\t\targs: []string{\"task\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: missing subcommand\\n\" +\n\t\t\t\t\"Run 'go-cli task --help' for usage.\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_unknown_subcommand\",\n\t\t\targs: []string{\"task\", \"delete\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: unknown subcommand \\\"delete\\\"\\n\" +\n\t\t\t\t\"Run 'go-cli task --help' for usage.\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_extra_arguments\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy\", \"milk\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: want 1 argument(s), got 2\\n\" +\n\t\t\t\t\"Run 'go-cli task add --help' for usage.\\n\"},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "DEP-06-a",
+      "rule": "DEP-06",
+      "description": "ADR なしで go.mod に godebug を足す",
+      "files": [
+        {
+          "path": "go.mod",
+          "mode": "replace",
+          "content": "module example.com/go-cli\n\ngo 1.27\n\ntoolchain go1.27.2\n\ngodebug default=go1.26\n"
+        }
+      ]
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "description": "funlen の上限を緩める",
+      "files": [
+        {
+          "path": ".golangci.yml",
+          "mode": "replace",
+          "content": "version: \"2\"\n\nrun:\n  timeout: 5m\n  tests: true\n\nformatters:\n  enable:\n    - gofumpt\n    - goimports\n    - golines\n  settings:\n    gofumpt:\n      module-path: example.com/go-cli\n      extra:\n        group-params: true\n        clothe-returns: true\n        balance-calls: true\n    goimports:\n      local-prefixes:\n        - example.com/go-cli\n    golines:\n      max-len: 120\n      reformat-tags: false\n      shorten-comments: false\n  exclusions:\n    generated: strict\n\nlinters:\n  default: standard\n  enable:\n    - asciicheck\n    - bidichk\n    - containedctx\n    - contextcheck\n    - decorder\n    - dogsled\n    - durationcheck\n    - err113\n    - errchkjson\n    - errname\n    - errorlint\n    - exhaustive\n    - fatcontext\n    - forbidigo\n    - forcetypeassert\n    - funcorder\n    - funlen\n    - gocheckcompilerdirectives\n    - gochecknoglobals\n    - gochecknoinits\n    - gocognit\n    - gocritic\n    - godoclint\n    - godot\n    - godox\n    - gomoddirectives\n    - gomodguard_v2\n    - goprintffuncname\n    - gosec\n    - iface\n    - importas\n    - inamedparam\n    - interfacebloat\n    - intrange\n    - iotamixing\n    - ireturn\n    - makezero\n    - mirror\n    - misspell\n    - mnd\n    - modernize\n    - musttag\n    - nestif\n    - nilerr\n    - nilnesserr\n    - nilnil\n    - noctx\n    - noinlineerr\n    - nonamedreturns\n    - paralleltest\n    - perfsprint\n    - prealloc\n    - predeclared\n    - reassign\n    - recvcheck\n    - revive\n    - tagliatelle\n    - testpackage\n    - thelper\n    - tparallel\n    - unconvert\n    - unparam\n    - usestdlibvars\n    - usetesting\n    - wastedassign\n    - wrapcheck\n  settings:\n    errcheck:\n      check-type-assertions: true\n      check-blank: true\n    decorder:\n      dec-order: [type, const, var, func]\n      disable-dec-order-check: false\n      disable-init-func-first-check: false\n      disable-dec-num-check: true\n    forbidigo:\n      analyze-types: true\n      forbid:\n        - pattern: ^(fmt\\.Print(|f|ln)|print|println)$\n          msg: OPS-01 return a cli.Output instead of printing\n        - pattern: ^log\\.\n          msg: OPS-01 return a cli.Output or an error instead of logging\n        - pattern: ^panic$\n          msg: ERR-01 return an error instead of panicking\n        - pattern: ^time\\.Now$\n          msg: DEP-05 receive the clock as a func() time.Time\n        - pattern: ^context\\.(Background|TODO)$\n          msg: DEP-05 receive the context as the first parameter\n        - pattern: ^os\\.(Exit|Getenv|LookupEnv|Environ|Args|Stdin|Stdout|Stderr)$\n          msg: DEP-05 only main.go touches the process; receive it through app.Env\n        - pattern: ^strconv\\.(Atoi|Parse.*)$\n          msg: ERR-04 convert strings in a Parse function of the domain package\n        - pattern: ^time\\.Parse.*$\n          msg: ERR-04 convert strings in a Parse function of the domain package\n    funcorder:\n      constructor: true\n      struct-method: true\n      function: true\n    funlen:\n      lines: 80\n      statements: 30\n      ignore-comments: true\n    gocognit:\n      min-complexity: 15\n    godoclint:\n      default: basic\n      enable:\n        - require-pkg-doc\n        - require-doc\n        - no-unused-link\n      options:\n        require-doc:\n          ignore-exported: false\n          ignore-unexported: false\n    godox:\n      keywords: [TODO, FIXME, BUG, HACK, XXX]\n    gomodguard_v2:\n      allowed: []\n      local-replace-directives: true\n    gosec:\n      excludes: []\n    importas:\n      no-extra-aliases: true\n    nestif:\n      min-complexity: 4\n    revive:\n      # modifies-parameter reports with confidence 0.5; the default 0.8 drops it.\n      confidence: 0.5\n      enable-default-rules: true\n      rules:\n        - name: argument-limit\n          arguments: [4]\n        - name: function-result-limit\n          arguments: [2]\n        - name: deep-exit\n        - name: early-return\n        - name: enforce-map-style\n          arguments: [make]\n        - name: enforce-repeated-arg-type-style\n          arguments: [short]\n        - name: filename-format\n          arguments: [\"^[a-z0-9]+(_test)?\\\\.go$\"]\n        - name: max-control-nesting\n          arguments: [3]\n        - name: modifies-parameter\n        - name: modifies-value-receiver\n        - name: package-directory-mismatch\n        - name: redundant-import-alias\n        - name: unused-receiver\n        - name: use-any\n        - name: use-errors-new\n        - name: time-equal\n    tagliatelle:\n      case:\n        use-field-name: true\n        rules:\n          json: snake\n    wrapcheck:\n      extra-ignore-sigs:\n        - io.WriteString(\n        - fmt.Fprintf(\n        - fmt.Fprintln(\n        - fmt.Fprint(\n      ignore-package-globs:\n        - example.com/go-cli/*\n  exclusions:\n    generated: strict\n    warn-unused: false\n    rules:\n      - path: ^main\\.go$\n        linters: [forbidigo]\n        text: DEP-05\n      - path: ^tools/\n        linters: [forbidigo]\n      # CODE-08: tools/ is protected and is not written by the authors of the CLI.\n      - path: ^tools/\n        linters: [godoclint]\n        text: symbol should have a godoc\n      - path: ^internal/(domain|app)/\n        linters: [forbidigo]\n        text: ERR-04\n      - path: _test\\.go$\n        linters: [funlen, godoclint, gosec]\n\nissues:\n  max-issues-per-linter: 0\n  max-same-issues: 0\n  uniq-by-line: false\n"
+        }
+      ]
+    }
+  ]
+}

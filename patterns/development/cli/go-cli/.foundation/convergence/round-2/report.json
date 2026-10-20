@@ -1,0 +1,476 @@
+{
+  "round": 2,
+  "thresholds": {
+    "files": 1.0,
+    "names": 0.8,
+    "content": 0.0
+  },
+  "tasks": [
+    {
+      "id": "T1-add",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "docs/cli.md",
+          "internal/cli/cli_test.go",
+          "internal/command/taskcmd/remove.go",
+          "internal/command/taskcmd/remove_test.go",
+          "internal/command/taskcmd/taskcmd.go",
+          "internal/domain/task/service.go"
+        ],
+        "agent-2": [
+          "docs/cli.md",
+          "internal/cli/cli_test.go",
+          "internal/command/taskcmd/remove.go",
+          "internal/command/taskcmd/remove_test.go",
+          "internal/command/taskcmd/taskcmd.go",
+          "internal/domain/task/service.go"
+        ],
+        "agent-3": [
+          "docs/cli.md",
+          "internal/cli/cli_test.go",
+          "internal/command/taskcmd/remove.go",
+          "internal/command/taskcmd/remove_test.go",
+          "internal/command/taskcmd/taskcmd.go",
+          "internal/domain/task/service.go"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 5,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "docs/cli.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/cli/cli_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/remove.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/remove_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/taskcmd.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/domain/task/service.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T2-change",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 0.867,
+      "content": 0.996,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "docs/cli.md",
+          "internal/adapter/taskstore/taskstore.go",
+          "internal/adapter/taskstore/taskstore_test.go",
+          "internal/command/taskcmd/add.go",
+          "internal/command/taskcmd/add_test.go",
+          "internal/command/taskcmd/list.go",
+          "internal/command/taskcmd/list_test.go",
+          "internal/command/taskcmd/view.go",
+          "internal/domain/task/service.go",
+          "internal/domain/task/task.go",
+          "internal/domain/task/task_test.go"
+        ],
+        "agent-2": [
+          "docs/cli.md",
+          "internal/adapter/taskstore/taskstore.go",
+          "internal/adapter/taskstore/taskstore_test.go",
+          "internal/command/taskcmd/add.go",
+          "internal/command/taskcmd/add_test.go",
+          "internal/command/taskcmd/list.go",
+          "internal/command/taskcmd/list_test.go",
+          "internal/command/taskcmd/view.go",
+          "internal/domain/task/service.go",
+          "internal/domain/task/task.go",
+          "internal/domain/task/task_test.go"
+        ],
+        "agent-3": [
+          "docs/cli.md",
+          "internal/adapter/taskstore/taskstore.go",
+          "internal/adapter/taskstore/taskstore_test.go",
+          "internal/command/taskcmd/add.go",
+          "internal/command/taskcmd/add_test.go",
+          "internal/command/taskcmd/list.go",
+          "internal/command/taskcmd/list_test.go",
+          "internal/command/taskcmd/view.go",
+          "internal/domain/task/service.go",
+          "internal/domain/task/task.go",
+          "internal/domain/task/task_test.go"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 4,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": [
+          "Set"
+        ]
+      },
+      "file_similarity": [
+        {
+          "path": "docs/cli.md",
+          "similarity": 0.981,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 0.971
+        },
+        {
+          "path": "internal/adapter/taskstore/taskstore.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/adapter/taskstore/taskstore_test.go",
+          "similarity": 0.992,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.987
+        },
+        {
+          "path": "internal/command/taskcmd/add.go",
+          "similarity": 0.987,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 0.98
+        },
+        {
+          "path": "internal/command/taskcmd/add_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/list.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/list_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/domain/task/service.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/domain/task/task.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/domain/task/task_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [
+        {
+          "path": "docs/cli.md",
+          "pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "similarity": 0.971,
+          "diff": [
+            "--- agent-1/docs/cli.md",
+            "+++ agent-3/docs/cli.md",
+            "@@ -12,7 +12,7 @@",
+            " ",
+            " | Flag | Description |",
+            " |---|---|",
+            "-| `--due <string>` | Due date in YYYY-MM-DD format |",
+            "+| `--due <string>` | Set the due date in YYYY-MM-DD format |",
+            " | `--json` | Write the output as JSON |",
+            " ",
+            " ## go-cli task complete"
+          ]
+        },
+        {
+          "path": "internal/command/taskcmd/add.go",
+          "pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "similarity": 0.98,
+          "diff": [
+            "--- agent-1/internal/command/taskcmd/add.go",
+            "+++ agent-3/internal/command/taskcmd/add.go",
+            "@@ -29,7 +29,7 @@",
+            " \t\tSummary: \"Add a task\",",
+            " \t\tArgs:    []cli.Arg{{Name: \"title\", Value: &opts.title}},",
+            " \t\tFlags: func(fs *flag.FlagSet) {",
+            "-\t\t\tfs.StringVar(&opts.due, \"due\", \"\", \"Due date in YYYY-MM-DD format\")",
+            "+\t\t\tfs.StringVar(&opts.due, \"due\", \"\", \"Set the due date in YYYY-MM-DD format\")",
+            " \t\t},",
+            " \t\tRun: func(ctx context.Context) (cli.Output, error) {",
+            " \t\t\treturn runAdd(ctx, svc, opts)"
+          ]
+        },
+        {
+          "path": "internal/adapter/taskstore/taskstore_test.go",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.987,
+          "diff": [
+            "--- agent-1/internal/adapter/taskstore/taskstore_test.go",
+            "+++ agent-2/internal/adapter/taskstore/taskstore_test.go",
+            "@@ -28,7 +28,8 @@",
+            " \t\t{",
+            " \t\t\tname: \"reads_tasks\",",
+            " \t\t\tcontent: `{\"version\": 1, \"tasks\": [` +",
+            "-\t\t\t\t`{\"id\": 1, \"title\": \"Buy milk\", \"done\": true, \"due\": \"2026-01-31T00:00:00Z\", \"created_at\": \"2026-01-02T03:04:05Z\"}]}`,",
+            "+\t\t\t\t`{\"id\": 1, \"title\": \"Buy milk\", \"done\": true, \"due\": \"2026-01-31T00:00:00Z\", ` +",
+            "+\t\t\t\t`\"created_at\": \"2026-01-02T03:04:05Z\"}]}`,",
+            " \t\t\twant: []task.Task{",
+            " \t\t\t\t{",
+            " \t\t\t\t\tID:        1,"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T3-cross",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "README.md",
+          "internal/app/app.go",
+          "internal/app/app_test.go",
+          "internal/app/config.go",
+          "internal/command/taskcmd/add_test.go",
+          "internal/domain/task/service.go",
+          "internal/domain/task/task.go"
+        ],
+        "agent-2": [
+          "README.md",
+          "internal/app/app.go",
+          "internal/app/app_test.go",
+          "internal/app/config.go",
+          "internal/command/taskcmd/add_test.go",
+          "internal/domain/task/service.go",
+          "internal/domain/task/task.go"
+        ],
+        "agent-3": [
+          "README.md",
+          "internal/app/app.go",
+          "internal/app/app_test.go",
+          "internal/app/config.go",
+          "internal/command/taskcmd/add_test.go",
+          "internal/domain/task/service.go",
+          "internal/domain/task/task.go"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 4,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "README.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/app/app.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/app/app_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/app/config.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/command/taskcmd/add_test.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/domain/task/service.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "internal/domain/task/task.go",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    gofumpt:
+      module-path: example.com/go-cli
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
+    goimports:
+      local-prefixes:
+        - example.com/go-cli
+    golines:
+      max-len: 120
+      reformat-tags: false
+      shorten-comments: false
+  exclusions:
+    generated: strict
+
+linters:
+  default: standard
+  enable:
+    - asciicheck
+    - bidichk
+    - containedctx
+    - contextcheck
+    - decorder
+    - dogsled
+    - durationcheck
+    - err113
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - funlen
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - gocritic
+    - godoclint
+    - godox
+    - gomoddirectives
+    - gomodguard_v2
+    - goprintffuncname
+    - gosec
+    - iface
+    - importas
+    - inamedparam
+    - interfacebloat
+    - intrange
+    - iotamixing
+    - ireturn
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - modernize
+    - musttag
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - noinlineerr
+    - nonamedreturns
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - reassign
+    - recvcheck
+    - revive
+    - tagliatelle
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - wrapcheck
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    decorder:
+      dec-order: [type, const, var, func]
+      disable-dec-order-check: false
+      disable-init-func-first-check: false
+      disable-dec-num-check: true
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^(fmt\.Print(|f|ln)|print|println)$
+          msg: OPS-01 return a cli.Output instead of printing
+        - pattern: ^log\.
+          msg: OPS-01 return a cli.Output or an error instead of logging
+        - pattern: ^panic$
+          msg: ERR-01 return an error instead of panicking
+        - pattern: ^time\.Now$
+          msg: DEP-05 receive the clock as a func() time.Time
+        - pattern: ^context\.(Background|TODO)$
+          msg: DEP-05 receive the context as the first parameter
+        - pattern: ^os\.(Exit|Getenv|LookupEnv|Environ|Args|Stdin|Stdout|Stderr)$
+          msg: DEP-05 only main.go touches the process; receive it through app.Env
+        - pattern: ^strconv\.(Atoi|Parse.*)$
+          msg: ERR-04 convert strings in a Parse function of the domain package
+        - pattern: ^time\.Parse.*$
+          msg: ERR-04 convert strings in a Parse function of the domain package
+    funcorder:
+      constructor: true
+      struct-method: true
+      function: true
+    funlen:
+      lines: 50
+      statements: 30
+      ignore-comments: true
+    gocognit:
+      min-complexity: 15
+    godoclint:
+      default: basic
+      enable:
+        - require-pkg-doc
+        - require-doc
+        - no-unused-link
+      options:
+        require-doc:
+          ignore-exported: false
+          ignore-unexported: false
+    godox:
+      keywords: [TODO, FIXME, BUG, HACK, XXX]
+    gomodguard_v2:
+      allowed: []
+      local-replace-directives: true
+    gosec:
+      excludes: []
+    importas:
+      no-extra-aliases: true
+    nestif:
+      min-complexity: 4
+    revive:
+      # modifies-parameter の信頼度は0.5なので、既定の0.8では検出されない。
+      confidence: 0.5
+      enable-default-rules: true
+      rules:
+        - name: argument-limit
+          arguments: [4]
+        - name: function-result-limit
+          arguments: [2]
+        - name: deep-exit
+        - name: early-return
+        - name: enforce-map-style
+          arguments: [make]
+        - name: enforce-repeated-arg-type-style
+          arguments: [short]
+        - name: filename-format
+          arguments: ["^[a-z0-9]+(_test)?\\.go$"]
+        - name: max-control-nesting
+          arguments: [3]
+        - name: modifies-parameter
+        - name: modifies-value-receiver
+        - name: package-directory-mismatch
+        - name: redundant-import-alias
+        - name: unused-receiver
+        - name: use-any
+        - name: use-errors-new
+        - name: time-equal
+    tagliatelle:
+      case:
+        use-field-name: true
+        rules:
+          json: snake
+    wrapcheck:
+      extra-ignore-sigs:
+        - io.WriteString(
+        - fmt.Fprintf(
+        - fmt.Fprintln(
+        - fmt.Fprint(
+      ignore-package-globs:
+        - example.com/go-cli/*
+  exclusions:
+    generated: strict
+    warn-unused: false
+    rules:
+      - path: ^main\.go$
+        linters: [forbidigo]
+        text: DEP-05
+      - path: ^tools/
+        linters: [forbidigo]
+      # CODE-08: tools/ は保護対象で、CLI の作者は宣言を追加しない。
+      - path: ^tools/
+        linters: [godoclint]
+        text: symbol should have a godoc
+      - path: ^internal/(domain|app)/
+        linters: [forbidigo]
+        text: ERR-04
+      - path: _test\.go$
+        linters: [funlen, godoclint, gosec]
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: false

@@ -1,0 +1,1164 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "util パッケージを作る",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/util/util.go",
+          "mode": "create",
+          "content": "// Package util は補助関数を提供する。\npackage util\n\n// Upper は s をそのまま返す。\nfunc Upper(s string) string {\n\treturn s\n}\n"
+        }
+      ],
+      "expect": "STR-01 internal/util/util\\.go"
+    },
+    {
+      "id": "STR-01-b",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "golden ファイルを testdata に置く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/testdata/list.golden",
+          "mode": "create",
+          "content": "ID  STATUS  TITLE\n"
+        }
+      ],
+      "expect": "STR-01 internal/command/taskcmd/testdata/list\\.golden"
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "domain だけ作り、adapter と command を作らない",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/note/note.go",
+          "mode": "create",
+          "content": "// Package note はメモを定義する。\npackage note\n\n// Note は短い文章を表す。\ntype Note struct {\n\tID   int\n\tText string\n}\n"
+        }
+      ],
+      "expect": "STR-02 internal/adapter/notestore"
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "level": "structure",
+      "description": "domain に validation.go を作る",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/validation.go",
+          "mode": "create",
+          "content": "package task\n\nfunc validateNothing() error {\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "STR-03 internal/domain/task/validation\\.go"
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "runComplete を作らず Run に処理を書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\tid, err := task.ParseID(opts.id)\n\t\t\tif err != nil {\n\t\t\t\treturn completeOutput{}, err\n\t\t\t}\n\t\t\tcompleted, err := svc.Complete(ctx, id)\n\t\t\tif err != nil {\n\t\t\t\treturn completeOutput{}, err\n\t\t\t}\n\t\t\treturn completeOutput{Task: toTaskView(completed)}, nil\n\t\t},\n\t}\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Completed task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "STR-04 internal/command/taskcmd/complete\\.go"
+    },
+    {
+      "id": "STR-04-b",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "WriteText を runComplete より前に置く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runComplete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runComplete は task complete を実行する。\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Completed task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tcompleted, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(completed)}, nil\n}\n"
+        }
+      ],
+      "expect": "STR-04 internal/command/taskcmd/complete\\.go"
+    },
+    {
+      "id": "STR-06-a",
+      "rule": "STR-06",
+      "level": "structure",
+      "description": "対になるファイルの無い helpers_test.go を作る",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/helpers_test.go",
+          "mode": "create",
+          "content": "package taskcmd_test\n\nimport \"testing\"\n\nfunc TestHelpers(t *testing.T) {\n\tt.Parallel()\n}\n"
+        }
+      ],
+      "expect": "STR-06 internal/command/taskcmd/helpers_test\\.go"
+    },
+    {
+      "id": "STR-07-a",
+      "rule": "STR-07",
+      "level": "structure",
+      "description": "docs/cli.md を手で書き換える",
+      "command": "make docs-check",
+      "files": [
+        {
+          "path": "docs/cli.md",
+          "mode": "replace",
+          "content": "<!-- Code generated by tools/clidoc. DO NOT EDIT. -->\n\n# go-cli command reference\n\n## go-cli task add\n\nAdd a task\n\n```text\ngo-cli task add [flags] <title>\n```\n\n| Flag | Description |\n|---|---|\n| `--json` | Write the output as JSON |\n\n## go-cli task complete\n\nMark a task as finished\n\n```text\ngo-cli task complete [flags] <id>\n```\n\n| Flag | Description |\n|---|---|\n| `--json` | Write the output as JSON |\n\n## go-cli task list\n\nList open tasks\n\n```text\ngo-cli task list [flags]\n```\n\n| Flag | Description |\n|---|---|\n| `--all` | Include completed tasks |\n| `--json` | Write the output as JSON |\n\n## Exit codes\n\n| Code | Meaning |\n|---|---|\n| 0 | Success |\n| 1 | Unexpected failure, such as an unreadable data file |\n| 2 | Invalid input, such as an unknown flag or a value that breaks a rule |\n| 3 | The requested item does not exist |\n"
+        }
+      ],
+      "expect": "STR-07 docs/cli\\.md"
+    },
+    {
+      "id": "STR-08-a",
+      "rule": "STR-08",
+      "level": "structure",
+      "description": "main.go で使い方を表示する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "main.go",
+          "mode": "replace",
+          "content": "// Command go-cli は go-cli 基盤の見本となる CLI である。\n//\n// main はプロセスの引数・標準入出力・環境変数・時計を app.Run に渡し、返された終了コードで終了する。\npackage main\n\nimport (\n\t\"context\"\n\t\"os\"\n\t\"os/signal\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/app\"\n)\n\n// main は CLI を実行し、返された終了コードで終了する。\nfunc main() {\n\tctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)\n\tif len(os.Args) == 1 {\n\t\tprintln(\"usage: go-cli <command> <subcommand>\")\n\t}\n\tcode := app.Run(ctx, os.Args[1:], app.Env{\n\t\tStdout: os.Stdout,\n\t\tStderr: os.Stderr,\n\t\tGetenv: os.Getenv,\n\t\tNow:    time.Now,\n\t})\n\tstop()\n\tos.Exit(code)\n}\n"
+        }
+      ],
+      "expect": "STR-08 main\\.go"
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "command から adapter を import する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"time\"\n\n\t\"example.com/go-cli/internal/adapter/taskstore\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// taskView は task コマンドの出力で1件の task を表す。\ntype taskView struct {\n\tID        int       `json:\"id\"`\n\tTitle     string    `json:\"title\"`\n\tDone      bool      `json:\"done\"`\n\tCreatedAt time.Time `json:\"created_at\"`\n}\n\n// toTaskView は Task を taskView に変換する。\nfunc toTaskView(t task.Task) taskView {\n\treturn taskView{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}\n}\n\n// status は STATUS 列に表示する文字列を返す。\nfunc (v taskView) status() string {\n\tif v.Done {\n\t\treturn \"done\"\n\t}\n\treturn \"open\"\n}\n\nfunc openStore(dir string) *taskstore.Store {\n\treturn taskstore.New(dir + \"/tasks.json\")\n}\n"
+        }
+      ],
+      "expect": "DEP-01 internal/command/taskcmd/view\\.go"
+    },
+    {
+      "id": "DEP-01-b",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "domain から cli を import する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/repository.go",
+          "mode": "replace",
+          "content": "package task\n\nimport (\n\t\"context\"\n\n\t\"example.com/go-cli/internal/cli\"\n)\n\n// Repository は全 task を一括で読み書きする。\ntype Repository interface {\n\t// Load は保存した全タスクを ID 順で返す。\n\t// 保存したタスクが無ければ空のスライスを返す。\n\tLoad(ctx context.Context) ([]Task, error)\n\t// Save は保存した全タスクを tasks で置き換える。\n\tSave(ctx context.Context, tasks []Task) error\n}\n\n// writeTable は CLI の表の出力関数を保持する。\nvar writeTable = cli.WriteTable\n"
+        }
+      ],
+      "expect": "DEP-01 internal/domain/task/repository\\.go"
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "level": "structure",
+      "description": "command から変換関数を公開する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "append",
+          "content": "\n// ToView は他のパッケージに渡すため task を変換する。\nfunc ToView(t task.Task) taskView {\n\treturn toTaskView(t)\n}\n"
+        }
+      ],
+      "expect": "DEP-02 internal/command/taskcmd/view\\.go"
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "level": "structure",
+      "description": "domain の名詞から別の名詞を import する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/note/note.go",
+          "mode": "create",
+          "content": "// Package note はメモを定義する。\npackage note\n\nimport \"example.com/go-cli/internal/domain/task\"\n\n// Note はタスクに関する短い文章を表す。\ntype Note struct {\n\tTask task.Task\n\tText string\n}\n"
+        }
+      ],
+      "expect": "DEP-03 internal/domain/note/note\\.go"
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "level": "structure",
+      "description": "外部モジュールを import する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/taskcmd.go",
+          "mode": "replace",
+          "content": "// Package taskcmd は task コマンド群を実装する。\npackage taskcmd\n\nimport (\n\t_ \"github.com/spf13/cobra\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// New は svc でユースケースを実行する task コマンド群を返す。\nfunc New(svc *task.Service) *cli.Group {\n\treturn &cli.Group{\n\t\tName:    \"task\",\n\t\tSummary: \"Manage tasks\",\n\t\tCommands: []*cli.Command{\n\t\t\tnewAdd(svc),\n\t\t\tnewComplete(svc),\n\t\t\tnewList(svc),\n\t\t},\n\t}\n}\n"
+        }
+      ],
+      "expect": "DEP-04 internal/command/taskcmd/taskcmd\\.go"
+    },
+    {
+      "id": "DEP-05-a",
+      "rule": "DEP-05",
+      "level": "structure",
+      "description": "command で os を import する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"os\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// taskView は task コマンドの出力で1件の task を表す。\ntype taskView struct {\n\tID        int       `json:\"id\"`\n\tTitle     string    `json:\"title\"`\n\tDone      bool      `json:\"done\"`\n\tCreatedAt time.Time `json:\"created_at\"`\n}\n\n// toTaskView は Task を taskView に変換する。\nfunc toTaskView(t task.Task) taskView {\n\treturn taskView{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}\n}\n\n// status は STATUS 列に表示する文字列を返す。\nfunc (v taskView) status() string {\n\tif v.Done {\n\t\treturn \"done\"\n\t}\n\treturn \"open\"\n}\n\nfunc debugView(v taskView) {\n\t_, _ = os.Stderr.WriteString(v.Title)\n}\n"
+        }
+      ],
+      "expect": "DEP-05 internal/command/taskcmd/view\\.go"
+    },
+    {
+      "id": "DEP-05-b",
+      "rule": "DEP-05",
+      "level": "lint",
+      "description": "domain で time.Now を呼ぶ",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc today() time.Time {\n\treturn time.Now().UTC()\n}\n"
+        }
+      ],
+      "expect": "DEP-05"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "lint",
+      "description": "ファイル名に _ を使う",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/adapter/taskstore/task_store.go",
+          "mode": "create",
+          "content": "package taskstore\n\nfunc storeName() string {\n\treturn \"tasks\"\n}\n"
+        }
+      ],
+      "expect": "filename-format"
+    },
+    {
+      "id": "NAM-01-b",
+      "rule": "NAM-01",
+      "level": "structure",
+      "description": "ディレクトリ名に _ を使う",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/adapter/task_store/store.go",
+          "mode": "create",
+          "content": "// Package taskstore はタスクを保存する。\npackage taskstore\n"
+        }
+      ],
+      "expect": "NAM-01 internal/adapter/task_store"
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "level": "lint",
+      "description": "略語を Id と書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\n// ParseId はコマンドライン引数をタスクの ID に変換する。\nfunc ParseId(s string) (int, error) {\n\treturn ParseID(s)\n}\n"
+        }
+      ],
+      "expect": "var-naming"
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "ビューを taskJSON と名付ける",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"time\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// taskJSON は task コマンドの出力で1件の task を表す。\ntype taskJSON struct {\n\tID        int       `json:\"id\"`\n\tTitle     string    `json:\"title\"`\n\tDone      bool      `json:\"done\"`\n\tCreatedAt time.Time `json:\"created_at\"`\n}\n\n// newTaskJSON は Task を taskJSON に変換する。\nfunc newTaskJSON(t task.Task) taskJSON {\n\treturn taskJSON{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}\n}\n\n// status は STATUS 列に表示する文字列を返す。\nfunc (v taskJSON) status() string {\n\tif v.Done {\n\t\treturn \"done\"\n\t}\n\treturn \"open\"\n}\n"
+        }
+      ],
+      "expect": "NAM-03 internal/command/taskcmd/view\\.go"
+    },
+    {
+      "id": "NAM-03-b",
+      "rule": "NAM-03",
+      "level": "lint",
+      "description": "sentinel エラーを Err で始めない",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/errkind/errkind.go",
+          "mode": "append",
+          "content": "\n// MissingFile はデータファイルが無いことを表す。\nvar MissingFile = errors.New(\"missing file\")\n"
+        }
+      ],
+      "expect": "errname"
+    },
+    {
+      "id": "NAM-03-c",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "ビューのメソッドを列の見出しと違う名前にする",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"time\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// taskView は task コマンドの出力で1件の task を表す。\ntype taskView struct {\n\tID        int       `json:\"id\"`\n\tTitle     string    `json:\"title\"`\n\tDone      bool      `json:\"done\"`\n\tCreatedAt time.Time `json:\"created_at\"`\n}\n\n// toTaskView は Task を taskView に変換する。\nfunc toTaskView(t task.Task) taskView {\n\treturn taskView{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}\n}\n\n// state は STATE 列に表示する文字列を返す。\nfunc (v taskView) state() string {\n\tif v.Done {\n\t\treturn \"done\"\n\t}\n\treturn \"open\"\n}\n"
+        },
+        {
+          "path": "internal/command/taskcmd/list.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"flag\"\n\t\"io\"\n\t\"strconv\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// listOptions は task list の引数とフラグを保持する。\ntype listOptions struct {\n\tall bool\n}\n\n// listOutput は task list の実行結果を表す。\ntype listOutput struct {\n\tTasks []taskView `json:\"tasks\"`\n}\n\n// newList は task list コマンドを返す。\nfunc newList(svc *task.Service) *cli.Command {\n\tvar opts listOptions\n\treturn &cli.Command{\n\t\tName:    \"list\",\n\t\tSummary: \"List open tasks\",\n\t\tFlags: func(fs *flag.FlagSet) {\n\t\t\tfs.BoolVar(&opts.all, \"all\", false, \"Include completed tasks\")\n\t\t},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runList(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runList は task list を実行する。\nfunc runList(ctx context.Context, svc *task.Service, opts listOptions) (listOutput, error) {\n\ttasks, err := svc.List(ctx, task.Filter{IncludeDone: opts.all})\n\tif err != nil {\n\t\treturn listOutput{}, err\n\t}\n\tviews := make([]taskView, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tviews = append(views, toTaskView(t))\n\t}\n\treturn listOutput{Tasks: views}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o listOutput) WriteText(w io.Writer) error {\n\trows := make([][]string, 0, len(o.Tasks))\n\tfor _, v := range o.Tasks {\n\t\trows = append(rows, []string{strconv.Itoa(v.ID), v.state(), v.Title})\n\t}\n\treturn cli.WriteTable(w, []string{\"ID\", \"STATUS\", \"TITLE\"}, rows)\n}\n"
+        }
+      ],
+      "expect": "NAM-03 internal/command/taskcmd/view\\.go"
+    },
+    {
+      "id": "NAM-03-d",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "環境変数を読む関数を load<Name> 以外の名前にする",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/app/config.go",
+          "mode": "replace",
+          "content": "package app\n\nimport (\n\t\"errors\"\n\t\"path/filepath\"\n)\n\n// config は環境変数から読み取った設定を保持する。\ntype config struct {\n\tdataDir string\n}\n\n// CLI の設定に使う環境変数を定義する。\nconst (\n\tenvDataDir = \"GOCLI_DATA_DIR\"\n\tenvXDGData = \"XDG_DATA_HOME\"\n\tenvHome    = \"HOME\"\n)\n\n// errNoDataDir はデータディレクトリを決める環境変数が無いことを表す。\nvar errNoDataDir = errors.New(\"cannot find a data directory: set \" + envDataDir + \" or HOME\")\n\n// loadConfig は環境変数から設定を読み取る。\nfunc loadConfig(getenv func(key string) string) (config, error) {\n\tdataDir, err := readDataDir(getenv)\n\tif err != nil {\n\t\treturn config{}, err\n\t}\n\treturn config{dataDir: dataDir}, nil\n}\n\n// readDataDir は $GOCLI_DATA_DIR、$XDG_DATA_HOME/go-cli、$HOME/.local/share/go-cli の順に最初に設定されたパスを返す。\nfunc readDataDir(getenv func(key string) string) (string, error) {\n\tdir := getenv(envDataDir)\n\tif dir != \"\" {\n\t\treturn dir, nil\n\t}\n\tdir = getenv(envXDGData)\n\tif dir != \"\" {\n\t\treturn filepath.Join(dir, name), nil\n\t}\n\tdir = getenv(envHome)\n\tif dir != \"\" {\n\t\treturn filepath.Join(dir, \".local\", \"share\", name), nil\n\t}\n\treturn \"\", errNoDataDir\n}\n"
+        }
+      ],
+      "expect": "NAM-03 internal/app/config\\.go"
+    },
+    {
+      "id": "NAM-04-a",
+      "rule": "NAM-04",
+      "level": "structure",
+      "description": "remove の代わりに delete を使う",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/delete.go",
+          "mode": "create",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// deleteOptions は task delete の引数とフラグを保持する。\ntype deleteOptions struct {\n\tid string\n}\n\n// deleteOutput は task delete の実行結果を表す。\ntype deleteOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newDelete は task delete コマンドを返す。\nfunc newDelete(svc *task.Service) *cli.Command {\n\tvar opts deleteOptions\n\treturn &cli.Command{\n\t\tName:    \"delete\",\n\t\tSummary: \"Delete a task\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runDelete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runDelete は task delete を実行する。\nfunc runDelete(ctx context.Context, svc *task.Service, opts deleteOptions) (deleteOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn deleteOutput{}, err\n\t}\n\tremoved, err := svc.Remove(ctx, id)\n\tif err != nil {\n\t\treturn deleteOutput{}, err\n\t}\n\treturn deleteOutput{Task: toTaskView(removed)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o deleteOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Deleted task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "NAM-04 internal/command/taskcmd/delete\\.go"
+    },
+    {
+      "id": "NAM-05-a",
+      "rule": "NAM-05",
+      "level": "structure",
+      "description": "Service の戻り値を t で受ける",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runComplete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runComplete は task complete を実行する。\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tt, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(t)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Completed task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "NAM-05 internal/command/taskcmd/complete\\.go"
+    },
+    {
+      "id": "NAM-05-b",
+      "rule": "NAM-05",
+      "level": "lint",
+      "description": "期間の名前に単位を付ける",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc waitTime() time.Duration {\n\tvar waitSecs time.Duration = time.Second\n\treturn waitSecs\n}\n"
+        }
+      ],
+      "expect": "time-naming"
+    },
+    {
+      "id": "NAM-06-a",
+      "rule": "NAM-06",
+      "level": "structure",
+      "description": "1文字の短いフラグを使う",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/list.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"flag\"\n\t\"io\"\n\t\"strconv\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// listOptions は task list の引数とフラグを保持する。\ntype listOptions struct {\n\tall bool\n}\n\n// listOutput は task list の実行結果を表す。\ntype listOutput struct {\n\tTasks []taskView `json:\"tasks\"`\n}\n\n// newList は task list コマンドを返す。\nfunc newList(svc *task.Service) *cli.Command {\n\tvar opts listOptions\n\treturn &cli.Command{\n\t\tName:    \"list\",\n\t\tSummary: \"List open tasks\",\n\t\tFlags: func(fs *flag.FlagSet) {\n\t\t\tfs.BoolVar(&opts.all, \"a\", false, \"Include completed tasks\")\n\t\t},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runList(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runList は task list を実行する。\nfunc runList(ctx context.Context, svc *task.Service, opts listOptions) (listOutput, error) {\n\ttasks, err := svc.List(ctx, task.Filter{IncludeDone: opts.all})\n\tif err != nil {\n\t\treturn listOutput{}, err\n\t}\n\tviews := make([]taskView, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tviews = append(views, toTaskView(t))\n\t}\n\treturn listOutput{Tasks: views}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o listOutput) WriteText(w io.Writer) error {\n\trows := make([][]string, 0, len(o.Tasks))\n\tfor _, v := range o.Tasks {\n\t\trows = append(rows, []string{strconv.Itoa(v.ID), v.status(), v.Title})\n\t}\n\treturn cli.WriteTable(w, []string{\"ID\", \"STATUS\", \"TITLE\"}, rows)\n}\n"
+        }
+      ],
+      "expect": "NAM-06 internal/command/taskcmd/list\\.go"
+    },
+    {
+      "id": "NAM-06-b",
+      "rule": "NAM-06",
+      "level": "lint",
+      "description": "JSON のキーを camelCase にする",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"time\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// taskView は task コマンドの出力で1件の task を表す。\ntype taskView struct {\n\tID        int       `json:\"id\"`\n\tTitle     string    `json:\"title\"`\n\tDone      bool      `json:\"done\"`\n\tCreatedAt time.Time `json:\"createdAt\"`\n}\n\n// toTaskView は Task を taskView に変換する。\nfunc toTaskView(t task.Task) taskView {\n\treturn taskView{ID: t.ID, Title: t.Title, Done: t.Done, CreatedAt: t.CreatedAt}\n}\n\n// status は STATUS 列に表示する文字列を返す。\nfunc (v taskView) status() string {\n\tif v.Done {\n\t\treturn \"done\"\n\t}\n\treturn \"open\"\n}\n"
+        }
+      ],
+      "expect": "tagliatelle"
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "lint",
+      "description": "init 関数を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc init() {\n\t_ = nextID(nil)\n}\n"
+        }
+      ],
+      "expect": "gochecknoinits"
+    },
+    {
+      "id": "CODE-01-b",
+      "rule": "CODE-01",
+      "level": "lint",
+      "description": "パッケージ変数を置く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\nvar defaultFilter = Filter{IncludeDone: false}\n"
+        }
+      ],
+      "expect": "gochecknoglobals"
+    },
+    {
+      "id": "CODE-01-c",
+      "rule": "CODE-01",
+      "level": "lint",
+      "description": "名前付きの戻り値を使う",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc countOpen(tasks []Task) (n int) {\n\tfor _, t := range tasks {\n\t\tif !t.Done {\n\t\t\tn++\n\t\t}\n\t}\n\treturn n\n}\n"
+        }
+      ],
+      "expect": "nonamedreturns"
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "structure",
+      "description": "fs.Bool でフラグを宣言する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/list.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"flag\"\n\t\"io\"\n\t\"strconv\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// listOptions は task list の引数とフラグを保持する。\ntype listOptions struct {\n\tall bool\n}\n\n// listOutput は task list の実行結果を表す。\ntype listOutput struct {\n\tTasks []taskView `json:\"tasks\"`\n}\n\n// newList は task list コマンドを返す。\nfunc newList(svc *task.Service) *cli.Command {\n\tvar opts listOptions\n\tvar all *bool\n\treturn &cli.Command{\n\t\tName:    \"list\",\n\t\tSummary: \"List open tasks\",\n\t\tFlags: func(fs *flag.FlagSet) {\n\t\t\tall = fs.Bool(\"all\", false, \"Include completed tasks\")\n\t\t},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\topts.all = *all\n\t\t\treturn runList(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runList は task list を実行する。\nfunc runList(ctx context.Context, svc *task.Service, opts listOptions) (listOutput, error) {\n\ttasks, err := svc.List(ctx, task.Filter{IncludeDone: opts.all})\n\tif err != nil {\n\t\treturn listOutput{}, err\n\t}\n\tviews := make([]taskView, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tviews = append(views, toTaskView(t))\n\t}\n\treturn listOutput{Tasks: views}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o listOutput) WriteText(w io.Writer) error {\n\trows := make([][]string, 0, len(o.Tasks))\n\tfor _, v := range o.Tasks {\n\t\trows = append(rows, []string{strconv.Itoa(v.ID), v.status(), v.Title})\n\t}\n\treturn cli.WriteTable(w, []string{\"ID\", \"STATUS\", \"TITLE\"}, rows)\n}\n"
+        }
+      ],
+      "expect": "CODE-02 internal/command/taskcmd/list\\.go"
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "level": "format",
+      "description": "import の群を混ぜる",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "replace",
+          "content": "// Package task はタスクとその読み取り・変更のユースケースを定義する。\npackage task\n\nimport (\n\t\"example.com/go-cli/internal/errkind\"\n\t\"fmt\"\n\t\"strconv\"\n\t\"time\"\n\t\"unicode/utf8\"\n)\n\n// Task は実行する作業を表す。\ntype Task struct {\n\tID        int\n\tTitle     string\n\tDone      bool\n\tCreatedAt time.Time\n}\n\n// Filter は List が返す task を絞り込む。\ntype Filter struct {\n\t// IncludeDone は List の結果に完了済みタスクも含める。\n\tIncludeDone bool\n}\n\n// maxTitleLength はタイトルの最大文字数を表す。\nconst maxTitleLength = 100\n\n// ParseID はコマンドライン引数を Task の ID フィールドに変換する。\nfunc ParseID(s string) (int, error) {\n\tid, err := strconv.Atoi(s)\n\tif err != nil || id < 1 {\n\t\treturn 0, fmt.Errorf(\"%w: task ID must be a positive integer: %q\", errkind.ErrInvalid, s)\n\t}\n\treturn id, nil\n}\n\n// validateTitle は Task の Title フィールドを検証する。\nfunc validateTitle(title string) error {\n\tn := utf8.RuneCountInString(title)\n\tif n == 0 || n > maxTitleLength {\n\t\treturn fmt.Errorf(\"%w: title must be 1 to %d characters\", errkind.ErrInvalid, maxTitleLength)\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "\\((goimports|gofumpt)\\)"
+    },
+    {
+      "id": "CODE-03-b",
+      "rule": "CODE-03",
+      "level": "lint",
+      "description": "import に別名を付ける",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/add.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\ttaskdomain \"example.com/go-cli/internal/domain/task\"\n)\n\n// addOptions は task add の引数とフラグを保持する。\ntype addOptions struct {\n\ttitle string\n}\n\n// addOutput は task add の実行結果を表す。\ntype addOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newAdd は task add コマンドを返す。\nfunc newAdd(svc *taskdomain.Service) *cli.Command {\n\tvar opts addOptions\n\treturn &cli.Command{\n\t\tName:    \"add\",\n\t\tSummary: \"Add a task\",\n\t\tArgs:    []cli.Arg{{Name: \"title\", Value: &opts.title}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runAdd(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runAdd は task add を実行する。\nfunc runAdd(ctx context.Context, svc *taskdomain.Service, opts addOptions) (addOutput, error) {\n\tadded, err := svc.Add(ctx, opts.title)\n\tif err != nil {\n\t\treturn addOutput{}, err\n\t}\n\treturn addOutput{Task: toTaskView(added)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o addOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Added task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "importas"
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "level": "lint",
+      "description": "interface{} と書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/view.go",
+          "mode": "append",
+          "content": "\nfunc countValues(m map[string]interface{}) int {\n\treturn len(m)\n}\n"
+        }
+      ],
+      "expect": "use-any"
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "if の初期化文でエラーを受ける",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc load(ctx context.Context, repo Repository) error {\n\tif _, err := repo.Load(ctx); err != nil {\n\t\treturn err\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "noinlineerr"
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "level": "lint",
+      "description": "引数を書き換える",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc normalizeTitle(title string) string {\n\ttitle = strings.TrimSpace(title)\n\treturn title\n}\n"
+        }
+      ],
+      "expect": "modifies-parameter"
+    },
+    {
+      "id": "CODE-07-a",
+      "rule": "CODE-07",
+      "level": "lint",
+      "description": "引数を5個取る",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc newTask(id int, title string, done bool, createdAt time.Time, note string) Task {\n\t_ = note\n\treturn Task{ID: id, Title: title, Done: done, CreatedAt: createdAt}\n}\n"
+        }
+      ],
+      "expect": "argument-limit"
+    },
+    {
+      "id": "CODE-08-a",
+      "rule": "CODE-08",
+      "level": "lint",
+      "description": "公開する関数に説明を書かない",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\nfunc IsOpen(t Task) bool {\n\treturn !t.Done\n}\n"
+        }
+      ],
+      "expect": "godoclint"
+    },
+    {
+      "id": "CODE-08-b",
+      "rule": "CODE-08",
+      "level": "structure",
+      "description": "service.go にパッケージの説明を書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "replace",
+          "content": "// Package task は task のユースケースを実行する。\npackage task\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"slices\"\n\t\"strings\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Service は task のユースケースを実行する。\ntype Service struct {\n\trepo Repository\n\tnow  func() time.Time\n}\n\n// NewService は repo にタスクを保存し、now から現在時刻を得る Service を返す。\nfunc NewService(repo Repository, now func() time.Time) *Service {\n\treturn &Service{repo: repo, now: now}\n}\n\n// Add は指定したタイトルの未完了タスクを作る。\nfunc (s *Service) Add(ctx context.Context, title string) (Task, error) {\n\ttrimmed := strings.TrimSpace(title)\n\terr := validateTitle(trimmed)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\tcreated := Task{ID: nextID(tasks), Title: trimmed, CreatedAt: s.now().UTC().Truncate(time.Second)}\n\terr = s.repo.Save(ctx, append(tasks, created))\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn created, nil\n}\n\n// Complete は指定した ID のタスクを完了にする。\n// 完了済みのタスクを指定しても状態は変わらない。\nfunc (s *Service) Complete(ctx context.Context, id int) (Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ti, err := indexOf(tasks, id)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks[i].Done = true\n\terr = s.repo.Save(ctx, tasks)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn tasks[i], nil\n}\n\n// List は filter に一致するタスクを ID 順で返す。\nfunc (s *Service) List(ctx context.Context, filter Filter) ([]Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tmatched := make([]Task, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tif t.Done && !filter.IncludeDone {\n\t\t\tcontinue\n\t\t}\n\t\tmatched = append(matched, t)\n\t}\n\treturn matched, nil\n}\n\n// indexOf は tasks 内で指定した ID の task の位置を返す。\nfunc indexOf(tasks []Task, id int) (int, error) {\n\ti := slices.IndexFunc(tasks, func(t Task) bool { return t.ID == id })\n\tif i < 0 {\n\t\treturn 0, fmt.Errorf(\"%w: task %d\", errkind.ErrNotFound, id)\n\t}\n\treturn i, nil\n}\n\n// nextID は tasks 内の最大 ID に1を足した新しい task の ID を返す。\nfunc nextID(tasks []Task) int {\n\tmaxID := 0\n\tfor _, t := range tasks {\n\t\tmaxID = max(maxID, t.ID)\n\t}\n\treturn maxID + 1\n}\n"
+        }
+      ],
+      "expect": "CODE-08 internal/domain/task/service\\.go"
+    },
+    {
+      "id": "CODE-08-c",
+      "rule": "CODE-08",
+      "level": "lint",
+      "description": "非公開の関数に説明を書かない",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "replace",
+          "content": "package task\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"slices\"\n\t\"strings\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Service は task のユースケースを実行する。\ntype Service struct {\n\trepo Repository\n\tnow  func() time.Time\n}\n\n// NewService は repo にタスクを保存し、now から現在時刻を得る Service を返す。\nfunc NewService(repo Repository, now func() time.Time) *Service {\n\treturn &Service{repo: repo, now: now}\n}\n\n// Add は指定したタイトルの未完了タスクを作る。\nfunc (s *Service) Add(ctx context.Context, title string) (Task, error) {\n\ttrimmed := strings.TrimSpace(title)\n\terr := validateTitle(trimmed)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\tcreated := Task{ID: nextID(tasks), Title: trimmed, CreatedAt: s.now().UTC().Truncate(time.Second)}\n\terr = s.repo.Save(ctx, append(tasks, created))\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn created, nil\n}\n\n// Complete は指定した ID のタスクを完了にする。\n// 完了済みのタスクを指定しても状態は変わらない。\nfunc (s *Service) Complete(ctx context.Context, id int) (Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ti, err := indexOf(tasks, id)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks[i].Done = true\n\terr = s.repo.Save(ctx, tasks)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn tasks[i], nil\n}\n\n// List は filter に一致するタスクを ID 順で返す。\nfunc (s *Service) List(ctx context.Context, filter Filter) ([]Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tmatched := make([]Task, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tif t.Done && !filter.IncludeDone {\n\t\t\tcontinue\n\t\t}\n\t\tmatched = append(matched, t)\n\t}\n\treturn matched, nil\n}\n\n// indexOf は tasks 内で指定した ID の task の位置を返す。\nfunc indexOf(tasks []Task, id int) (int, error) {\n\ti := slices.IndexFunc(tasks, func(t Task) bool { return t.ID == id })\n\tif i < 0 {\n\t\treturn 0, fmt.Errorf(\"%w: task %d\", errkind.ErrNotFound, id)\n\t}\n\treturn i, nil\n}\n\nfunc nextID(tasks []Task) int {\n\tmaxID := 0\n\tfor _, t := range tasks {\n\t\tmaxID = max(maxID, t.ID)\n\t}\n\treturn maxID + 1\n}\n"
+        }
+      ],
+      "expect": "godoclint"
+    },
+    {
+      "id": "CODE-08-d",
+      "rule": "CODE-08",
+      "level": "structure",
+      "description": "コメントの文を途中で折り返す",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "replace",
+          "content": "package task\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"slices\"\n\t\"strings\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Service は task のユースケースを実行する。\ntype Service struct {\n\trepo Repository\n\tnow  func() time.Time\n}\n\n// NewService は repo にタスクを保存し、now から現在時刻を得る Service を返す。\nfunc NewService(repo Repository, now func() time.Time) *Service {\n\treturn &Service{repo: repo, now: now}\n}\n\n// Add は指定したタイトルの未完了タスクを作る。\nfunc (s *Service) Add(ctx context.Context, title string) (Task, error) {\n\ttrimmed := strings.TrimSpace(title)\n\terr := validateTitle(trimmed)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\tcreated := Task{ID: nextID(tasks), Title: trimmed, CreatedAt: s.now().UTC().Truncate(time.Second)}\n\terr = s.repo.Save(ctx, append(tasks, created))\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn created, nil\n}\n\n// Complete は指定した ID のタスクを\n// 完了にする。\n// 完了済みのタスクを指定しても状態は変わらない。\nfunc (s *Service) Complete(ctx context.Context, id int) (Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ti, err := indexOf(tasks, id)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks[i].Done = true\n\terr = s.repo.Save(ctx, tasks)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn tasks[i], nil\n}\n\n// List は filter に一致するタスクを ID 順で返す。\nfunc (s *Service) List(ctx context.Context, filter Filter) ([]Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tmatched := make([]Task, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tif t.Done && !filter.IncludeDone {\n\t\t\tcontinue\n\t\t}\n\t\tmatched = append(matched, t)\n\t}\n\treturn matched, nil\n}\n\n// indexOf は tasks 内で指定した ID の task の位置を返す。\nfunc indexOf(tasks []Task, id int) (int, error) {\n\ti := slices.IndexFunc(tasks, func(t Task) bool { return t.ID == id })\n\tif i < 0 {\n\t\treturn 0, fmt.Errorf(\"%w: task %d\", errkind.ErrNotFound, id)\n\t}\n\treturn i, nil\n}\n\n// nextID は tasks 内の最大 ID に1を足した新しい task の ID を返す。\nfunc nextID(tasks []Task) int {\n\tmaxID := 0\n\tfor _, t := range tasks {\n\t\tmaxID = max(maxID, t.ID)\n\t}\n\treturn maxID + 1\n}\n"
+        }
+      ],
+      "expect": "CODE-08 internal/domain/task/service\\.go"
+    },
+    {
+      "id": "CODE-08-e",
+      "rule": "CODE-08",
+      "level": "structure",
+      "description": "コメントを英語で書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\n// English comment。\n"
+        }
+      ],
+      "expect": "CODE-08 internal/domain/task/task\\.go"
+    },
+    {
+      "id": "CODE-08-f",
+      "rule": "CODE-08",
+      "level": "structure",
+      "description": "コメントの1行に2文を書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\n// 日本語の説明。次の説明。\n"
+        }
+      ],
+      "expect": "CODE-08 internal/domain/task/task\\.go"
+    },
+    {
+      "id": "CODE-09-a",
+      "rule": "CODE-09",
+      "level": "lint",
+      "description": "数値を直接書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\nfunc isLongTitle(title string) bool {\n\treturn utf8.RuneCountInString(title) > 80\n}\n"
+        }
+      ],
+      "expect": "mnd"
+    },
+    {
+      "id": "CODE-10-a",
+      "rule": "CODE-10",
+      "level": "structure",
+      "description": "run<Verb> の説明を自由に書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runComplete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runComplete はタスクを完了にする。\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tcompleted, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(completed)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Completed task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "CODE-10 internal/command/taskcmd/complete\\.go"
+    },
+    {
+      "id": "CODE-10-b",
+      "rule": "CODE-10",
+      "level": "structure",
+      "description": "Parse<Field> の説明を自由に書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "replace",
+          "content": "// Package task はタスクとその読み取り・変更のユースケースを定義する。\npackage task\n\nimport (\n\t\"fmt\"\n\t\"strconv\"\n\t\"time\"\n\t\"unicode/utf8\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Task は実行する作業を表す。\ntype Task struct {\n\tID        int\n\tTitle     string\n\tDone      bool\n\tCreatedAt time.Time\n}\n\n// Filter は List が返す task を絞り込む。\ntype Filter struct {\n\t// IncludeDone は List の結果に完了済みタスクも含める。\n\tIncludeDone bool\n}\n\n// maxTitleLength はタイトルの最大文字数を表す。\nconst maxTitleLength = 100\n\n// ParseID はコマンドライン引数をタスクの ID に変換する。\nfunc ParseID(s string) (int, error) {\n\tid, err := strconv.Atoi(s)\n\tif err != nil || id < 1 {\n\t\treturn 0, fmt.Errorf(\"%w: task ID must be a positive integer: %q\", errkind.ErrInvalid, s)\n\t}\n\treturn id, nil\n}\n\n// validateTitle は Task の Title フィールドを検証する。\nfunc validateTitle(title string) error {\n\tn := utf8.RuneCountInString(title)\n\tif n == 0 || n > maxTitleLength {\n\t\treturn fmt.Errorf(\"%w: title must be 1 to %d characters\", errkind.ErrInvalid, maxTitleLength)\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "CODE-10 internal/domain/task/task\\.go"
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "エラーの種類を末尾で包む",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "replace",
+          "content": "// Package task はタスクとその読み取り・変更のユースケースを定義する。\npackage task\n\nimport (\n\t\"fmt\"\n\t\"strconv\"\n\t\"time\"\n\t\"unicode/utf8\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Task は実行する作業を表す。\ntype Task struct {\n\tID        int\n\tTitle     string\n\tDone      bool\n\tCreatedAt time.Time\n}\n\n// Filter は List が返す task を絞り込む。\ntype Filter struct {\n\t// IncludeDone は List の結果に完了済みタスクも含める。\n\tIncludeDone bool\n}\n\n// maxTitleLength はタイトルの最大文字数を表す。\nconst maxTitleLength = 100\n\n// ParseID はコマンドライン引数を Task の ID フィールドに変換する。\nfunc ParseID(s string) (int, error) {\n\tid, err := strconv.Atoi(s)\n\tif err != nil || id < 1 {\n\t\treturn 0, fmt.Errorf(\"task ID must be a positive integer: %q: %w\", s, errkind.ErrInvalid)\n\t}\n\treturn id, nil\n}\n\n// validateTitle は Task の Title フィールドを検証する。\nfunc validateTitle(title string) error {\n\tn := utf8.RuneCountInString(title)\n\tif n == 0 || n > maxTitleLength {\n\t\treturn fmt.Errorf(\"%w: title must be 1 to %d characters\", errkind.ErrInvalid, maxTitleLength)\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "ERR-01 internal/domain/task/task\\.go"
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "level": "lint",
+      "description": "その場でエラーを作る",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc checkEmpty(tasks []Task) error {\n\tif len(tasks) == 0 {\n\t\treturn fmt.Errorf(\"no tasks\")\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "err113"
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "level": "lint",
+      "description": "標準ライブラリのエラーを包まずに返す",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/adapter/taskstore/taskstore.go",
+          "mode": "append",
+          "content": "\nfunc readFile(path string) ([]byte, error) {\n\tdata, err := os.ReadFile(path)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn data, nil\n}\n"
+        }
+      ],
+      "expect": "wrapcheck"
+    },
+    {
+      "id": "ERR-03-a",
+      "rule": "ERR-03",
+      "level": "lint",
+      "description": "エラー文字列を大文字で始めピリオドで終える",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\nfunc validateOpen(t Task) error {\n\tif t.Done {\n\t\treturn fmt.Errorf(\"%w: Task is already done.\", errkind.ErrInvalid)\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "error-strings|ST1005"
+    },
+    {
+      "id": "ERR-04-a",
+      "rule": "ERR-04",
+      "level": "lint",
+      "description": "command で strconv.Atoi を呼ぶ",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"strconv\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runComplete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runComplete は task complete を実行する。\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := strconv.Atoi(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tcompleted, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(completed)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Completed task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "ERR-04"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "structure",
+      "description": "goroutine で保存する",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc (s *Service) saveLater(ctx context.Context, tasks []Task) {\n\tgo func() {\n\t\t_ = s.repo.Save(ctx, tasks)\n\t}()\n}\n"
+        }
+      ],
+      "expect": "ASYNC-01 internal/domain/task/service\\.go"
+    },
+    {
+      "id": "ASYNC-01-b",
+      "rule": "ASYNC-01",
+      "level": "lint",
+      "description": "構造体に context を入れる",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\n// job は保存待ちの処理を表す。\ntype job struct {\n\tctx context.Context\n}\n"
+        }
+      ],
+      "expect": "containedctx"
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "lint",
+      "description": "fmt.Println で表示する",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/add.go",
+          "mode": "append",
+          "content": "\nfunc printAdded(v taskView) {\n\tfmt.Println(\"added\", v.ID)\n}\n"
+        }
+      ],
+      "expect": "OPS-01"
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "domain に環境変数の名前を書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nconst envTitleMax = \"GOCLI_TITLE_MAX\"\n"
+        }
+      ],
+      "expect": "OPS-02 internal/domain/task/service\\.go"
+    },
+    {
+      "id": "OPS-02-b",
+      "rule": "OPS-02",
+      "level": "lint",
+      "description": "config.go で os.Getenv を直接呼ぶ",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/app/config.go",
+          "mode": "replace",
+          "content": "package app\n\nimport (\n\t\"errors\"\n\t\"os\"\n\t\"path/filepath\"\n)\n\n// config は環境変数から読み取った設定を保持する。\ntype config struct {\n\tdataDir string\n}\n\n// CLI の設定に使う環境変数を定義する。\nconst (\n\tenvDataDir = \"GOCLI_DATA_DIR\"\n\tenvXDGData = \"XDG_DATA_HOME\"\n\tenvHome    = \"HOME\"\n)\n\n// errNoDataDir はデータディレクトリを決める環境変数が無いことを表す。\nvar errNoDataDir = errors.New(\"cannot find a data directory: set \" + envDataDir + \" or HOME\")\n\n// loadConfig は環境変数から設定を読み取る。\nfunc loadConfig(getenv func(key string) string) (config, error) {\n\tdataDir, err := loadDataDir(getenv)\n\tif err != nil {\n\t\treturn config{}, err\n\t}\n\treturn config{dataDir: dataDir}, nil\n}\n\n// loadDataDir は $GOCLI_DATA_DIR、$XDG_DATA_HOME/go-cli、$HOME/.local/share/go-cli の順に最初に設定されたパスを返す。\nfunc loadDataDir(getenv func(key string) string) (string, error) {\n\tdir := os.Getenv(envDataDir)\n\tif dir != \"\" {\n\t\treturn dir, nil\n\t}\n\tdir = getenv(envXDGData)\n\tif dir != \"\" {\n\t\treturn filepath.Join(dir, name), nil\n\t}\n\tdir = getenv(envHome)\n\tif dir != \"\" {\n\t\treturn filepath.Join(dir, \".local\", \"share\", name), nil\n\t}\n\treturn \"\", errNoDataDir\n}\n"
+        }
+      ],
+      "expect": "os\\.Getenv.*DEP-05"
+    },
+    {
+      "id": "OPS-02-c",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "loadConfig の中で環境変数を直接読む",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/app/config.go",
+          "mode": "replace",
+          "content": "package app\n\nimport (\n\t\"errors\"\n\t\"path/filepath\"\n)\n\n// config は環境変数から読み取った設定を保持する。\ntype config struct {\n\tdataDir string\n}\n\n// CLI の設定に使う環境変数を定義する。\nconst (\n\tenvDataDir = \"GOCLI_DATA_DIR\"\n\tenvXDGData = \"XDG_DATA_HOME\"\n\tenvHome    = \"HOME\"\n)\n\n// errNoDataDir はデータディレクトリを決める環境変数が無いことを表す。\nvar errNoDataDir = errors.New(\"cannot find a data directory: set \" + envDataDir + \" or HOME\")\n\n// loadConfig は環境変数から設定を読み取る。\nfunc loadConfig(getenv func(key string) string) (config, error) {\n\tdir := getenv(envDataDir)\n\tif dir == \"\" {\n\t\treturn config{}, errNoDataDir\n\t}\n\treturn config{dataDir: dir}, nil\n}\n\n// loadDataDir は $GOCLI_DATA_DIR、$XDG_DATA_HOME/go-cli、$HOME/.local/share/go-cli の順に最初に設定されたパスを返す。\nfunc loadDataDir(getenv func(key string) string) (string, error) {\n\tdir := getenv(envDataDir)\n\tif dir != \"\" {\n\t\treturn dir, nil\n\t}\n\tdir = getenv(envXDGData)\n\tif dir != \"\" {\n\t\treturn filepath.Join(dir, name), nil\n\t}\n\tdir = getenv(envHome)\n\tif dir != \"\" {\n\t\treturn filepath.Join(dir, \".local\", \"share\", name), nil\n\t}\n\treturn \"\", errNoDataDir\n}\n"
+        }
+      ],
+      "expect": "OPS-02 internal/app/config\\.go"
+    },
+    {
+      "id": "OPS-03-a",
+      "rule": "OPS-03",
+      "level": "structure",
+      "description": "ASCII 以外の文字を書く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "append",
+          "content": "\n// defaultTitle はタイトルが指定されないときに使う値を表す。\nconst defaultTitle = \"やること\"\n"
+        }
+      ],
+      "expect": "OPS-03 internal/domain/task/task\\.go"
+    },
+    {
+      "id": "OPS-03-b",
+      "rule": "OPS-03",
+      "level": "test",
+      "description": "時刻を UTC の秒に丸めずに保存する",
+      "command": "make test",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "replace",
+          "content": "package task\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"slices\"\n\t\"strings\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Service は task のユースケースを実行する。\ntype Service struct {\n\trepo Repository\n\tnow  func() time.Time\n}\n\n// NewService は repo にタスクを保存し、now から現在時刻を得る Service を返す。\nfunc NewService(repo Repository, now func() time.Time) *Service {\n\treturn &Service{repo: repo, now: now}\n}\n\n// Add は指定したタイトルの未完了タスクを作る。\nfunc (s *Service) Add(ctx context.Context, title string) (Task, error) {\n\ttrimmed := strings.TrimSpace(title)\n\terr := validateTitle(trimmed)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\tcreated := Task{ID: nextID(tasks), Title: trimmed, CreatedAt: s.now()}\n\terr = s.repo.Save(ctx, append(tasks, created))\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn created, nil\n}\n\n// Complete は指定した ID のタスクを完了にする。\n// 完了済みのタスクを指定しても状態は変わらない。\nfunc (s *Service) Complete(ctx context.Context, id int) (Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ti, err := indexOf(tasks, id)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\ttasks[i].Done = true\n\terr = s.repo.Save(ctx, tasks)\n\tif err != nil {\n\t\treturn Task{}, err\n\t}\n\treturn tasks[i], nil\n}\n\n// List は filter に一致するタスクを ID 順で返す。\nfunc (s *Service) List(ctx context.Context, filter Filter) ([]Task, error) {\n\ttasks, err := s.repo.Load(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tmatched := make([]Task, 0, len(tasks))\n\tfor _, t := range tasks {\n\t\tif t.Done && !filter.IncludeDone {\n\t\t\tcontinue\n\t\t}\n\t\tmatched = append(matched, t)\n\t}\n\treturn matched, nil\n}\n\n// indexOf は tasks 内で指定した ID の task の位置を返す。\nfunc indexOf(tasks []Task, id int) (int, error) {\n\ti := slices.IndexFunc(tasks, func(t Task) bool { return t.ID == id })\n\tif i < 0 {\n\t\treturn 0, fmt.Errorf(\"%w: task %d\", errkind.ErrNotFound, id)\n\t}\n\treturn i, nil\n}\n\n// nextID は tasks 内の最大 ID に1を足した新しい task の ID を返す。\nfunc nextID(tasks []Task) int {\n\tmaxID := 0\n\tfor _, t := range tasks {\n\t\tmaxID = max(maxID, t.ID)\n\t}\n\treturn maxID + 1\n}\n"
+        }
+      ],
+      "expect": "FAIL: TestAdd"
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "level": "lint",
+      "description": "0644 でファイルを書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/adapter/taskstore/taskstore.go",
+          "mode": "append",
+          "content": "\nfunc writePlain(path string, data []byte) error {\n\treturn os.WriteFile(path, data, 0o644)\n}\n"
+        }
+      ],
+      "expect": "G306"
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "level": "type",
+      "description": "Run が終了コードを返す",
+      "command": "make build",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) int {\n\t\t\t_, err := runComplete(ctx, svc, opts)\n\t\t\tif err != nil {\n\t\t\t\treturn 3\n\t\t\t}\n\t\t\treturn 0\n\t\t},\n\t}\n}\n\n// runComplete は task complete を実行する。\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tcompleted, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(completed)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"Completed task %d: %s\\n\", o.Task.ID, o.Task.Title)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "cannot use"
+    },
+    {
+      "id": "OPS-06-a",
+      "rule": "OPS-06",
+      "level": "test",
+      "description": "文章の出力の形を変える",
+      "command": "make test",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/complete.go",
+          "mode": "replace",
+          "content": "package taskcmd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// completeOptions は task complete の引数とフラグを保持する。\ntype completeOptions struct {\n\tid string\n}\n\n// completeOutput は task complete の実行結果を表す。\ntype completeOutput struct {\n\tTask taskView `json:\"task\"`\n}\n\n// newComplete は task complete コマンドを返す。\nfunc newComplete(svc *task.Service) *cli.Command {\n\tvar opts completeOptions\n\treturn &cli.Command{\n\t\tName:    \"complete\",\n\t\tSummary: \"Mark a task as done\",\n\t\tArgs:    []cli.Arg{{Name: \"id\", Value: &opts.id}},\n\t\tRun: func(ctx context.Context) (cli.Output, error) {\n\t\t\treturn runComplete(ctx, svc, opts)\n\t\t},\n\t}\n}\n\n// runComplete は task complete を実行する。\nfunc runComplete(ctx context.Context, svc *task.Service, opts completeOptions) (completeOutput, error) {\n\tid, err := task.ParseID(opts.id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\tcompleted, err := svc.Complete(ctx, id)\n\tif err != nil {\n\t\treturn completeOutput{}, err\n\t}\n\treturn completeOutput{Task: toTaskView(completed)}, nil\n}\n\n// WriteText は cli.Output を実装する。\nfunc (o completeOutput) WriteText(w io.Writer) error {\n\t_, err := fmt.Fprintf(w, \"task #%d was marked as done.\\n\", o.Task.ID)\n\treturn err\n}\n"
+        }
+      ],
+      "expect": "FAIL: TestComplete"
+    },
+    {
+      "id": "OPS-06-b",
+      "rule": "OPS-06",
+      "level": "structure",
+      "description": "Summary をピリオドで終える",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/taskcmd.go",
+          "mode": "replace",
+          "content": "// Package taskcmd は task コマンド群を実装する。\npackage taskcmd\n\nimport (\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// New は svc でユースケースを実行する task コマンド群を返す。\nfunc New(svc *task.Service) *cli.Group {\n\treturn &cli.Group{\n\t\tName:    \"task\",\n\t\tSummary: \"Manage tasks.\",\n\t\tCommands: []*cli.Command{\n\t\t\tnewAdd(svc),\n\t\t\tnewComplete(svc),\n\t\t\tnewList(svc),\n\t\t},\n\t}\n}\n"
+        }
+      ],
+      "expect": "OPS-06 internal/command/taskcmd/taskcmd\\.go"
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "level": "structure",
+      "description": "Test<Verb> を書かない",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/list_test.go",
+          "mode": "replace",
+          "content": "package taskcmd_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestListCommand(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"prints_only_the_header_without_tasks\",\n\t\t\targs: []string{\"task\", \"list\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"ID  STATUS  TITLE\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"lists_tasks\",\n\t\t\tsetup: [][]string{\n\t\t\t\t{\"task\", \"add\", \"Buy milk\"},\n\t\t\t\t{\"task\", \"add\", \"Write report\"},\n\t\t\t\t{\"task\", \"complete\", \"1\"},\n\t\t\t},\n\t\t\targs: []string{\"task\", \"list\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"ID  STATUS  TITLE\\n\" +\n\t\t\t\t\"2   open    Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"lists_tasks_with_all\",\n\t\t\tsetup: [][]string{\n\t\t\t\t{\"task\", \"add\", \"Buy milk\"},\n\t\t\t\t{\"task\", \"add\", \"Write report\"},\n\t\t\t\t{\"task\", \"complete\", \"1\"},\n\t\t\t},\n\t\t\targs: []string{\"task\", \"list\", \"--all\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"ID  STATUS  TITLE\\n\" +\n\t\t\t\t\"1   done    Buy milk\\n\" +\n\t\t\t\t\"2   open    Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"writes_json\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"list\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"tasks\": [\n    {\n      \"id\": 1,\n      \"title\": \"Buy milk\",\n      \"done\": false,\n      \"created_at\": \"2026-01-02T03:04:05Z\"\n    }\n  ]\n}\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"writes_an_empty_json_array_without_tasks\",\n\t\t\targs: []string{\"task\", \"list\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"{\\n  \\\"tasks\\\": []\\n}\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_unknown_flag\",\n\t\t\targs: []string{\"task\", \"list\", \"--done\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: flag provided but not defined: -done\\n\" +\n\t\t\t\t\"Run 'go-cli task list --help' for usage.\\n\"},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ],
+      "expect": "TEST-01 internal/command/taskcmd/list_test\\.go"
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "level": "lint",
+      "description": "t.Parallel を呼ばない",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service_test.go",
+          "mode": "create",
+          "content": "package task_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\nfunc TestParseIDOne(t *testing.T) {\n\tgot, err := task.ParseID(\"1\")\n\tif got != 1 || err != nil {\n\t\tt.Errorf(\"ParseID(%q) = %d, %v, want 1, nil\", \"1\", got, err)\n\t}\n}\n"
+        }
+      ],
+      "expect": "paralleltest"
+    },
+    {
+      "id": "TEST-02-b",
+      "rule": "TEST-02",
+      "level": "structure",
+      "description": "サブテストの名前を文章にする",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/add_test.go",
+          "mode": "replace",
+          "content": "package taskcmd_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestAdd(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"adds a task\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy milk\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"numbers_tasks_in_order\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"add\", \"Write report\"},\n\t\t\twant:  apptest.Result{Code: 0, Stdout: \"Added task 2: Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"trims_spaces_around_the_title\",\n\t\t\targs: []string{\"task\", \"add\", \"  Buy milk  \"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"writes_json\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy milk\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"task\": {\n    \"id\": 1,\n    \"title\": \"Buy milk\",\n    \"done\": false,\n    \"created_at\": \"2026-01-02T03:04:05Z\"\n  }\n}\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_empty_title\",\n\t\t\targs: []string{\"task\", \"add\", \" \"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: title must be 1 to 100 characters\\n\" +\n\t\t\t\t\"Run 'go-cli task add --help' for usage.\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_a_missing_title\",\n\t\t\targs: []string{\"task\", \"add\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: want 1 argument(s), got 0\\n\" +\n\t\t\t\t\"Run 'go-cli task add --help' for usage.\\n\"},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ],
+      "expect": "TEST-02 internal/command/taskcmd/add_test\\.go"
+    },
+    {
+      "id": "TEST-02-c",
+      "rule": "TEST-02",
+      "level": "lint",
+      "description": "time.Time を != で比べる",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/task_test.go",
+          "mode": "replace",
+          "content": "package task_test\n\nimport (\n\t\"errors\"\n\t\"testing\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n\t\"example.com/go-cli/internal/errkind\"\n)\n\nfunc TestParseID(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname    string\n\t\ts       string\n\t\twant    int\n\t\twantErr error\n\t}{\n\t\t{name: \"accepts_a_positive_integer\", s: \"12\", want: 12, wantErr: nil},\n\t\t{name: \"rejects_zero\", s: \"0\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_negative_integer\", s: \"-1\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_word\", s: \"one\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_an_empty_string\", s: \"\", want: 0, wantErr: errkind.ErrInvalid},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\tgot, err := task.ParseID(tt.s)\n\t\t\tif got != tt.want || !errors.Is(err, tt.wantErr) {\n\t\t\t\tt.Errorf(\"ParseID(%q) = %d, %v, want %d, %v\", tt.s, got, err, tt.want, tt.wantErr)\n\t\t\t}\n\t\t})\n\t}\n}\n\nfunc TestDate(t *testing.T) {\n\tt.Parallel()\n\tgot := time.Date(2026, time.January, 31, 0, 0, 0, 0, time.UTC)\n\twant := time.Date(2026, time.January, 31, 0, 0, 0, 0, time.UTC)\n\tif got != want {\n\t\tt.Errorf(\"Date() = %v, want %v\", got, want)\n\t}\n}\n"
+        }
+      ],
+      "expect": "time-equal|Equal.*revive"
+    },
+    {
+      "id": "TEST-03-a",
+      "rule": "TEST-03",
+      "level": "structure",
+      "description": "Repository の偽物を作る",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/service_test.go",
+          "mode": "create",
+          "content": "package task_test\n\nimport (\n\t\"context\"\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\ntype fakeRepo struct {\n\ttasks []task.Task\n}\n\nfunc (r *fakeRepo) Load(_ context.Context) ([]task.Task, error) {\n\treturn r.tasks, nil\n}\n\nfunc (r *fakeRepo) Save(_ context.Context, tasks []task.Task) error {\n\tr.tasks = tasks\n\treturn nil\n}\n\nfunc TestService(t *testing.T) {\n\tt.Parallel()\n\t_ = task.NewService(&fakeRepo{}, nil)\n}\n"
+        }
+      ],
+      "expect": "TEST-03 internal/domain/task/service_test\\.go"
+    },
+    {
+      "id": "TEST-05-a",
+      "rule": "TEST-05",
+      "level": "structure",
+      "description": "終了コード2の件を --json の件より前に置く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/command/taskcmd/add_test.go",
+          "mode": "replace",
+          "content": "package taskcmd_test\n\nimport (\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/app/apptest\"\n)\n\nfunc TestAdd(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname  string\n\t\tsetup [][]string\n\t\targs  []string\n\t\twant  apptest.Result\n\t}{\n\t\t{\n\t\t\tname: \"adds_a_task\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy milk\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname:  \"numbers_tasks_in_order\",\n\t\t\tsetup: [][]string{{\"task\", \"add\", \"Buy milk\"}},\n\t\t\targs:  []string{\"task\", \"add\", \"Write report\"},\n\t\t\twant:  apptest.Result{Code: 0, Stdout: \"Added task 2: Write report\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"trims_spaces_around_the_title\",\n\t\t\targs: []string{\"task\", \"add\", \"  Buy milk  \"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: \"Added task 1: Buy milk\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_an_empty_title\",\n\t\t\targs: []string{\"task\", \"add\", \" \"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: title must be 1 to 100 characters\\n\" +\n\t\t\t\t\"Run 'go-cli task add --help' for usage.\\n\"},\n\t\t},\n\t\t{\n\t\t\tname: \"writes_json\",\n\t\t\targs: []string{\"task\", \"add\", \"Buy milk\", \"--json\"},\n\t\t\twant: apptest.Result{Code: 0, Stdout: `{\n  \"task\": {\n    \"id\": 1,\n    \"title\": \"Buy milk\",\n    \"done\": false,\n    \"created_at\": \"2026-01-02T03:04:05Z\"\n  }\n}\n`},\n\t\t},\n\t\t{\n\t\t\tname: \"rejects_a_missing_title\",\n\t\t\targs: []string{\"task\", \"add\"},\n\t\t\twant: apptest.Result{Code: 2, Stderr: \"go-cli: invalid input: want 1 argument(s), got 0\\n\" +\n\t\t\t\t\"Run 'go-cli task add --help' for usage.\\n\"},\n\t\t},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\th := apptest.New(t)\n\t\t\tfor _, args := range tt.setup {\n\t\t\t\th.Setup(args...)\n\t\t\t}\n\t\t\tgot := h.Run(tt.args...)\n\t\t\tif got != tt.want {\n\t\t\t\tt.Errorf(\"Run(%q) = %+v, want %+v\", tt.args, got, tt.want)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ],
+      "expect": "TEST-05 internal/command/taskcmd/add_test\\.go"
+    },
+    {
+      "id": "TEST-05-b",
+      "rule": "TEST-05",
+      "level": "structure",
+      "description": "domain のテストで rejects_ の件を accepts_ の件より前に置く",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task_test.go",
+          "mode": "replace",
+          "content": "package task_test\n\nimport (\n\t\"errors\"\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n\t\"example.com/go-cli/internal/errkind\"\n)\n\nfunc TestParseID(t *testing.T) {\n\tt.Parallel()\n\ttests := []struct {\n\t\tname    string\n\t\ts       string\n\t\twant    int\n\t\twantErr error\n\t}{\n\t\t{name: \"rejects_zero\", s: \"0\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"accepts_a_positive_integer\", s: \"12\", want: 12, wantErr: nil},\n\t\t{name: \"rejects_a_negative_integer\", s: \"-1\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_word\", s: \"one\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_an_empty_string\", s: \"\", want: 0, wantErr: errkind.ErrInvalid},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\tgot, err := task.ParseID(tt.s)\n\t\t\tif got != tt.want || !errors.Is(err, tt.wantErr) {\n\t\t\t\tt.Errorf(\"ParseID(%q) = %d, %v, want %d, %v\", tt.s, got, err, tt.want, tt.wantErr)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ],
+      "expect": "TEST-05 internal/domain/task/task_test\\.go"
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "level": "structure",
+      "description": "エンティティに項目を足し、保存形式に足さない",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/domain/task/task.go",
+          "mode": "replace",
+          "content": "// Package task はタスクとその読み取り・変更のユースケースを定義する。\npackage task\n\nimport (\n\t\"fmt\"\n\t\"strconv\"\n\t\"time\"\n\t\"unicode/utf8\"\n\n\t\"example.com/go-cli/internal/errkind\"\n)\n\n// Task は実行する作業を表す。\ntype Task struct {\n\tID        int\n\tTitle     string\n\tDone      bool\n\tDue       time.Time\n\tCreatedAt time.Time\n}\n\n// Filter は List が返す task を絞り込む。\ntype Filter struct {\n\t// IncludeDone は List の結果に完了済みタスクも含める。\n\tIncludeDone bool\n}\n\n// maxTitleLength はタイトルの最大文字数を表す。\nconst maxTitleLength = 100\n\n// ParseID はコマンドライン引数を Task の ID フィールドに変換する。\nfunc ParseID(s string) (int, error) {\n\tid, err := strconv.Atoi(s)\n\tif err != nil || id < 1 {\n\t\treturn 0, fmt.Errorf(\"%w: task ID must be a positive integer: %q\", errkind.ErrInvalid, s)\n\t}\n\treturn id, nil\n}\n\n// validateTitle は Task の Title フィールドを検証する。\nfunc validateTitle(title string) error {\n\tn := utf8.RuneCountInString(title)\n\tif n == 0 || n > maxTitleLength {\n\t\treturn fmt.Errorf(\"%w: title must be 1 to %d characters\", errkind.ErrInvalid, maxTitleLength)\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "expect": "PROC-02 internal/adapter/taskstore/taskstore\\.go"
+    },
+    {
+      "id": "PROC-02-b",
+      "rule": "PROC-02",
+      "level": "structure",
+      "description": "名詞のコマンドを app.go に登録しない",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "internal/app/app.go",
+          "mode": "replace",
+          "content": "// Package app は go-cli のコマンドツリーを構築し、プロセスの実行環境に接続する。\n//\n// 全パッケージを知る組み立て役として、設定の読み取り・adapter と Service の作成・全コマンド群の登録を行う。\npackage app\n\nimport (\n\t\"context\"\n\t\"io\"\n\t\"path/filepath\"\n\t\"runtime/debug\"\n\t\"time\"\n\n\t\"example.com/go-cli/internal/adapter/taskstore\"\n\t\"example.com/go-cli/internal/cli\"\n\t\"example.com/go-cli/internal/domain/task\"\n)\n\n// Env は CLI の実行環境を保持する。\n// main は実際の実行環境を渡し、テストはテスト用の実行環境を渡す。\ntype Env struct {\n\tStdout io.Writer\n\tStderr io.Writer\n\tGetenv func(key string) string\n\tNow    func() time.Time\n}\n\n// name は CLI の名前を表す。\nconst name = \"go-cli\"\n\n// New はコマンドツリーを構築する。\n// ファイルの読み書きは行わない。\nfunc New(env Env) (*cli.App, error) {\n\tcfg, err := loadConfig(env.Getenv)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\t_ = task.NewService(taskstore.New(filepath.Join(cfg.dataDir, \"tasks.json\")), env.Now)\n\treturn &cli.App{\n\t\tName:    name,\n\t\tVersion: version(),\n\t\tGroups:  []*cli.Group{},\n\t}, nil\n}\n\n// Run はコマンドツリーを構築し、プログラム名を除いた args で実行して終了コードを返す。\nfunc Run(ctx context.Context, args []string, env Env) int {\n\tstreams := cli.IO{Out: env.Stdout, Err: env.Stderr}\n\ta, err := New(env)\n\tif err != nil {\n\t\treturn cli.Fail(streams, name, err)\n\t}\n\treturn a.Run(ctx, args, streams)\n}\n\n// version は go install が記録したモジュールの版を返し、ローカルのビルドでは (devel) を返す。\nfunc version() string {\n\tinfo, ok := debug.ReadBuildInfo()\n\tif !ok || info.Main.Version == \"\" {\n\t\treturn \"(devel)\"\n\t}\n\treturn info.Main.Version\n}\n"
+        }
+      ],
+      "expect": "PROC-02 internal/app/app\\.go"
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "format",
+      "description": "関数の先頭に空行を入れる",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\nfunc firstID(tasks []Task) int {\n\n\treturn tasks[0].ID\n}\n"
+        }
+      ],
+      "expect": "\\(gofumpt\\)"
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "nolint で指摘を黙らせる",
+      "command": "make guard",
+      "files": [
+        {
+          "path": "internal/domain/task/service.go",
+          "mode": "append",
+          "content": "\n// lastID は最後のタスクの ID を返す。\nfunc lastID(tasks []Task) int { //nolint:unused\n\treturn tasks[len(tasks)-1].ID\n}\n"
+        }
+      ],
+      "expect": "TOOL-03"
+    },
+    {
+      "id": "TOOL-03-b",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "テストを t.Skip で飛ばす",
+      "command": "make guard",
+      "files": [
+        {
+          "path": "internal/domain/task/task_test.go",
+          "mode": "replace",
+          "content": "package task_test\n\nimport (\n\t\"errors\"\n\t\"testing\"\n\n\t\"example.com/go-cli/internal/domain/task\"\n\t\"example.com/go-cli/internal/errkind\"\n)\n\nfunc TestParseID(t *testing.T) {\n\tt.Parallel()\n\tt.Skip(\"flaky\")\n\ttests := []struct {\n\t\tname    string\n\t\ts       string\n\t\twant    int\n\t\twantErr error\n\t}{\n\t\t{name: \"accepts_a_positive_integer\", s: \"12\", want: 12, wantErr: nil},\n\t\t{name: \"rejects_zero\", s: \"0\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_negative_integer\", s: \"-1\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_a_word\", s: \"one\", want: 0, wantErr: errkind.ErrInvalid},\n\t\t{name: \"rejects_an_empty_string\", s: \"\", want: 0, wantErr: errkind.ErrInvalid},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\t\t\tgot, err := task.ParseID(tt.s)\n\t\t\tif got != tt.want || !errors.Is(err, tt.wantErr) {\n\t\t\t\tt.Errorf(\"ParseID(%q) = %d, %v, want %d, %v\", tt.s, got, err, tt.want, tt.wantErr)\n\t\t\t}\n\t\t})\n\t}\n}\n"
+        }
+      ],
+      "expect": "TOOL-03"
+    },
+    {
+      "id": "TOOL-04-a",
+      "rule": "TOOL-04",
+      "level": "structure",
+      "description": "golangci-lint の版を下げる",
+      "command": "make arch",
+      "files": [
+        {
+          "path": "golangci-lint.mod",
+          "mode": "replace",
+          "content": "module example.com/go-cli\n\ngo 1.27\n\ntool github.com/golangci/golangci-lint/v2/cmd/golangci-lint\n\nrequire (\n\t4d63.com/gocheckcompilerdirectives v1.4.0 // indirect\n\t4d63.com/gochecknoglobals v0.2.2 // indirect\n\tcharm.land/lipgloss/v2 v2.0.6 // indirect\n\tcodeberg.org/chavacava/garif v0.2.1 // indirect\n\tcodeberg.org/polyfloyd/go-errorlint v1.9.0 // indirect\n\tdev.gaijin.team/go/exhaustruct/v4 v4.0.0 // indirect\n\tdev.gaijin.team/go/exhaustruct/v5 v5.2.0 // indirect\n\tdev.gaijin.team/go/golib v0.8.1 // indirect\n\tgithub.com/4meepo/tagalign v1.4.4 // indirect\n\tgithub.com/Abirdcfly/dupword v0.1.8 // indirect\n\tgithub.com/AdminBenni/iota-mixing v1.0.0 // indirect\n\tgithub.com/AlwxSin/noinlineerr v1.0.6 // indirect\n\tgithub.com/Antonboom/errname v1.1.2 // indirect\n\tgithub.com/Antonboom/nilnil v1.1.2 // indirect\n\tgithub.com/Antonboom/testifylint v1.6.4 // indirect\n\tgithub.com/BurntSushi/toml v1.6.0 // indirect\n\tgithub.com/ClickHouse/clickhouse-go-linter v1.2.1 // indirect\n\tgithub.com/Djarvur/go-err113 v0.1.1 // indirect\n\tgithub.com/Masterminds/semver/v3 v3.5.0 // indirect\n\tgithub.com/MirrexOne/unqueryvet v1.5.4 // indirect\n\tgithub.com/OpenPeeDeeP/depguard/v2 v2.2.1 // indirect\n\tgithub.com/alecthomas/chroma/v2 v2.27.0 // indirect\n\tgithub.com/alecthomas/go-check-sumtype v0.5.1-0.20260828200218-ae6904d28606 // indirect\n\tgithub.com/alexkohler/nakedret/v2 v2.0.6 // indirect\n\tgithub.com/alexkohler/prealloc v1.1.0 // indirect\n\tgithub.com/alfatraining/structtag v1.0.0 // indirect\n\tgithub.com/alingse/asasalint v0.0.11 // indirect\n\tgithub.com/alingse/nilnesserr v0.2.0 // indirect\n\tgithub.com/ashanbrown/forbidigo/v2 v2.3.1 // indirect\n\tgithub.com/ashanbrown/makezero/v2 v2.2.1 // indirect\n\tgithub.com/beorn7/perks v1.0.1 // indirect\n\tgithub.com/bkielbasa/cyclop v1.2.3 // indirect\n\tgithub.com/blizzy78/varnamelen v0.8.0 // indirect\n\tgithub.com/bombsimon/wsl/v4 v4.7.0 // indirect\n\tgithub.com/bombsimon/wsl/v5 v5.9.0 // indirect\n\tgithub.com/breml/bidichk v0.3.4 // indirect\n\tgithub.com/breml/errchkjson v0.4.1 // indirect\n\tgithub.com/butuzov/ireturn v0.4.1 // indirect\n\tgithub.com/butuzov/mirror v1.3.3 // indirect\n\tgithub.com/catenacyber/perfsprint v0.10.1 // indirect\n\tgithub.com/ccojocar/zxcvbn-go v1.0.4 // indirect\n\tgithub.com/cespare/xxhash/v2 v2.3.0 // indirect\n\tgithub.com/charithe/durationcheck v0.0.11 // indirect\n\tgithub.com/charmbracelet/colorprofile v0.4.3 // indirect\n\tgithub.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect\n\tgithub.com/charmbracelet/x/ansi v0.11.8 // indirect\n\tgithub.com/charmbracelet/x/term v0.2.2 // indirect\n\tgithub.com/charmbracelet/x/termios v0.1.1 // indirect\n\tgithub.com/charmbracelet/x/windows v0.2.2 // indirect\n\tgithub.com/ckaznocha/intrange v0.3.1 // indirect\n\tgithub.com/clipperhouse/displaywidth v0.11.0 // indirect\n\tgithub.com/clipperhouse/uax29/v2 v2.7.0 // indirect\n\tgithub.com/curioswitch/go-reassign v0.3.0 // indirect\n\tgithub.com/daixiang0/gci v0.13.7 // indirect\n\tgithub.com/dave/dst v0.28.0 // indirect\n\tgithub.com/denis-tingaikin/go-header v0.5.0 // indirect\n\tgithub.com/dlclark/regexp2/v2 v2.2.1 // indirect\n\tgithub.com/ettle/strcase v0.2.0 // indirect\n\tgithub.com/fatih/color v1.19.0 // indirect\n\tgithub.com/fatih/structtag v1.2.0 // indirect\n\tgithub.com/firefart/nonamedreturns v1.0.8 // indirect\n\tgithub.com/fsnotify/fsnotify v1.9.0 // indirect\n\tgithub.com/fzipp/gocyclo v0.6.0 // indirect\n\tgithub.com/ghostiam/protogetter v1.0.1 // indirect\n\tgithub.com/go-critic/go-critic v0.15.0 // indirect\n\tgithub.com/go-toolsmith/astcast v1.1.0 // indirect\n\tgithub.com/go-toolsmith/astcopy v1.1.0 // indirect\n\tgithub.com/go-toolsmith/astequal v1.2.0 // indirect\n\tgithub.com/go-toolsmith/astfmt v1.1.0 // indirect\n\tgithub.com/go-toolsmith/astp v1.1.0 // indirect\n\tgithub.com/go-toolsmith/strparse v1.1.0 // indirect\n\tgithub.com/go-toolsmith/typep v1.1.0 // indirect\n\tgithub.com/go-viper/mapstructure/v2 v2.5.0 // indirect\n\tgithub.com/go-xmlfmt/xmlfmt v1.1.3 // indirect\n\tgithub.com/gobwas/glob v0.2.3 // indirect\n\tgithub.com/godoc-lint/godoc-lint v0.11.4 // indirect\n\tgithub.com/gofrs/flock v0.13.1 // indirect\n\tgithub.com/golang/protobuf v1.5.3 // indirect\n\tgithub.com/golangci/asciicheck v0.5.0 // indirect\n\tgithub.com/golangci/canonicalheader v0.0.0-20260928145534-e18e5c5a078f // indirect\n\tgithub.com/golangci/dupl v0.0.0-20260401084720-c99c5cf5c202 // indirect\n\tgithub.com/golangci/go-printf-func-name v0.1.1 // indirect\n\tgithub.com/golangci/gofmt v0.0.0-20260820135601-e84e05053792 // indirect\n\tgithub.com/golangci/golangci-lint/v2 v2.14.0 // indirect\n\tgithub.com/golangci/golines v0.16.0 // indirect\n\tgithub.com/golangci/misspell v0.8.0 // indirect\n\tgithub.com/golangci/plugin-module-register v0.1.2 // indirect\n\tgithub.com/golangci/revgrep v0.8.0 // indirect\n\tgithub.com/golangci/rowserrcheck v0.0.0-20261005233414-e0740d52dee8 // indirect\n\tgithub.com/golangci/swaggoswag v0.0.0-20250504205917-77f2aca3143e // indirect\n\tgithub.com/golangci/unconvert v0.0.0-20250410112200-a129a6e6413e // indirect\n\tgithub.com/google/go-cmp v0.7.0 // indirect\n\tgithub.com/gordonklaus/ineffassign v0.2.0 // indirect\n\tgithub.com/gostaticanalysis/analysisutil v0.7.1 // indirect\n\tgithub.com/gostaticanalysis/comment v1.5.0 // indirect\n\tgithub.com/gostaticanalysis/forcetypeassert v0.2.0 // indirect\n\tgithub.com/gostaticanalysis/nilerr v0.1.2 // indirect\n\tgithub.com/hashicorp/go-immutable-radix/v2 v2.1.0 // indirect\n\tgithub.com/hashicorp/go-version v1.9.0 // indirect\n\tgithub.com/hashicorp/golang-lru/v2 v2.0.7 // indirect\n\tgithub.com/hashicorp/hcl v1.0.0 // indirect\n\tgithub.com/hexops/gotextdiff v1.0.3 // indirect\n\tgithub.com/inconshreveable/mousetrap v1.1.0 // indirect\n\tgithub.com/jgautheron/goconst v1.11.0 // indirect\n\tgithub.com/jjti/go-spancheck v0.6.5 // indirect\n\tgithub.com/julz/importas v0.2.0 // indirect\n\tgithub.com/karamaru-alpha/copyloopvar v1.2.2 // indirect\n\tgithub.com/kisielk/errcheck v1.30.0 // indirect\n\tgithub.com/kkHAIKE/contextcheck v1.1.6 // indirect\n\tgithub.com/kulti/thelper v0.7.1 // indirect\n\tgithub.com/kunwardeep/paralleltest v1.0.16 // indirect\n\tgithub.com/ldez/exptostd v0.4.5 // indirect\n\tgithub.com/ldez/gomoddirectives v0.10.0 // indirect\n\tgithub.com/ldez/grignotin v0.10.1 // indirect\n\tgithub.com/ldez/structtags v0.6.1 // indirect\n\tgithub.com/ldez/tagliatelle v0.8.0 // indirect\n\tgithub.com/ldez/usetesting v0.5.0 // indirect\n\tgithub.com/leonklingele/grouper v1.1.2 // indirect\n\tgithub.com/lucasb-eyer/go-colorful v1.4.1 // indirect\n\tgithub.com/macabu/inamedparam v0.2.0 // indirect\n\tgithub.com/magiconair/properties v1.8.6 // indirect\n\tgithub.com/manuelarte/embeddedstructfieldcheck v0.4.0 // indirect\n\tgithub.com/manuelarte/funcorder v0.6.0 // indirect\n\tgithub.com/maratori/testableexamples v1.0.1 // indirect\n\tgithub.com/maratori/testpackage v1.1.2 // indirect\n\tgithub.com/matoous/godox v1.1.0 // indirect\n\tgithub.com/mattn/go-colorable v0.1.16 // indirect\n\tgithub.com/mattn/go-isatty v0.0.22 // indirect\n\tgithub.com/mattn/go-runewidth v0.0.24 // indirect\n\tgithub.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect\n\tgithub.com/mgechev/revive v1.17.1 // indirect\n\tgithub.com/mitchellh/go-homedir v1.1.0 // indirect\n\tgithub.com/mitchellh/mapstructure v1.5.0 // indirect\n\tgithub.com/moricho/tparallel v0.3.2 // indirect\n\tgithub.com/muesli/cancelreader v0.2.2 // indirect\n\tgithub.com/nakabonne/nestif v0.3.1 // indirect\n\tgithub.com/nishanths/exhaustive v0.15.0 // indirect\n\tgithub.com/nishanths/predeclared v0.3.0 // indirect\n\tgithub.com/nunnatsa/ginkgolinter v0.24.0 // indirect\n\tgithub.com/pelletier/go-toml v1.9.5 // indirect\n\tgithub.com/pelletier/go-toml/v2 v2.4.3 // indirect\n\tgithub.com/prometheus/client_golang v1.12.1 // indirect\n\tgithub.com/prometheus/client_model v0.2.0 // indirect\n\tgithub.com/prometheus/common v0.32.1 // indirect\n\tgithub.com/prometheus/procfs v0.7.3 // indirect\n\tgithub.com/quasilyte/go-ruleguard v0.4.5 // indirect\n\tgithub.com/quasilyte/go-ruleguard/dsl v0.3.23 // indirect\n\tgithub.com/quasilyte/gogrep v0.5.0 // indirect\n\tgithub.com/quasilyte/regex/syntax v0.0.0-20210819130434-b3f0c404a727 // indirect\n\tgithub.com/quasilyte/stdinfo v0.0.0-20220114132959-f7386bf02567 // indirect\n\tgithub.com/raeperd/recvcheck v0.3.1 // indirect\n\tgithub.com/rivo/uniseg v0.4.7 // indirect\n\tgithub.com/rogpeppe/go-internal v1.16.0 // indirect\n\tgithub.com/ryancurrah/gomodguard v1.4.1 // indirect\n\tgithub.com/ryancurrah/gomodguard/v2 v2.1.3 // indirect\n\tgithub.com/ryanrolds/sqlclosecheck v0.6.0 // indirect\n\tgithub.com/sanposhiho/wastedassign/v2 v2.1.0 // indirect\n\tgithub.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect\n\tgithub.com/sashamelentyev/interfacebloat v1.1.0 // indirect\n\tgithub.com/sashamelentyev/usestdlibvars v1.29.0 // indirect\n\tgithub.com/securego/gosec/v2 v2.29.0 // indirect\n\tgithub.com/sirupsen/logrus v1.10.2 // indirect\n\tgithub.com/sivchari/containedctx v1.0.3 // indirect\n\tgithub.com/sonatard/noctx v0.5.1 // indirect\n\tgithub.com/sourcegraph/go-diff v0.9.0 // indirect\n\tgithub.com/spf13/afero v1.15.0 // indirect\n\tgithub.com/spf13/cast v1.5.0 // indirect\n\tgithub.com/spf13/cobra v1.10.2 // indirect\n\tgithub.com/spf13/jwalterweatherman v1.1.0 // indirect\n\tgithub.com/spf13/pflag v1.0.10 // indirect\n\tgithub.com/spf13/viper v1.12.0 // indirect\n\tgithub.com/ssgreg/nlreturn/v2 v2.2.1 // indirect\n\tgithub.com/stbenjam/no-sprintf-host-port v0.3.1 // indirect\n\tgithub.com/stretchr/objx v0.5.3 // indirect\n\tgithub.com/stretchr/testify v1.12.1 // indirect\n\tgithub.com/subosito/gotenv v1.4.1 // indirect\n\tgithub.com/tetafro/godot v1.5.6 // indirect\n\tgithub.com/timakin/bodyclose v0.0.0-20260723120731-857993a2939c // indirect\n\tgithub.com/timonwong/loggercheck v0.13.0 // indirect\n\tgithub.com/tomarrell/wrapcheck/v2 v2.13.0 // indirect\n\tgithub.com/tommy-muehle/go-mnd/v2 v2.5.1 // indirect\n\tgithub.com/ultraware/funlen v0.2.0 // indirect\n\tgithub.com/ultraware/whitespace v0.2.0 // indirect\n\tgithub.com/uudashr/gocognit v1.3.0 // indirect\n\tgithub.com/uudashr/iface v1.5.3 // indirect\n\tgithub.com/xen0n/gosmopolitan v1.3.0 // indirect\n\tgithub.com/xo/terminfo v1.0.0 // indirect\n\tgithub.com/yagipy/maintidx v1.0.0 // indirect\n\tgithub.com/yeya24/promlinter v0.3.0 // indirect\n\tgithub.com/ykadowak/zerologlint v0.1.5 // indirect\n\tgitlab.com/bosi/decorder v0.4.2 // indirect\n\tgo-simpler.org/musttag v0.14.0 // indirect\n\tgo-simpler.org/sloglint v0.12.0 // indirect\n\tgo.augendre.info/arangolint v0.4.0 // indirect\n\tgo.augendre.info/fatcontext v0.10.1 // indirect\n\tgo.uber.org/multierr v1.10.0 // indirect\n\tgo.uber.org/zap v1.27.0 // indirect\n\tgo.yaml.in/yaml/v3 v3.0.5 // indirect\n\tgolang.org/x/exp/typeparams v0.0.0-20260811152304-ee035b5b010f // indirect\n\tgolang.org/x/mod v0.42.0 // indirect\n\tgolang.org/x/sync v0.24.0 // indirect\n\tgolang.org/x/sys v0.49.0 // indirect\n\tgolang.org/x/text v0.41.0 // indirect\n\tgolang.org/x/tools v0.52.0 // indirect\n\tgoogle.golang.org/protobuf v1.36.12 // indirect\n\tgopkg.in/ini.v1 v1.67.0 // indirect\n\tgopkg.in/yaml.v2 v2.4.0 // indirect\n\tgopkg.in/yaml.v3 v3.0.1 // indirect\n\thonnef.co/go/tools v0.8.2 // indirect\n\tmvdan.cc/gofumpt v0.12.0 // indirect\n\tmvdan.cc/unparam v0.0.0-20260823230713-2fa3d841b0c8 // indirect\n)\n"
+        }
+      ],
+      "expect": "TOOL-04 golangci-lint\\.mod"
+    }
+  ]
+}
