@@ -1,0 +1,7 @@
+{
+  "command": [
+    "python3",
+    ".ci/verify.py"
+  ],
+  "pythonVersion": "3.14"
+}
