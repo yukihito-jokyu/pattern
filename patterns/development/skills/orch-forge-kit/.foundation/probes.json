@@ -1,0 +1,664 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "forge_kit にサブパッケージを作る",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/stages/__init__.py",
+          "mode": "create",
+          "content": "\"\"\"段のモジュールをまとめる。\"\"\"\n"
+        }
+      ],
+      "expect": "STR-01 "
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "表に無いモジュールを足す",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/cache.py",
+          "mode": "create",
+          "content": "\"\"\"計算の結果を覚える。\"\"\"\n\nfrom __future__ import annotations\n"
+        }
+      ],
+      "expect": "STR-02 "
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "level": "structure",
+      "description": "__init__.py で名前を再 export する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/__init__.py",
+          "mode": "append",
+          "content": "\n__all__ = [\"cli\"]\n"
+        }
+      ],
+      "expect": "STR-03 "
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "生成物のバンドルの決まりを手で書き足す",
+      "command": "make docs-check",
+      "files": [
+        {
+          "path": "kit/claude/skills/forge-build/references/bundle-rules.md",
+          "mode": "append",
+          "content": "\n手で足した行\n"
+        }
+      ],
+      "expect": "bundle-rules\\.md が古い"
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "採点役の tools に Agent を入れる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/agents/forge-grader.md",
+          "mode": "replace",
+          "content": "---\nname: forge-grader\ndescription: orch-forge の採点役。実行役の実行の記録・最後の返答・差分を、charter の判定項目ごとに判定し、grade.json を書く。forge-run スキルが status の job の行から起動する。それ以外の場面では使わない。\ntools: Read, Write, Glob, Grep, Agent\nomitClaudeMd: true\n---\n\nあなたは orch-forge の採点役です。ある実行の結果を、決められた判定項目ごとに「満たした / 満たしていない」で判定します。\n\n起動のメッセージには、プロンプトのファイルのパスが書かれています。最初にそのファイルを読み、書かれた指示だけに従ってください。\n\n- 根拠はプロンプトが示すファイルだけにする。根拠が見つからない項目は「満たしていない」にする\n- 判定項目に無い観点で減点しない。全体の印象で判定しない\n- grade.json の形と項目の順は、プロンプトのとおりにする。形が違うと集計で落ちる\n- 終えたら、プロンプトが示す1行だけを返す\n"
+        }
+      ],
+      "expect": "STR-05 kit/claude/agents/forge-grader\\.md"
+    },
+    {
+      "id": "STR-05-b",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "配布するスキルを自動で呼べるようにする",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/skills/forge-run/SKILL.md",
+          "mode": "replace",
+          "content": "---\nname: forge-run\ndescription: forge-goals で承認した charter に沿って、開発用のオーケストレーションスキルを claude -p で評価課題に使わせ、採点役が判定し、足りない指標の原因を分析役が調べて改善の候補を作り、人の採否を経てスキルを更新し、最後に報告を書く。「オーケストレーションスキルを評価して」「スキルの改善を回して」と言われたときに使う。\nallowed-tools: Bash(python3 .forge/forge.py *)\nargument-hint: \"<target-id>\"\n---\n\n# forge-run\n\nこのスキルは、承認済みの charter（ゴール・指標・評価課題）に沿って、対象のオーケストレーションスキルを良くする作業を進める。対象は、スキルとそのサブエージェントの組（バンドル）である。作業は次の順に流れる。\n\n1. **最初の評価**：評価用のリポジトリのコピーごとに、補助 CLI が `claude -p` を起動して、対象のスキルを評価課題で使わせる（この起動を実行役と呼ぶ）。実行の記録から、サブエージェントの起動・編集・検査の結果を集め、採点役が判定し、指標を計算する\n2. **改善のラウンド**：must の指標が足りなければ、分析役が原因を調べて候補のバンドルを直す。候補を同じ課題で評価し、今のバンドルと比べる。採るかは人が決める\n3. **最後の評価**：ホールドアウトの課題も含めて評価し、評価課題に合わせすぎていないかを確かめる\n4. **報告**：指標の推移、採った変更、人に判断してほしいことをまとめる\n\nどの段階にいて次に何をするかは、補助 CLI の `status` が決める。あなたは `status` の指示に従って、コマンドを実行するか、サブエージェントを起動するか、人に聞く。段階を自分で判断して飛ばさない。\n\n## 役割\n\n| 役 | 担い手 | 受け持つこと |\n|---|---|---|\n| 実行役 | 補助 CLI の `execute` が起動する `claude -p` | 評価用のコピーの中で、対象のスキルに従って評価課題を1つこなす |\n| 採点役 | サブエージェント `forge-grader` | 1つの実行の結果を、判定項目ごとに判定して grade.json を書く |\n| 分析役 | サブエージェント `forge-analyst` | 足りない指標の原因を調べ、候補のバンドルを直して proposal.json を書く |\n\nメインのセッション（あなた）は、補助 CLI の実行、サブエージェントの起動、人との対話だけを受け持つ。\n\n## 手順\n\n1. 引数で `target-id` を受け取る。無ければ `python3 .forge/forge.py targets` で作業領域の対象の一覧を出し、AskUserQuestion で選んでもらう\n2. `python3 .forge/forge.py status --target <id>` を実行する。`段階:` に `（forge-goals）` が付いていれば `/forge-goals` で charter を決めるよう、`（forge-build）` が付いていれば `/forge-build <id>` でスキルを作るよう伝えて終える\n3. 最初の評価がまだなら（`段階: 最初の評価の準備`）、下の「人に確かめること」の評価の開始に従う\n4. `status` の出力の `次:` の行に従う。終えたら `status` に戻る。下の「繰り返すこと」の表のとおりに進め、`段階: 完了` が出るまで繰り返す\n5. `段階: 完了` が出たら、`.forge/targets/<id>/report.md` を読み、下の「報告」の形で人に伝える\n\n### 繰り返すこと\n\n| 出力の行 | すること |\n|---|---|\n| `次: python3 .forge/forge.py execute ...` | Bash で `run_in_background` を true にして実行し、完了の知らせを待つ（実行役の全部が終わるまで、課題の数と charter の `executor.timeout_sec` に応じて長くかかる）。終わったら出力を読み、`その後:` のコマンドを実行する。途中で止まっても、同じコマンドで続きから回せる |\n| `次: python3 .forge/forge.py ...`（execute 以外） | そのまま Bash で実行する |\n| `次: 下の job をすべて Agent ツールで…` | 下の「サブエージェントの起動」に従い、続く `job` の行をすべて起動する。全員が終わったら `その後:` のコマンドを実行する |\n| `次: <proposal.md> の所見を人に見せる` | 所見の表を見せ、`その後:` のコマンドを実行する |\n| `次: <compare.md> と <proposal.md> を人に見せ、採用するかを聞く` | 下の「人に確かめること」の採否に従う |\n| `段階: 対象スキルがバンドルの決まりを満たしていない` | 続く問題の一覧を人に見せ、人がバンドルの決まりに沿って直すか、`/forge-build` で別の名前のスキルを作り直すかを決めてもらう。あなたはスキルを直さない |\n| 出力に `WARN` の行がある | 人に見せる |\n\n### サブエージェントの起動\n\n`job` の行は `job <エージェント名> <ラベル> <プロンプトのパス>` の形をしている。1行につき1回、Agent ツールを次の値で呼ぶ。\n\n| Agent ツールの引数 | 値 |\n|---|---|\n| `subagent_type` | `<エージェント名>`（`forge-grader` か `forge-analyst`） |\n| `description` | `<ラベル>` |\n| `prompt` | `次のファイルを読み、その指示に従ってください: <プロンプトのパス>` |\n\n- 同じ出力に並んだ `job` の行は、Agent ツールの呼び出しを1つのメッセージにまとめて起動する（並行に動かすため）\n- `run_in_background` は false にし、全員の完了を待ってから次へ進む\n- 返答は `完了: <パス>` の1行である。中身の確認は補助 CLI が行うので、返答を読んで判断しない\n- 採点役・分析役が書くべきファイルを、あなたが代わりに書かない。出力が無ければ、同じ `job` をもう一度起動する\n\n### エラーのとき\n\n補助 CLI が `エラー:` を出したら、内容で次のように扱う。\n\n| エラーの内容 | すること |\n|---|---|\n| 「上の実行の採点役を、同じプロンプトでもう一度起動してください」 | 挙がった実行の採点役を同じ `job` で起動し直してから、同じコマンドをやり直す |\n| 「分析役に、この問題を直すよう添えて…」 | 分析役を、`prompt` の末尾に `前回の問題: <問題の一覧>` を足して起動し直し、propose をやり直す。2回続けて落ちたら、人に見せて判断を仰ぐ |\n| 「charter が … 変わりました」「未承認」 | `/forge-goals` で charter を見直すよう伝えて止まる |\n| 「prepare からやり直してください」 | エラーの全文を人に見せ、評価の作業領域 `.forge/work/<id>/` の該当する置き場を消してよいかを AskUserQuestion で確かめる。消してよければ消してから `status` に戻る |\n| 「準備済み」「決定済み」 | `status` に戻る |\n\n## 人に確かめること\n\n- 評価の開始：`.forge/targets/<id>/charter.md` の「実行役の起動（上限）」と「費用の上限の見積もり」を見せ、AskUserQuestion で「始める（推奨）／止める」を聞く。既定: 人が答えられないときは始めない\n- 各ラウンドの採否：`compare.md` の指標の表と推奨の理由、`proposal.md` の変更の表とバンドルの差分、S6（評価の側の問題）の所見があればそれも見せる。そのうえで AskUserQuestion で「採用する／採用しない／ここで止める」を聞く。推奨が「採用」なら「採用する」を、「不採用」なら「採用しない」を先頭に置いて名前の末尾に `（推奨）` を付ける。採用なら `採用なら:` の、採用しないなら `不採用なら:` のコマンドを実行し、ここで止めるなら何も実行せずに終える（次に `/forge-run` を呼べば同じ場面から続く）。既定: 人が答えられないときは、何も実行せずに止まる\n- S6 の所見があり、人が charter を直すと決めたとき：採否を記録してから、`/forge-goals` で charter を見直すよう伝えて止まる。既定: 人が答えられないときは charter を変えずに続ける\n- `WARN` の行（評価の間に元のリポジトリが変わった、実行役が打ち切られた）と、上の表に無いエラー：内容を人に見せ、判断を仰ぐ。既定: 人が答えられないときは止まる\n\n## 報告\n\n最後の返答に、次の項目をこの順で書く。\n\n1. must の指標が最初と最後でどう変わったか（表）\n2. 採った変更の一覧\n3. report.md の「人に判断してほしいこと」の節の全項目\n4. report.md のパス\n\n## してはいけないこと\n\n- 対象のスキルとサブエージェントを、自分の判断で書き換えること。バンドルを変えるのは `decide --adopt` だけである\n- 採点・提案・比較のファイルを手で書き換えること\n- charter を書き換えること。charter を変えるときは `/forge-goals` に戻る\n- 人の答えを待たずに `decide` を実行すること\n- 実行役（`claude -p`）を、補助 CLI の `execute` を通さずに起動すること。権限と予算の条件がそろわなくなる\n"
+        }
+      ],
+      "expect": "STR-05 kit/claude/skills/forge-run/SKILL\\.md"
+    },
+    {
+      "id": "STR-06-a",
+      "rule": "STR-06",
+      "level": "structure",
+      "description": "バンドルの決まりの id を bundle.py の外に書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/building.py",
+          "mode": "append",
+          "content": "\nTODO_RULE = \"B10\"\n"
+        }
+      ],
+      "expect": "STR-06 "
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "段のモジュールが別の段のモジュールを import する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/compare.py",
+          "mode": "append",
+          "content": "\nfrom forge_kit import analyze\n"
+        }
+      ],
+      "expect": "DEP-01 "
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "level": "structure",
+      "description": "他のモジュールの _ で始まる名前を使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/compare.py",
+          "mode": "append",
+          "content": "\nGRADE_OK = workspace._grade_ok\n"
+        }
+      ],
+      "expect": "DEP-02 "
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "level": "structure",
+      "description": "標準ライブラリの表に無いものを import する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\nimport yaml\n"
+        }
+      ],
+      "expect": "DEP-03 "
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "level": "structure",
+      "description": "段のモジュールで subprocess を使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/score.py",
+          "mode": "append",
+          "content": "\nimport subprocess\n"
+        }
+      ],
+      "expect": "DEP-04 "
+    },
+    {
+      "id": "DEP-04-b",
+      "rule": "DEP-04",
+      "level": "lint",
+      "description": "段のモジュールで print する",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/score.py",
+          "mode": "append",
+          "content": "\n\ndef show(text: str) -> None:\n    print(text)\n"
+        }
+      ],
+      "expect": "T201"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "lint",
+      "description": "関数名を PascalCase にする",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/metrics.py",
+          "mode": "append",
+          "content": "\n\ndef MeanValue() -> None:\n    return None\n"
+        }
+      ],
+      "expect": "N802"
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "level": "structure",
+      "description": "語彙表の動詞と同じ意味の別名で関数を足す",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/workspace.py",
+          "mode": "append",
+          "content": "\n\ndef get_scores(where: Layout, slot: Slot) -> contracts.Scores:\n    return load_scores(where, slot)\n"
+        }
+      ],
+      "expect": "NAM-02 "
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "JSON のキーを camelCase にする",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/contracts.py",
+          "mode": "append",
+          "content": "\n\ndef parse_run_id(data: dict[str, object], problems: list[str]) -> str:\n    return shape.text(data, \"runId\", \"\", problems)\n"
+        }
+      ],
+      "expect": "NAM-03 "
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "structure",
+      "description": "frozen でないクラスを作る",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\n\nclass Box:\n    value: int = 0\n"
+        }
+      ],
+      "expect": "CODE-01 "
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "lint",
+      "description": "相対 import を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\nfrom . import metrics\n"
+        }
+      ],
+      "expect": "TID252"
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "level": "type",
+      "description": "型注釈の無い関数を書く",
+      "command": "make typecheck",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/metrics.py",
+          "mode": "append",
+          "content": "\n\ndef double(value):\n    return value * 2\n"
+        }
+      ],
+      "expect": "no-untyped-def|missing a type annotation"
+    },
+    {
+      "id": "CODE-03-b",
+      "rule": "CODE-03",
+      "level": "lint",
+      "description": "Optional で省略可能な値を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/metrics.py",
+          "mode": "append",
+          "content": "\nimport typing\n\n\ndef first(values: list[float]) -> typing.Optional[float]:\n    return values[0] if values else None\n"
+        }
+      ],
+      "expect": "UP045"
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "level": "lint",
+      "description": "引数が7つの関数を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/metrics.py",
+          "mode": "append",
+          "content": "\n\ndef total(a: int, b: int, c: int, d: int, e: int, f: int, g: int) -> int:\n    return a + b + c + d + e + f + g\n"
+        }
+      ],
+      "expect": "PLR0913"
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "docstring の無いモジュールを書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "scripts/helper.py",
+          "mode": "create",
+          "content": "from __future__ import annotations\n\nVALUE = 1\n"
+        }
+      ],
+      "expect": "D100"
+    },
+    {
+      "id": "CODE-05-b",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "コメントアウトしたコードを残す",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\n# value = number(1.0)\n"
+        }
+      ],
+      "expect": "ERA001"
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "level": "structure",
+      "description": "ファイル名の文字列を layout.py の外に書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/score.py",
+          "mode": "append",
+          "content": "\nSCORES = \"scores.json\"\n"
+        }
+      ],
+      "expect": "CODE-06 "
+    },
+    {
+      "id": "CODE-06-b",
+      "rule": "CODE-06",
+      "level": "structure",
+      "description": "ファイル名の定数を layout.py の外でつなぐ",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/building.py",
+          "mode": "append",
+          "content": "\n\ndef scores_md(where: layout.Layout, slot: layout.Slot) -> str:\n    return str(where.slot_dir(slot) / layout.SCORES_MD)\n"
+        }
+      ],
+      "expect": "CODE-06 "
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "errors.py に無い例外を投げる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/compare.py",
+          "mode": "append",
+          "content": "\n\ndef fail() -> None:\n    raise ValueError(\"比べられない\")\n"
+        }
+      ],
+      "expect": "ERR-01 "
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "level": "lint",
+      "description": "Exception を捕まえる",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/compare.py",
+          "mode": "append",
+          "content": "\n\ndef safe(where: Layout) -> str:\n    try:\n        return compare(where, 1)\n    except Exception:\n        return \"\"\n"
+        }
+      ],
+      "expect": "BLE001"
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "level": "structure",
+      "description": "workspace の外で JSON を読む",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/report.py",
+          "mode": "append",
+          "content": "\n\ndef raw(where: Layout) -> object:\n    return fsops.read_json(where.charter_path)\n"
+        }
+      ],
+      "expect": "ERR-02 "
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "level": "test",
+      "description": "ひな形に表に無い置き換えの名前を足す",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.forge/templates/prompts/grader.md",
+          "mode": "append",
+          "content": "\n補足: ${extra}\n"
+        }
+      ],
+      "expect": "test_every_template_matches_table"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "structure",
+      "description": "proc.py の外で threading を使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/collect.py",
+          "mode": "append",
+          "content": "\nimport threading\n"
+        }
+      ],
+      "expect": "ASYNC-01 "
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "structure",
+      "description": "cli.py の外で標準出力に書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/status.py",
+          "mode": "append",
+          "content": "\nimport sys\n\n\ndef show(text: str) -> None:\n    sys.stdout.write(text)\n"
+        }
+      ],
+      "expect": "OPS-01 "
+    },
+    {
+      "id": "OPS-01-b",
+      "rule": "OPS-01",
+      "level": "test",
+      "description": "status に新しい種類の行を足す",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/status.py",
+          "mode": "replace",
+          "content": "\"\"\"作業領域のファイルから今の段階を求め、次に実行するコマンドか、起動するサブエージェントか、人に聞くことを示す。\"\"\"\n\nfrom __future__ import annotations\n\nfrom forge_kit import bundle, charter, contracts, render, workspace\nfrom forge_kit.errors import InvalidFileError\nfrom forge_kit.layout import Layout\n\nCLI = \"python3 .forge/forge.py\"\nGOALS = \"（forge-goals）\"\nBUILD = \"（forge-build）\"\nRUN = \"（forge-run）\"\n# status の行の書き出し。スキルはこの書き出しで行を読み分けるので、新しい種類を足さない（OPS-01）\nLINE_KINDS = (\n    \"対象:\",\n    \"段階:\",\n    \"改善のラウンド:\",\n    \"次:\",\n    \"その後:\",\n    \"問題が出たら:\",\n    \"承認なら:\",\n    \"直すなら:\",\n    \"採用なら:\",\n    \"不採用なら:\",\n    \"job \",\n)\nLAUNCH = \"次: 下の job をすべて Agent ツールで1つのメッセージにまとめて起動し、全員の完了を待つ\"\n\n\ndef _command(name: str, where: Layout, extra: str = \"\") -> str:\n    return f\"{CLI} {name} --target {where.target}{extra}\"\n\n\ndef _build_steps(where: Layout, progress: workspace.BuildProgress) -> list[str]:\n    if not progress.designer_prompted:\n        return [f\"段階: 設計の準備{BUILD}\", f\"次: {_command('design-new', where)}\"]\n    if not progress.designed:\n        return [\n            f\"段階: 設計役の作業{BUILD}\",\n            LAUNCH,\n            render.job(contracts.AGENTS[\"designer\"], \"design\", str(where.designer_prompt_path)),\n            f\"その後: {_command('design-check', where)}\",\n        ]\n    if not progress.design_checked:\n        return [\n            f\"段階: 設計の検査{BUILD}\",\n            f\"次: {_command('design-check', where)}\",\n            \"問題が出たら: 問題の一覧を添えて設計役をもう一度起動し、終わったら design-check をやり直す\",\n        ]\n    if progress.design_state != \"approved\":\n        return [\n            f\"段階: 設計の確認（人が決める）{BUILD}\",\n            f\"次: {where.design_md_path} を人に見せ、承認するかを聞く\",\n            f\"承認なら: {_command('design-approve', where)}\",\n            \"直すなら: \" + _command(\"design-new\", where, \" --feedback '<直してほしいこと>'\"),\n        ]\n    return _draft_steps(where, progress)\n\n\ndef _draft_steps(where: Layout, progress: workspace.BuildProgress) -> list[str]:\n    if not progress.builder_prompted:\n        return [f\"段階: 構築の準備{BUILD}\", f\"次: {_command('build', where)}\"]\n    if not progress.bundle_checked:\n        return [\n            f\"段階: 構築役の作業{BUILD}\",\n            LAUNCH,\n            render.job(contracts.AGENTS[\"builder\"], \"build\", str(where.builder_prompt_path)),\n            f\"その後: {_command('bundle-check', where)}\",\n            \"問題が出たら: 問題の一覧を添えて構築役をもう一度起動し、終わったら bundle-check をやり直す\",\n        ]\n    return [\n        f\"段階: 下書きの確認（人が決める）{BUILD}\",\n        f\"次: {where.bundle_check_md_path} と {where.draft_dir} の下書きを人に見せ、入れるかを聞く\",\n        f\"承認なら: {_command('install', where)}\",\n        \"直すなら: \" + _command(\"build\", where, \" --feedback '<直してほしいこと>'\"),\n    ]\n\n\ndef _slot_args(slot: workspace.SlotProgress) -> str:\n    if slot.slot.variant == \"final\":\n        return \" --variant final\"\n    return f\" --variant {slot.slot.variant} --round {slot.slot.round_no}\"\n\n\ndef _slot_steps(where: Layout, slot: workspace.SlotProgress, label: str) -> list[str]:\n    \"\"\"1回の評価の次の手。評価が採点まで終わっていれば空。\"\"\"\n    args = _slot_args(slot)\n    if not slot.planned:\n        return [f\"段階: {label}の準備{RUN}\", f\"次: {_command('prepare', where, args)}\"]\n    if slot.pending_runs:\n        return [\n            f\"段階: {label}の実行（未実行 {len(slot.pending_runs)} 件）{RUN}\",\n            f\"次: {_command('execute', where, args)}\",\n            f\"その後: {_command('collect', where, args)}\",\n        ]\n    if not slot.collected:\n        return [f\"段階: {label}の集計の準備{RUN}\", f\"次: {_command('collect', where, args)}\"]\n    if slot.pending_grades:\n        jobs = [\n            render.job(contracts.AGENTS[\"grader\"], run.run_id, str(where.grader_prompt_path(slot.slot, run.run_id)))\n            for run in slot.pending_grades\n        ]\n        return [\n            f\"段階: {label}の採点（採点が無い実行 {len(jobs)} 件）{RUN}\",\n            LAUNCH,\n            *jobs,\n            f\"その後: {_command('score', where, args)}\",\n        ]\n    if not slot.scored:\n        return [f\"段階: {label}の集計{RUN}\", f\"次: {_command('score', where, args)}\"]\n    return []\n\n\ndef _round_steps(where: Layout, item: workspace.RoundProgress) -> list[str]:\n    number = item.round_no\n    label = f\"{number} 回目の改善\"\n    round_arg = f\" --round {number}\"\n    if not item.proposed:\n        return [\n            f\"段階: {label}の分析{RUN}\",\n            LAUNCH,\n            render.job(contracts.AGENTS[\"analyst\"], f\"round-{number}\", str(where.analyst_prompt_path(number))),\n            f\"その後: {_command('propose', where, round_arg)}\",\n        ]\n    if not item.checked:\n        return [\n            f\"段階: {label}の提案の検査{RUN}\",\n            f\"次: {_command('propose', where, round_arg)}\",\n            \"問題が出たら: 問題の一覧を添えて分析役をもう一度起動し、終わったら propose をやり直す\",\n        ]\n    if not item.has_changes:\n        return [\n            f\"段階: {label}（バンドルの変更が無い提案）{RUN}\",\n            f\"次: {where.proposal_md_path(number)} の所見を人に見せる\",\n            f\"その後: {_command('decide', where, round_arg + ' --reject')}\",\n        ]\n    steps = _slot_steps(where, item.candidate, f\"{label}の候補の評価\")\n    if steps:\n        return steps\n    if not item.compared:\n        return [f\"段階: {label}の比較{RUN}\", f\"次: {_command('compare', where, round_arg)}\"]\n    return [\n        f\"段階: {label}の採否（人が決める）{RUN}\",\n        f\"次: {where.compare_md_path(number)} と {where.proposal_md_path(number)} を人に見せ、採用するかを聞く\",\n        f\"採用なら: {_command('decide', where, round_arg + ' --adopt')}\",\n        f\"不採用なら: {_command('decide', where, round_arg + ' --reject')}\",\n    ]\n\n\ndef _run_steps(where: Layout, model: charter.Charter, progress: workspace.Progress) -> list[str]:\n    steps = _slot_steps(where, progress.baseline, \"最初の評価\")\n    if steps:\n        return steps\n    open_round = next((item for item in progress.rounds if item.decision is None), None)\n    if open_round is not None:\n        return _round_steps(where, open_round)\n    current = workspace.load_scores(where, progress.current_slot)\n    if not current.all_must_met and progress.decided_rounds < model.budget.max_rounds:\n        number = progress.decided_rounds + 1\n        return [f\"段階: {number} 回目の改善の準備{RUN}\", f\"次: {_command('analyze', where, f' --round {number}')}\"]\n    steps = _slot_steps(where, progress.final, \"最後の評価（ホールドアウトを含む）\")\n    if steps:\n        return steps\n    if not progress.reported:\n        return [f\"段階: 報告{RUN}\", f\"次: {_command('report', where)}\"]\n    return [f\"段階: 完了{RUN}\", f\"次: {where.report_path} を人に見せる\"]\n\n\ndef _evaluation(where: Layout, model: charter.Charter) -> list[str]:\n    problems = bundle.check(where.claude_dir, model.target.skill_name)\n    if problems:\n        return [\n            f\"段階: 対象スキルがバンドルの決まりを満たしていない{RUN}\",\n            *[f\"  - {problem}\" for problem in problems],\n            f\"次: 問題を人に見せ、{where.bundle_rules_path} に沿って直すかを相談する\",\n        ]\n    progress = workspace.progress(where, model)\n    rounds = f\"改善のラウンド: {progress.decided_rounds} / {model.budget.max_rounds} 回が決定済み\"\n    return [rounds, \"メモ: 新しい種類の行\", *_run_steps(where, model, progress)]\n\n\ndef status(where: Layout) -> str:\n    if not where.charter_path.is_file():\n        return \"\\n\".join([f\"段階: charter が無い{GOALS}\", \"次: /forge-goals で、人とゴール・指標・評価課題を決める\"])\n    try:\n        data, model = workspace.load_charter(where)\n    except InvalidFileError as exc:\n        return \"\\n\".join([f\"段階: charter に問題がある{GOALS}\", exc.message, \"次: /forge-goals で直す\"])\n    header = f\"対象: {model.target.id}（スキル {model.target.skill_name}）\"\n    state = charter.approval_state(data, model)\n    if state != \"approved\":\n        reason = \"未承認\" if state == \"unapproved\" else \"承認の後に変更された\"\n        return \"\\n\".join([header, f\"段階: charter が{reason}{GOALS}\", \"次: /forge-goals で人に確かめ、承認を記録する\"])\n    if not workspace.has_skill(where, model):\n        return \"\\n\".join([header, *_build_steps(where, workspace.build_progress(where, model))])\n    return \"\\n\".join([header, *_evaluation(where, model)])\n"
+        }
+      ],
+      "expect": "メモ: 新しい種類の行"
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "環境変数から設定を読む",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/execute.py",
+          "mode": "append",
+          "content": "\nimport os\n\nMODEL = os.environ.get(\"FORGE_MODEL\", \"\")\n"
+        }
+      ],
+      "expect": "OPS-02 "
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "level": "structure",
+      "description": "段の入口で承認を確かめずに charter を読む",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/compare.py",
+          "mode": "replace",
+          "content": "\"\"\"今のバンドルと候補（提案を入れたバンドル）の採点を比べ、採用するかの推奨を決める。決めるのは人である。\"\"\"\n\nfrom __future__ import annotations\n\nfrom collections.abc import Sequence\n\nfrom forge_kit import contracts, fsops, metrics, render, workspace\nfrom forge_kit.errors import StageError\nfrom forge_kit.layout import Layout\n\nNAMES = {\"adopt\": \"採用\", \"reject\": \"不採用\"}\nCHANGE_NAMES = {\"better\": \"改善\", \"worse\": \"悪化\", \"same\": \"同じ\", \"unknown\": \"比べられない\"}\n\n\ndef compare_rows(baseline: contracts.Scores, candidate: contracts.Scores) -> tuple[contracts.CompareRow, ...]:\n    before = {score.id: score.value for score in baseline.metrics}\n    return tuple(\n        contracts.CompareRow(\n            id=score.id,\n            name=score.name,\n            priority=score.priority,\n            direction=score.direction,\n            threshold=score.threshold,\n            baseline=before.get(score.id),\n            candidate=score.value,\n            change=metrics.change_of(before.get(score.id), score.value, score.direction),\n            candidate_met=score.met,\n        )\n        for score in candidate.metrics\n    )\n\n\ndef recommend(rows: Sequence[contracts.CompareRow]) -> tuple[str, tuple[str, ...]]:\n    \"\"\"推奨の決定表: must の悪化があれば不採用、無くてどれかが改善すれば採用、どれも変わらなければ不採用。\"\"\"\n    worse = [row for row in rows if row.priority == \"must\" and row.change == \"worse\"]\n    better = [row for row in rows if row.change == \"better\"]\n    unmet = [f\"{row.id} は閾値に未達（{render.number(row.candidate)}）\" for row in rows if not row.candidate_met]\n    if worse:\n        return \"reject\", tuple(f\"must の {r.id} が悪化（{_pair(r)}）\" for r in worse)\n    if better:\n        return \"adopt\", tuple(f\"{r.id} が改善（{_pair(r)}）\" for r in better) + tuple(unmet)\n    return \"reject\", (\"どの指標も変わらなかった\", *unmet)\n\n\ndef _pair(row: contracts.CompareRow) -> str:\n    return f\"{render.number(row.baseline)} → {render.number(row.candidate)}\"\n\n\ndef compare(where: Layout, round_no: int) -> str:\n    _data, model = workspace.load_charter(where)\n    progress = workspace.progress(where, model)\n    current = next((item for item in progress.rounds if item.round_no == round_no), None)\n    if current is None or current.decision is not None or not current.candidate.scored:\n        raise StageError(f\"{round_no} 回目は比べられる段階ではありません。status で次にすることを確かめてください\")\n    baseline = workspace.load_scores(where, progress.current_slot)\n    candidate = workspace.load_scores(where, current.candidate.slot)\n    rows = compare_rows(baseline, candidate)\n    recommendation, reasons = recommend(rows)\n    comparison = contracts.Comparison(round_no, baseline.slot, candidate.slot, rows, recommendation, reasons)\n    fsops.write_json(where.compare_path(round_no), contracts.to_data(comparison))\n    fsops.write_text(\n        where.compare_md_path(round_no), render_comparison(comparison, str(where.proposal_md_path(round_no)))\n    )\n    return \"\\n\".join([f\"比べました: {round_no} 回目（推奨: {NAMES[recommendation]}）\", table(rows)])\n\n\ndef table(rows: Sequence[contracts.CompareRow]) -> str:\n    return render.table(\n        [\"id\", \"名前\", \"優先度\", \"今\", \"候補\", \"変化\", \"閾値\", \"候補の判定\"],\n        [\n            [\n                r.id,\n                r.name,\n                r.priority,\n                render.number(r.baseline),\n                render.number(r.candidate),\n                CHANGE_NAMES[r.change],\n                render.number(r.threshold),\n                render.mark(r.candidate_met),\n            ]\n            for r in rows\n        ],\n    )\n\n\ndef render_comparison(comparison: contracts.Comparison, proposal_md: str) -> str:\n    parts = [\n        f\"# {comparison.round_no} 回目の比較\",\n        \"\",\n        f\"- 今のバンドルの採点: {comparison.baseline_slot}\",\n        f\"- 候補の採点: {comparison.candidate_slot}\",\n        f\"- 提案の内容と差分: `{proposal_md}`\",\n        f\"- 推奨: {NAMES[comparison.recommendation]}（採用するかは人が決める）\",\n        \"\",\n        \"## 推奨の理由\",\n        \"\",\n        render.bullets(comparison.reasons),\n        \"\",\n        \"## 指標\",\n        \"\",\n        table(comparison.rows),\n    ]\n    return \"\\n\".join(parts) + \"\\n\"\n"
+        }
+      ],
+      "expect": "OPS-04 "
+    },
+    {
+      "id": "OPS-04-b",
+      "rule": "OPS-04",
+      "level": "structure",
+      "description": "分析の段から .claude/ のバンドルを置き換える",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/analyze.py",
+          "mode": "append",
+          "content": "\n\ndef apply(where: Layout, name: str) -> None:\n    bundle.place(where, name, where.proposed_dir(1))\n"
+        }
+      ],
+      "expect": "OPS-04 "
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "level": "structure",
+      "description": "execute.py の外で claude -p の引数を組み立てる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/collect.py",
+          "mode": "append",
+          "content": "\nARGS = (\"claude\", \"-p\", \"依頼\")\n"
+        }
+      ],
+      "expect": "OPS-05 "
+    },
+    {
+      "id": "OPS-05-b",
+      "rule": "OPS-05",
+      "level": "test",
+      "description": "実行役の引数からセッションを残さない指定を外す",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/execute.py",
+          "mode": "replace",
+          "content": "\"\"\"評価用のコピーごとに実行役（claude -p）を起動し、実行の記録を保存する。\n\n引数はこのモジュールの command だけで組み立てる。\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\nfrom forge_kit import charter, contracts, fsops, proc, workspace\nfrom forge_kit.errors import StageError\nfrom forge_kit.layout import Layout, Slot\n\nCLAUDE = \"claude\"\n\n\ndef command(executor: charter.Executor, prompt: str, system_path: Path) -> list[str]:\n    \"\"\"実行役の引数（OPS-05）。権限は acceptEdits と charter の allowed_tools だけに限り、人に聞く道具を外す。\"\"\"\n    args = [\n        CLAUDE,\n        \"-p\",\n        prompt,\n        \"--output-format\",\n        \"stream-json\",\n        \"--verbose\",\n        \"--permission-mode\",\n        \"acceptEdits\",\n        \"--permission-prompts\",\n        \"none\",\n        \"--max-budget-usd\",\n        str(executor.max_budget_usd),\n        \"--append-system-prompt-file\",\n        str(system_path),\n    ]\n    if executor.model:\n        args += [\"--model\", executor.model]\n    if executor.allowed_tools:\n        args += [\"--allowedTools\", *executor.allowed_tools]\n    return args\n\n\ndef _execute_run(\n    where: Layout, model: charter.Charter, slot: Slot, run: contracts.Run, launcher: proc.Launcher\n) -> contracts.Execution:\n    prompt = fsops.read_text(where.prompt_path(slot, run.run_id)).strip()\n    args = command(model.executor, prompt, where.system_path(slot, run.run_id))\n    launched = launcher(args, where.copy_dir(slot, run.run_id), model.executor.timeout_sec)\n    fsops.write_text(where.stream_path(slot, run.run_id), launched.stdout)\n    fsops.write_text(where.stderr_path(slot, run.run_id), launched.stderr)\n    execution = contracts.Execution(run.run_id, launched.exit_code, launched.timed_out)\n    fsops.write_json(where.exec_path(slot, run.run_id), contracts.to_data(execution))\n    return execution\n\n\ndef execute(where: Layout, slot: Slot, launcher: proc.Launcher) -> str:\n    \"\"\"まだ実行していない実行役を、charter の executor.parallel の数だけ並行に起動する。止まっても続きから回せる。\"\"\"\n    model, sha = workspace.approved_charter(where)\n    plan = workspace.load_plan(where, slot)\n    if plan.charter_sha256 != sha:\n        raise StageError(\n            f\"charter が {slot.name} の準備の後に変わりました。作業領域を消して prepare からやり直してください\"\n        )\n    pending = [run for run in plan.runs if not where.exec_path(slot, run.run_id).is_file()]\n    for run in pending:\n        if not where.copy_dir(slot, run.run_id).is_dir():\n            raise StageError(\n                f\"{run.run_id} の評価用のコピーがありません（OS が消した可能性）。prepare からやり直してください\"\n            )\n    results = proc.launch_many(\n        pending, model.executor.parallel, lambda run: _execute_run(where, model, slot, run, launcher)\n    )\n    lines = [f\"実行しました: {slot.name}（今回 {len(results)} 件、済み {len(plan.runs) - len(pending)} 件）\"]\n    for execution in results:\n        if execution.timed_out:\n            lines.append(f\"WARN {execution.run_id} は {model.executor.timeout_sec} 秒で打ち切りました\")\n        elif execution.exit_code != 0:\n            lines.append(\n                f\"WARN {execution.run_id} は終了コード {execution.exit_code} で終わりました（stderr.txt を見る）\"\n            )\n    return \"\\n\".join(lines)\n"
+        }
+      ],
+      "expect": "test_command"
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "level": "structure",
+      "description": "対応するモジュールの無いテストを置く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "tests/test_misc.py",
+          "mode": "create",
+          "content": "\"\"\"雑多なテスト。\"\"\"\n\nfrom __future__ import annotations\n\nimport unittest\n\n\nclass MiscTest(unittest.TestCase):\n    def test_one(self) -> None:\n        self.assertTrue(True)\n"
+        }
+      ],
+      "expect": "TEST-01 "
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "level": "structure",
+      "description": "テストでモックを使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "tests/test_render.py",
+          "mode": "append",
+          "content": "\nfrom unittest import mock\n"
+        }
+      ],
+      "expect": "TEST-02 "
+    },
+    {
+      "id": "PROC-07-a",
+      "rule": "PROC-07",
+      "level": "structure",
+      "description": "スキルから人に確かめる節を消す",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/skills/forge-run/SKILL.md",
+          "mode": "replace",
+          "content": "---\nname: forge-run\ndescription: forge-goals で承認した charter に沿って、開発用のオーケストレーションスキルを claude -p で評価課題に使わせ、採点役が判定し、足りない指標の原因を分析役が調べて改善の候補を作り、人の採否を経てスキルを更新し、最後に報告を書く。「オーケストレーションスキルを評価して」「スキルの改善を回して」と言われたときに使う。\ndisable-model-invocation: true\nallowed-tools: Bash(python3 .forge/forge.py *)\nargument-hint: \"<target-id>\"\n---\n\n# forge-run\n\nこのスキルは、承認済みの charter（ゴール・指標・評価課題）に沿って、対象のオーケストレーションスキルを良くする作業を進める。対象は、スキルとそのサブエージェントの組（バンドル）である。作業は次の順に流れる。\n\n1. **最初の評価**：評価用のリポジトリのコピーごとに、補助 CLI が `claude -p` を起動して、対象のスキルを評価課題で使わせる（この起動を実行役と呼ぶ）。実行の記録から、サブエージェントの起動・編集・検査の結果を集め、採点役が判定し、指標を計算する\n2. **改善のラウンド**：must の指標が足りなければ、分析役が原因を調べて候補のバンドルを直す。候補を同じ課題で評価し、今のバンドルと比べる。採るかは人が決める\n3. **最後の評価**：ホールドアウトの課題も含めて評価し、評価課題に合わせすぎていないかを確かめる\n4. **報告**：指標の推移、採った変更、人に判断してほしいことをまとめる\n\nどの段階にいて次に何をするかは、補助 CLI の `status` が決める。あなたは `status` の指示に従って、コマンドを実行するか、サブエージェントを起動するか、人に聞く。段階を自分で判断して飛ばさない。\n\n## 役割\n\n| 役 | 担い手 | 受け持つこと |\n|---|---|---|\n| 実行役 | 補助 CLI の `execute` が起動する `claude -p` | 評価用のコピーの中で、対象のスキルに従って評価課題を1つこなす |\n| 採点役 | サブエージェント `forge-grader` | 1つの実行の結果を、判定項目ごとに判定して grade.json を書く |\n| 分析役 | サブエージェント `forge-analyst` | 足りない指標の原因を調べ、候補のバンドルを直して proposal.json を書く |\n\nメインのセッション（あなた）は、補助 CLI の実行、サブエージェントの起動、人との対話だけを受け持つ。\n\n## 手順\n\n1. 引数で `target-id` を受け取る。無ければ `python3 .forge/forge.py targets` で作業領域の対象の一覧を出し、AskUserQuestion で選んでもらう\n2. `python3 .forge/forge.py status --target <id>` を実行する。`段階:` に `（forge-goals）` が付いていれば `/forge-goals` で charter を決めるよう、`（forge-build）` が付いていれば `/forge-build <id>` でスキルを作るよう伝えて終える\n3. 最初の評価がまだなら（`段階: 最初の評価の準備`）、下の「人に確かめること」の評価の開始に従う\n4. `status` の出力の `次:` の行に従う。終えたら `status` に戻る。下の「繰り返すこと」の表のとおりに進め、`段階: 完了` が出るまで繰り返す\n5. `段階: 完了` が出たら、`.forge/targets/<id>/report.md` を読み、下の「報告」の形で人に伝える\n\n### 繰り返すこと\n\n| 出力の行 | すること |\n|---|---|\n| `次: python3 .forge/forge.py execute ...` | Bash で `run_in_background` を true にして実行し、完了の知らせを待つ（実行役の全部が終わるまで、課題の数と charter の `executor.timeout_sec` に応じて長くかかる）。終わったら出力を読み、`その後:` のコマンドを実行する。途中で止まっても、同じコマンドで続きから回せる |\n| `次: python3 .forge/forge.py ...`（execute 以外） | そのまま Bash で実行する |\n| `次: 下の job をすべて Agent ツールで…` | 下の「サブエージェントの起動」に従い、続く `job` の行をすべて起動する。全員が終わったら `その後:` のコマンドを実行する |\n| `次: <proposal.md> の所見を人に見せる` | 所見の表を見せ、`その後:` のコマンドを実行する |\n| `次: <compare.md> と <proposal.md> を人に見せ、採用するかを聞く` | 下の「人に確かめること」の採否に従う |\n| `段階: 対象スキルがバンドルの決まりを満たしていない` | 続く問題の一覧を人に見せ、人がバンドルの決まりに沿って直すか、`/forge-build` で別の名前のスキルを作り直すかを決めてもらう。あなたはスキルを直さない |\n| 出力に `WARN` の行がある | 人に見せる |\n\n### サブエージェントの起動\n\n`job` の行は `job <エージェント名> <ラベル> <プロンプトのパス>` の形をしている。1行につき1回、Agent ツールを次の値で呼ぶ。\n\n| Agent ツールの引数 | 値 |\n|---|---|\n| `subagent_type` | `<エージェント名>`（`forge-grader` か `forge-analyst`） |\n| `description` | `<ラベル>` |\n| `prompt` | `次のファイルを読み、その指示に従ってください: <プロンプトのパス>` |\n\n- 同じ出力に並んだ `job` の行は、Agent ツールの呼び出しを1つのメッセージにまとめて起動する（並行に動かすため）\n- `run_in_background` は false にし、全員の完了を待ってから次へ進む\n- 返答は `完了: <パス>` の1行である。中身の確認は補助 CLI が行うので、返答を読んで判断しない\n- 採点役・分析役が書くべきファイルを、あなたが代わりに書かない。出力が無ければ、同じ `job` をもう一度起動する\n\n### エラーのとき\n\n補助 CLI が `エラー:` を出したら、内容で次のように扱う。\n\n| エラーの内容 | すること |\n|---|---|\n| 「上の実行の採点役を、同じプロンプトでもう一度起動してください」 | 挙がった実行の採点役を同じ `job` で起動し直してから、同じコマンドをやり直す |\n| 「分析役に、この問題を直すよう添えて…」 | 分析役を、`prompt` の末尾に `前回の問題: <問題の一覧>` を足して起動し直し、propose をやり直す。2回続けて落ちたら、人に見せて判断を仰ぐ |\n| 「charter が … 変わりました」「未承認」 | `/forge-goals` で charter を見直すよう伝えて止まる |\n| 「prepare からやり直してください」 | エラーの全文を人に見せ、評価の作業領域 `.forge/work/<id>/` の該当する置き場を消してよいかを AskUserQuestion で確かめる。消してよければ消してから `status` に戻る |\n| 「準備済み」「決定済み」 | `status` に戻る |\n\n## 確かめること\n\n- 評価の開始：`.forge/targets/<id>/charter.md` の「実行役の起動（上限）」と「費用の上限の見積もり」を見せ、AskUserQuestion で「始める（推奨）／止める」を聞く。既定: 人が答えられないときは始めない\n- 各ラウンドの採否：`compare.md` の指標の表と推奨の理由、`proposal.md` の変更の表とバンドルの差分、S6（評価の側の問題）の所見があればそれも見せる。そのうえで AskUserQuestion で「採用する／採用しない／ここで止める」を聞く。推奨が「採用」なら「採用する」を、「不採用」なら「採用しない」を先頭に置いて名前の末尾に `（推奨）` を付ける。採用なら `採用なら:` の、採用しないなら `不採用なら:` のコマンドを実行し、ここで止めるなら何も実行せずに終える（次に `/forge-run` を呼べば同じ場面から続く）。既定: 人が答えられないときは、何も実行せずに止まる\n- S6 の所見があり、人が charter を直すと決めたとき：採否を記録してから、`/forge-goals` で charter を見直すよう伝えて止まる。既定: 人が答えられないときは charter を変えずに続ける\n- `WARN` の行（評価の間に元のリポジトリが変わった、実行役が打ち切られた）と、上の表に無いエラー：内容を人に見せ、判断を仰ぐ。既定: 人が答えられないときは止まる\n\n## 報告\n\n最後の返答に、次の項目をこの順で書く。\n\n1. must の指標が最初と最後でどう変わったか（表）\n2. 採った変更の一覧\n3. report.md の「人に判断してほしいこと」の節の全項目\n4. report.md のパス\n\n## してはいけないこと\n\n- 対象のスキルとサブエージェントを、自分の判断で書き換えること。バンドルを変えるのは `decide --adopt` だけである\n- 採点・提案・比較のファイルを手で書き換えること\n- charter を書き換えること。charter を変えるときは `/forge-goals` に戻る\n- 人の答えを待たずに `decide` を実行すること\n- 実行役（`claude -p`）を、補助 CLI の `execute` を通さずに起動すること。権限と予算の条件がそろわなくなる\n"
+        }
+      ],
+      "expect": "PROC-07 "
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "format",
+      "description": "整形していないコードを書く",
+      "command": "make format-check",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\nVALUE=1\n"
+        }
+      ],
+      "expect": "would be reformatted"
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "抑止コメントを書く",
+      "command": "make guard",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\n\nVALUE = 1  # pragma: no cover\n"
+        }
+      ],
+      "expect": "TOOL-03"
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "level": "type",
+      "description": "Python 3.10 の match 文を書く",
+      "command": "make typecheck",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef kind(value: int) -> str:\n    match value:\n        case 0:\n            return \"zero\"\n    return \"other\"\n"
+        }
+      ],
+      "expect": "Python 3\\.10"
+    },
+    {
+      "id": "STR-06-b",
+      "rule": "STR-06",
+      "level": "test",
+      "description": "バンドルの決まりを足し、test_<id> を足さない",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/bundle.py",
+          "mode": "append",
+          "content": "\nRULES = (*RULES, Rule(\"B14\", \"決まりを足した。\", _no_todo))\n"
+        }
+      ],
+      "expect": "test_every_rule_has_test"
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "level": "test",
+      "description": "指標をカタログに足し、計算を足さない",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.forge/forge_kit/catalog.py",
+          "mode": "append",
+          "content": "\nMETRICS = (*METRICS, Metric(\"retries\", \"やり直しの回数\", \"machine\", \"lower\", 1.0, None, False, \"x\", \"x\", \"\"))\n"
+        }
+      ],
+      "expect": "test_every_catalog_metric_has_calculator"
+    }
+  ]
+}

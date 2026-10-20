@@ -1,0 +1,276 @@
+--- /dev/null
++++ b/docs/design/adr/0012-executor-effort.md
+@@ -0,0 +1,43 @@
++# 0012 実行役の推論の強さを charter の executor.effort で決める
++
++- 状態：採用
++- 関係するルール：OPS-05、PROC-06
++
++## 背景
++
++評価の実行役（`claude -p`）の条件は、人が承認した charter の `executor` に全部書く（OPS-05、[ADR 0006](0006-no-permission-widening.md)）。今の `executor` で決められるのは、モデル、許すツール、費用と時間の上限、並行の数である。
++
++Claude Code には、セッションの推論の強さ（effort level）を決める `--effort` がある。値は `low`、`medium`、`high`、`xhigh`、`max`、`ultracode` で、指定しなければ設定（`effortLevel`、`modelSettings`）かモデルの既定になる（[research.md](../research.md) の「Claude Code のヘッドレス実行（claude -p）」）。推論の強さは費用・時間・結果に響くのに、charter で決められず、評価の条件が利用者の設定次第で変わっていた。
++
++## 選択肢
++
++| 選択肢 | 良い点 | 悪い点 |
++|---|---|---|
++| `executor.effort` を足し、空を許す。空なら `--effort` を入れない。`SCHEMA_VERSION` を 2 に上げる | `model` と同じ扱いで読み手が迷わない。決めていなければ今までと同じ条件で動く | 版 1 の charter は直して承認し直す必要がある |
++| `executor.effort` を省けるキーにし、版を上げない | 古い charter をそのまま使える | charter のキーを黙って変えることになり、PROC-06 に反する |
++| 既定値を `high` などに固定する | 評価の条件が利用者の設定に左右されない | 人が決めていない値が評価の条件に入る。本番の開発者の設定と食い違う |
++
++## 決定
++
++- charter の `executor` に `effort`（文字列）を足す。値は空か、`low`・`medium`・`high`・`xhigh`・`max` のどれかにする。`ultracode` は受け付けない
++- `execute.command` は、`effort` が空でなければ `--effort <値>` を `--model` の後、`--allowedTools` の前に入れる。空なら引数ごと入れず、Claude Code の既定に任せる
++- `charter.SCHEMA_VERSION` を 2 に上げる
++
++## 理由
++
++決めていないときに Claude Code の既定に任せる形は、`executor.model` と同じである。人が決めた値だけを評価の条件に入れられる。`ultracode` は推論の強さに加えて ultracode（ワークフローの仕組み）を有効にし、推論の強さを決める項目の範囲を超えるので、選べる値から外す。
++
++## 移行の手順
++
++版 1 の charter.json は `schema_version` の検査で落ちる。次の順で直す。
++
++1. `schema_version` を `2` にする
++2. `executor` に `"effort": ""` を足す。推論の強さを決めるなら、空の代わりに `low`・`medium`・`high`・`xhigh`・`max` のどれかを書く
++3. `python3 .forge/forge.py charter-check --target <id>` を通し、`/forge-goals <id>` で人の承認を取り直す（中身が変わり、承認のハッシュが合わなくなるため）
++4. 評価の途中なら、準備の後に charter が変わったため、`execute` が止まる。作業領域を消して `prepare` からやり直す
++
++## 影響
++
++- 人が読む charter（charter.md）と報告の「実行の条件」に推論の強さが出る
++- rules.md の OPS-05 の引数の表には `--effort` の行が無い。表を直すには PROC-04 の順で変える
++- Claude Code が `--effort` の値を増やしても、`charter.EFFORT_LEVELS` に足すまで charter では選べない。足すときは charter-schema.md と forge-goals の表も一緒に変える
+--- a/docs/design/research.md
++++ b/docs/design/research.md
+@@ -43,7 +43,7 @@
+ 
+ ## Claude Code のヘッドレス実行（claude -p）2.1.296
+ 
+-- 確認方法：https://code.claude.com/docs/en/headless.md、https://code.claude.com/docs/en/cli-reference.md、https://code.claude.com/docs/en/agent-sdk/typescript.md を取得して読んだ。あわせて実機で試した（下の「実機の試験」）
++- 確認方法：https://code.claude.com/docs/en/headless.md、https://code.claude.com/docs/en/cli-reference.md、https://code.claude.com/docs/en/agent-sdk/typescript.md を取得して読んだ。あわせて実機で試した（下の「実機の試験」）。`--effort` は cli-reference.md の行と、`claude --help` の `--effort <level>`（low, medium, high, xhigh, max）で確かめた
+ - 確認の状態：確認済み
+ - 公式の推奨：
+   - `claude -p` は `--bare` を付けなければ、対話のセッションと同じくスキルとサブエージェントを読み込む
+@@ -54,6 +54,7 @@
+   - `--permission-prompts none` で、人の答えが要るツール（`AskUserQuestion`）を外し、確認が要る操作を拒否する（v2.1.259 以降。[Turn off permission prompts in unattended runs](https://code.claude.com/docs/en/headless#turn-off-permission-prompts-in-unattended-runs)）
+   - `--permission-mode acceptEdits` で、作業ディレクトリの中の編集を確認なしで許す。v2.1.302 以降、モードを指定しない `-p` は Manual モードで始まる
+   - `--append-system-prompt-file` で、既定のシステムプロンプトに文を足せる
++  - `--effort` で、そのセッションの推論の強さ（effort level）を決める。値は `low`、`medium`、`high`、`xhigh`、`max`、`ultracode` で、使える値はモデルによる。`ultracode` は `xhigh` に加えて ultracode を有効にする。設定の `effortLevel` と `modelSettings` より優先し、設定には残らない（[CLI flags](https://code.claude.com/docs/en/cli-reference#cli-flags)）
+   - プロンプトに `/<スキル名> <引数>` を書くとスキルを呼べる
+ - 実機の試験（2026-10-20、2.1.296、haiku）：`disable-model-invocation: true` のスキルが Agent ツールでカスタムサブエージェントを1つ起動する小さなリポジトリで、`claude -p "/orch" --output-format stream-json --verbose --permission-mode acceptEdits --permission-prompts none --max-budget-usd 0.5` を実行した。結果は次のとおり
+   - スキルは `/orch` で呼ばれ、サブエージェントがファイルを書いた（終了コード 0、$0.011、6.5 秒）
+@@ -66,8 +67,10 @@
+   - 実行の記録は stream-json で保存し、文書にある項目（Agent の `tool_use`、`parent_tool_use_id`、`task_started` の `spawn_depth`、`result` の項目）だけから指標を求める（[ADR 0009](adr/0009-measure-from-documented-stream-fields.md)）
+   - 実行役には `--permission-mode acceptEdits` と `--permission-prompts none` を付け、`--max-budget-usd` で1回の費用に上限を付ける（OPS-05、[ADR 0006](adr/0006-no-permission-widening.md)）
+   - 人に聞く場面の扱いは、`--append-system-prompt-file` で渡すひな形（`executor-system.md`）に書く
++  - 実行役の推論の強さは、charter の `executor.effort`（`low`・`medium`・`high`・`xhigh`・`max`）を `--effort` で渡す。空なら引数ごと入れず、Claude Code の既定に任せる（[ADR 0012](adr/0012-executor-effort.md)）
+ - 採用しないもの：
+   - `subagent_stats`（文書に無く、版で変わりうるため）
++  - `--effort ultracode`（推論の強さに加えて ultracode を有効にし、推論の強さを決める項目の範囲を超えるため。[ADR 0012](adr/0012-executor-effort.md)）
+   - `--forward-subagent-text`（指標と採点に要るのは `tool_use` と最後の返答で、サブエージェントの文章は出力を大きくするだけのため）
+   - `--bare`（スキルとサブエージェントの自動の読み込みが止まるため）
+ - ツールにできないこと：`claude -p` の中では人の承認を挟めない → 人に聞く場面は、生成するスキルの「## 人に確かめること」に人が答えられないときの既定の答えを書かせ（バンドルの決まり B05）、実行役はその既定で進める
+--- a/kit/.forge/forge_kit/charter.py
++++ b/kit/.forge/forge_kit/charter.py
+@@ -9,7 +9,7 @@
+ from forge_kit import catalog, shape
+ from forge_kit.errors import InvalidFileError
+ 
+-SCHEMA_VERSION = 1
++SCHEMA_VERSION = 2
+ TOP_KEYS = (
+     "schema_version",
+     "target",
+@@ -34,6 +34,7 @@
+ CHECK_TIMEOUT_BOUNDS = (10, 7200)
+ EXECUTOR_TIMEOUT_BOUNDS = (60, 7200)
+ PARALLEL_BOUNDS = (1, 20)
++EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
+ BUDGET_USD_MAX = 100.0
+ DEFAULT_AGENTS = 3
+ DEFAULT_MAX_ROUNDS = 3
+@@ -81,9 +82,10 @@
+ 
+ @dataclass(frozen=True)
+ class Executor:
+-    """実行役（claude -p）の条件。model が空なら Claude Code の既定のモデルを使う。"""
++    """実行役（claude -p）の条件。model と effort が空なら Claude Code の既定（モデル、推論の強さ）を使う。"""
+ 
+     model: str
++    effort: str
+     allowed_tools: tuple[str, ...]
+     max_budget_usd: float
+     timeout_sec: int
+@@ -230,12 +232,17 @@
+ def _executor(root: dict[str, object], problems: list[str]) -> Executor:
+     where = "executor"
+     data = shape.as_object(root.get(where), where, problems)
+-    shape.unknown_keys(data, ("model", "allowed_tools", "max_budget_usd", "timeout_sec", "parallel"), where, problems)
++    keys = ("model", "effort", "allowed_tools", "max_budget_usd", "timeout_sec", "parallel")
++    shape.unknown_keys(data, keys, where, problems)
+     budget = shape.real(data, "max_budget_usd", where, problems)
+     if not 0 < budget <= BUDGET_USD_MAX:
+         problems.append(f"{where}.max_budget_usd は 0 より大きく {BUDGET_USD_MAX} 以下にしてください（今: {budget}）")
++    effort = shape.text(data, "effort", where, problems)
++    if effort and effort not in EFFORT_LEVELS:
++        problems.append(f"{where}.effort は空か {', '.join(EFFORT_LEVELS)} のどれかにしてください（今: {effort!r}）")
+     return Executor(
+         model=shape.text(data, "model", where, problems, pattern=r"[A-Za-z0-9.\[\]_-]*"),
++        effort=effort,
+         allowed_tools=shape.texts(data, "allowed_tools", where, problems),
+         max_budget_usd=budget,
+         timeout_sec=shape.integer(data, "timeout_sec", where, problems, bounds=EXECUTOR_TIMEOUT_BOUNDS),
+@@ -379,6 +386,7 @@
+     }
+     executor = {
+         "model": "",
++        "effort": "",
+         "allowed_tools": [],
+         "max_budget_usd": DEFAULT_BUDGET_USD,
+         "timeout_sec": DEFAULT_EXECUTOR_TIMEOUT_SEC,
+--- a/kit/.forge/forge_kit/execute.py
++++ b/kit/.forge/forge_kit/execute.py
+@@ -35,6 +35,8 @@
+     ]
+     if executor.model:
+         args += ["--model", executor.model]
++    if executor.effort:
++        args += ["--effort", executor.effort]
+     if executor.allowed_tools:
+         args += ["--allowedTools", *executor.allowed_tools]
+     return args
+--- a/kit/.forge/forge_kit/report.py
++++ b/kit/.forge/forge_kit/report.py
+@@ -87,6 +87,7 @@
+     return render.bullets(
+         [
+             f"モデル: {executor.model or 'Claude Code の既定'}",
++            f"推論の強さ: {executor.effort or 'Claude Code の既定'}",
+             f"確認なしで許したツール: {', '.join(executor.allowed_tools) or 'なし'}",
+             f"1回の実行の上限: {render.usd(executor.max_budget_usd)}、{executor.timeout_sec} 秒",
+             "費用は Claude Code の推定の値である。ユーザー単位の設定とスキルも実行役に読み込まれた",
+--- a/kit/.forge/forge_kit/views.py
++++ b/kit/.forge/forge_kit/views.py
+@@ -106,6 +106,7 @@
+     cost = estimate(model)
+     lines = [
+         f"- モデル: {executor.model or 'Claude Code の既定'}",
++        f"- 推論の強さ: {executor.effort or 'Claude Code の既定'}",
+         f"- 確認なしで許すツール: {', '.join(f'`{t}`' for t in executor.allowed_tools) or 'なし（編集だけ許す）'}",
+         f"- 1回の実行の上限: {render.usd(executor.max_budget_usd)}、{executor.timeout_sec} 秒",
+         f"- 同時に動かす実行役: {executor.parallel}",
+--- a/kit/claude/skills/forge-goals/SKILL.md
++++ b/kit/claude/skills/forge-goals/SKILL.md
+@@ -60,6 +60,7 @@
+ |---|---|---|
+ | `executor.allowed_tools` | 空 | ファイルの編集は許してある。スキルが回すコマンド（検査など）を `Bash(make check)` の形で足す。足りないと、実行役の操作が拒否され、採点の所見に「拒否された操作」が出る |
+ | `executor.model` | 空（Claude Code の既定） | モデルを固定するときだけ書く |
++| `executor.effort` | 空（Claude Code の既定） | 推論の強さを固定するときだけ、`low`・`medium`・`high`・`xhigh`・`max` のどれかを書く。使える値はモデルによる |
+ | `executor.max_budget_usd` | 3.0 | 1回の実行の費用の上限（ドル） |
+ | `executor.timeout_sec` | 1800 | 1回の実行の時間の上限（秒） |
+ | `executor.parallel` | 3 | 同時に動かす実行役の数 |
+--- a/kit/claude/skills/forge-goals/references/charter-schema.md
++++ b/kit/claude/skills/forge-goals/references/charter-schema.md
+@@ -12,7 +12,7 @@
+ 
+ | キー | 形 | 決まり |
+ |---|---|---|
+-| `schema_version` | 整数 | `1` |
++| `schema_version` | 整数 | `2` |
+ | `target.id` | 文字列 | kebab-case。`--target` に渡す値で、スキル名と同じにする |
+ | `target.skill_name` | 文字列 | 作る・直すスキルの名前。kebab-case で、`forge-` で始めない。サブエージェントは `<スキル名>-<役>` の名前になる |
+ | `purpose` | 文字列 | 人が書いた目的の文をそのまま入れる |
+@@ -24,6 +24,7 @@
+ | `environment.skip_dirs` | 文字列の配列 | コピーで除く名前。`/` で始めるとルート直下だけ |
+ | `environment.link_dirs` | 文字列の配列 | コピーせずリンクにする名前 |
+ | `executor.model` | 文字列 | 実行役のモデル。空なら Claude Code の既定 |
++| `executor.effort` | 文字列 | 実行役の推論の強さ（`claude -p` の `--effort`）。`low`、`medium`、`high`、`xhigh`、`max` のどれか。空なら Claude Code の既定 |
+ | `executor.allowed_tools` | 文字列の配列 | 実行役に確認なしで許す道具（`Bash(make check)` の形）。ファイルの編集は既に許してある |
+ | `executor.max_budget_usd` | 数 | 1回の実行の費用の上限（ドル）。0 より大きく 100 以下 |
+ | `executor.timeout_sec` | 整数 | 1回の実行の時間の上限（秒）。60〜7200 |
+@@ -47,7 +48,7 @@
+ 
+ ```json
+ {
+-  "schema_version": 1,
++  "schema_version": 2,
+   "target": {"id": "dev-orch", "skill_name": "dev-orch"},
+   "purpose": "機能の追加の依頼を、実装役とレビュー役のサブエージェントに分けて進め、検査を通してから報告するようにしたい",
+   "goals": [
+@@ -75,6 +76,7 @@
+   },
+   "executor": {
+     "model": "",
++    "effort": "",
+     "allowed_tools": ["Bash(python3 check.py)"],
+     "max_budget_usd": 3.0,
+     "timeout_sec": 1800,
+--- a/tests/support.py
++++ b/tests/support.py
+@@ -88,6 +88,7 @@
+         },
+         "executor": {
+             "model": "",
++            "effort": "",
+             "allowed_tools": ["Bash(python3 check.py)"],
+             "max_budget_usd": 1.0,
+             "timeout_sec": 600,
+--- a/tests/test_charter.py
++++ b/tests/test_charter.py
+@@ -67,6 +67,18 @@
+         data["purpose"] = "変えた目的"
+         self.assertEqual(charter.approval_state(data, charter.parse(data, "charter.json")), "stale")
+ 
++    def test_effort(self) -> None:
++        data = support.orch_charter()
++        executor = data["executor"]
++        assert isinstance(executor, dict)
++        self.assertEqual(charter.parse(data, "charter.json").executor.effort, "")
++        executor["effort"] = "xhigh"
++        self.assertEqual(charter.parse(data, "charter.json").executor.effort, "xhigh")
++        executor["effort"] = "ultracode"
++        with self.assertRaises(InvalidFileError) as caught:
++            charter.parse(data, "charter.json")
++        self.assertIn("executor.effort", caught.exception.message)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+--- a/tests/test_execute.py
++++ b/tests/test_execute.py
+@@ -42,9 +42,9 @@
+         data = support.orch_charter()
+         executor = data["executor"]
+         assert isinstance(executor, dict)
+-        executor.update({"model": "sonnet", "allowed_tools": []})
++        executor.update({"model": "sonnet", "effort": "high", "allowed_tools": []})
+         args = execute.command(charter.parse(data, "charter.json").executor, "p", Path("/s.md"))
+-        self.assertEqual(args[-2:], ["--model", "sonnet"])
++        self.assertEqual(args[-4:], ["--model", "sonnet", "--effort", "high"])
+         self.assertNotIn("--allowedTools", args)
+ 
+     def test_execute(self) -> None:
+--- a/tests/test_report.py
++++ b/tests/test_report.py
+@@ -21,6 +21,7 @@
+         self.assertIn("| delegation | must | 0.800 | 1.000 | 1.000 | 1.000 |", text)
+         self.assertIn("改善のラウンドは行っていない", text)
+         self.assertIn("Bash(python3 check.py)", text)
++        self.assertIn("- 推論の強さ: Claude Code の既定", text)
+         self.assertIn("## 6. 人に判断してほしいこと\n\n- なし", text)
+         final = layout.make_slot("final", 0)
+         for run in workspace.load_plan(where, final).runs:
+--- a/tests/test_views.py
++++ b/tests/test_views.py
+@@ -17,6 +17,7 @@
+         self.assertNotIn("在庫を空にする関数を足して", visible)
+         self.assertIn("未承認", full)
+         self.assertIn("Bash(python3 check.py)", full)
++        self.assertIn("- 推論の強さ: Claude Code の既定", full)
+ 
+     def test_estimate(self) -> None:
+         model = charter.parse(support.orch_charter(), "charter.json")

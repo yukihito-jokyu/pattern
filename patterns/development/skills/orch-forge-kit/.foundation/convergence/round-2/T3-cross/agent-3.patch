@@ -1,0 +1,256 @@
+--- a/kit/.forge/forge_kit/building.py
++++ b/kit/.forge/forge_kit/building.py
+@@ -57,6 +57,7 @@
+     model, _sha = workspace.approved_charter(where)
+     _require_no_skill(where, model)
+     found, _design_sha = workspace.approved_design(where, model)
++    approval = workspace.load_design_approval(where)
+     if not bundle.has_bundle(where.draft_dir, model.target.skill_name):
+         _skeleton(where, found)
+     for path in (where.bundle_check_path, where.bundle_check_md_path):
+@@ -69,6 +70,7 @@
+         "design_md": str(where.design_md_path),
+         "rules_md": str(where.bundle_rules_path),
+         "draft_dir": str(where.draft_dir),
++        "note": (approval.note if approval else "") or render.MISSING,
+         "feedback": feedback or render.MISSING,
+     }
+     fsops.write_text(where.builder_prompt_path, prompts.render("builder", values))
+--- a/kit/.forge/forge_kit/cli.py
++++ b/kit/.forge/forge_kit/cli.py
+@@ -72,7 +72,6 @@
+         ("charter-approve", "人の承認を charter に記録する"),
+         ("status", "今の段階と次にすることを出す"),
+         ("design-check", "設計役の design.json を検査し、人が読む design.md を書く"),
+-        ("design-approve", "人の承認を設計に記録する"),
+         ("bundle-check", "構築役の下書きをバンドルの決まりで検査する"),
+         ("install", "検査済みの下書きを対象のリポジトリの .claude/ へ入れる"),
+         ("report", "全体の報告を書く"),
+@@ -85,6 +84,9 @@
+         _target(sub.add_parser(name, help=help_text)).add_argument(
+             "--feedback", default="", help="人が直してほしいと言ったこと（そのまま渡す）"
+         )
++    _target(sub.add_parser("design-approve", help="人の承認を設計に記録する")).add_argument(
++        "--note", default="", help="人が構築役に気をつけてほしいと言ったこと（そのまま構築役に渡す）"
++    )
+     for name, help_text in (
+         ("prepare", "評価を準備する（コピーと実行役のプロンプト）"),
+         ("execute", "実行役（claude -p）を起動する"),
+@@ -128,7 +130,7 @@
+         "status": lambda args: status.status(where(args)),
+         "design-new": lambda args: designing.design_new(where(args), args.feedback),
+         "design-check": lambda args: designing.design_check(where(args)),
+-        "design-approve": lambda args: designing.design_approve(where(args), today),
++        "design-approve": lambda args: designing.design_approve(where(args), args.note, today),
+         "build": lambda args: building.build(where(args), args.feedback),
+         "bundle-check": lambda args: building.bundle_check(where(args)),
+         "install": lambda args: building.install(where(args), today),
+--- a/kit/.forge/forge_kit/contracts.py
++++ b/kit/.forge/forge_kit/contracts.py
+@@ -47,8 +47,11 @@
+ 
+ @dataclass(frozen=True)
+ class DesignApproval:
++    """人の設計の承認。note は人が構築役に気をつけてほしいと残したこと（無ければ空）。"""
++
+     sha256: str
+     approved_on: str
++    note: str
+ 
+ 
+ @dataclass(frozen=True)
+@@ -243,10 +246,11 @@
+ def parse_design_approval(data: object, source: str) -> DesignApproval:
+     problems: list[str] = []
+     root = shape.as_object(data, "", problems)
+-    shape.unknown_keys(root, ("sha256", "approved_on"), "", problems)
++    shape.unknown_keys(root, ("sha256", "approved_on", "note"), "", problems)
+     approval = DesignApproval(
+         sha256=shape.text(root, "sha256", "", problems, pattern=SHA256),
+         approved_on=shape.text(root, "approved_on", "", problems, pattern=ISO_DATE),
++        note=shape.text(root, "note", "", problems) if "note" in root else "",
+     )
+     _finish(source, problems)
+     return approval
+--- a/kit/.forge/forge_kit/designing.py
++++ b/kit/.forge/forge_kit/designing.py
+@@ -52,12 +52,14 @@
+     return f"設計: 問題なし（{counts}）\n人が読む版: {where.design_md_path}"
+ 
+ 
+-def design_approve(where: Layout, today: str) -> str:
++def design_approve(where: Layout, note: str, today: str) -> str:
++    """人の承認と、構築役へのメモ（note）を記録する。構築役のプロンプトは消し、build でメモを入れて書き直させる。"""
+     model, _sha = workspace.approved_charter(where)
+     if not where.design_md_path.is_file():
+         raise StageError("設計がまだ検査されていません。先に design-check を実行してください")
+     data, found = workspace.load_design(where, model)
+-    approval = contracts.DesignApproval(design.digest(data), today)
++    approval = contracts.DesignApproval(design.digest(data), today, note)
+     fsops.write_json(where.design_approval_path, contracts.to_data(approval))
++    fsops.remove_tree(where.builder_prompt_path)
+     fsops.write_text(where.design_md_path, views.render_design(found, "approved"))
+     return f"設計の承認を記録しました（{today}）: {where.design_approval_path}"
+--- a/kit/.forge/forge_kit/prompts.py
++++ b/kit/.forge/forge_kit/prompts.py
+@@ -30,7 +30,7 @@
+     ),
+     "builder": (
+         "builder.md",
+-        frozenset({"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "feedback"}),
++        frozenset({"skill_name", "repo", "charter_md", "design_md", "rules_md", "draft_dir", "note", "feedback"}),
+     ),
+     "executor": ("executor.md", frozenset({"skill_name", "task_prompt"})),
+     "executor-system": ("executor-system.md", frozenset({"skill_name"})),
+--- a/kit/.forge/forge_kit/status.py
++++ b/kit/.forge/forge_kit/status.py
+@@ -51,7 +51,7 @@
+         return [
+             f"段階: 設計の確認（人が決める）{BUILD}",
+             f"次: {where.design_md_path} を人に見せ、承認するかを聞く",
+-            f"承認なら: {_command('design-approve', where)}",
++            "承認なら: " + _command("design-approve", where, " --note '<構築役に気をつけてほしいこと>'"),
+             "直すなら: " + _command("design-new", where, " --feedback '<直してほしいこと>'"),
+         ]
+     return _draft_steps(where, progress)
+--- a/kit/.forge/templates/prompts/builder.md
++++ b/kit/.forge/templates/prompts/builder.md
+@@ -11,6 +11,12 @@
+ 3. バンドルの決まり: `${rules_md}`。下書きは全部の決まりを満たす（満たさないと検査で落ちる）
+ 4. リポジトリ `${repo}`: `CLAUDE.md`、`AGENTS.md`、`README.md`、検査のコマンド、ディレクトリ構造。スキルとサブエージェントの手順を、このリポジトリの決まりとコマンドに合わせるために読む。`.forge/` と `.claude/skills/forge-*` と `.claude/agents/forge-*` は読まない
+ 5. 骨組み: `${draft_dir}`
++
++## 設計を承認した人からのメモ
++
++${note}
++
++上が `—` なら、メモはありません。そうでなければ、設計を承認した人が構築で気をつけてほしいと残したことです。初めての構築でも直すときでも、下書きの全体をメモに沿って書きます。メモが設計やバンドルの決まりと食い違う所は、設計と決まりに従います。
+ 
+ ## 人から直してほしいと言われたこと
+ 
+--- a/kit/claude/skills/forge-build/SKILL.md
++++ b/kit/claude/skills/forge-build/SKILL.md
+@@ -63,7 +63,7 @@
+ 
+ ## 人に確かめること
+ 
+-- 設計の確認：`design.md` の役・手順・人に確かめる場面・報告を見せ、AskUserQuestion で「承認する（推奨）／直したい」を聞く。承認なら `承認なら:` のコマンドを実行する。直したいなら、直してほしいことを文章で聞き、返ってきた文をそのまま `直すなら:` のコマンドの `<直してほしいこと>` に入れて実行する（文の中の `'` は `’` に置き換える）。既定: 人が答えられないときは、承認せずに止まる
++- 設計の確認：`design.md` の役・手順・人に確かめる場面・報告を見せ、AskUserQuestion で「承認する（推奨）／メモを付けて承認する／直したい」を聞く。承認するなら、`承認なら:` のコマンドの `<構築役に気をつけてほしいこと>` を空にして（`--note ''`）実行する。メモを付けて承認するなら、構築役に気をつけてほしいことを一言、文章で聞き、返ってきた文をそのまま `<構築役に気をつけてほしいこと>` に入れて実行する（文の中の `'` は `’` に置き換える）。メモは `build` が構築役のプロンプトに毎回入れるので、Agent ツールの `prompt` に足さない。直したいなら、直してほしいことを文章で聞き、返ってきた文をそのまま `直すなら:` のコマンドの `<直してほしいこと>` に入れて実行する（文の中の `'` は `’` に置き換える）。既定: 人が答えられないときは、承認せずに止まる
+ - 下書きの確認：`bundle-check.md` のファイル・サブエージェント・手順の一覧と、下書きの SKILL.md の全文を見せ、AskUserQuestion で「入れる（推奨）／直したい」を聞く。入れるなら `承認なら:` のコマンドを実行する。直したいなら、設計の確認と同じく文章で聞き、`直すなら:` のコマンドに入れて実行する。既定: 人が答えられないときは、入れずに止まる
+ - `WARN` の行と、上の表に無いエラー：内容を人に見せ、判断を仰ぐ。既定: 人が答えられないときは止まる
+ 
+@@ -78,7 +78,7 @@
+ 
+ ## してはいけないこと
+ 
+-- 設計と下書きを、自分で書いたり直したりすること。直すのは設計役と構築役で、人の言葉は `--feedback` で渡す
++- 設計と下書きを、自分で書いたり直したりすること。直すのは設計役と構築役で、人の言葉は `--feedback` と `--note` で渡す
+ - 人の答えを待たずに `design-approve` や `install` を実行すること
+ - `.claude/` に、自分でファイルを写すこと。入れるのは `install` だけである
+ - charter を書き換えること。charter を変えるときは `/forge-goals` に戻る
+--- a/tests/test_building.py
++++ b/tests/test_building.py
+@@ -4,7 +4,7 @@
+ 
+ import unittest
+ 
+-from forge_kit import building, bundle, designing, fsops, layout, workspace
++from forge_kit import building, bundle, designing, fsops, layout, render, workspace
+ from forge_kit.errors import InvalidFileError, StageError
+ from tests import support
+ 
+@@ -15,7 +15,7 @@
+         designing.design_new(self.where, "")
+         support.act_designer(self.where)
+         designing.design_check(self.where)
+-        designing.design_approve(self.where, support.TODAY)
++        designing.design_approve(self.where, "", support.TODAY)
+ 
+     def test_build_writes_skeleton(self) -> None:
+         out = building.build(self.where, "")
+@@ -58,6 +58,17 @@
+         with self.assertRaises(StageError):
+             building.install(self.where, support.TODAY)
+ 
++    def test_note(self) -> None:
++        building.build(self.where, "")
++        self.assertIn(
++            f"## 設計を承認した人からのメモ\n\n{render.MISSING}\n", fsops.read_text(self.where.builder_prompt_path)
++        )
++        designing.design_approve(self.where, "サブエージェントの返答は1行にして", support.TODAY)
++        building.build(self.where, "")
++        self.assertIn("サブエージェントの返答は1行にして", fsops.read_text(self.where.builder_prompt_path))
++        building.build(self.where, "報告に費用を足して")
++        self.assertIn("サブエージェントの返答は1行にして", fsops.read_text(self.where.builder_prompt_path))
++
+     def test_feedback(self) -> None:
+         building.build(self.where, "報告に費用を足して")
+         self.assertIn("報告に費用を足して", fsops.read_text(self.where.builder_prompt_path))
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -32,9 +32,15 @@
+         self.assert_status(
+             where, "直すなら: python3 .forge/forge.py design-new --target new-orch --feedback '<直してほしいこと>'"
+         )
+-        self.cli(where, "design-approve", *target)
++        self.assert_status(
++            where,
++            "承認なら: python3 .forge/forge.py design-approve --target new-orch"
++            " --note '<構築役に気をつけてほしいこと>'",
++        )
++        self.cli(where, "design-approve", *target, "--note", "報告は日本語で書いて")
+         self.assert_status(where, "build --target new-orch")
+         self.cli(where, "build", *target)
++        self.assertIn("報告は日本語で書いて", fsops.read_text(where.builder_prompt_path))
+         self.assert_status(where, "job forge-builder build")
+         code, _out, err = support.run_cli(where.root, "bundle-check", *target)
+         self.assertEqual(code, 1)
+--- a/tests/test_contracts.py
++++ b/tests/test_contracts.py
+@@ -28,6 +28,13 @@
+         with self.assertRaises(InvalidFileError):
+             contracts.parse_proposal({"changes": [change], "observations": []}, "p", metric_ids=("acceptance",))
+ 
++    def test_parse_design_approval(self) -> None:
++        approval = contracts.DesignApproval("0" * 64, "2026-01-01", "返答は1行にして")
++        data = json.loads(json.dumps(contracts.to_data(approval)))
++        self.assertEqual(contracts.parse_design_approval(data, "design-approval.json"), approval)
++        old = {"sha256": "0" * 64, "approved_on": "2026-01-01"}
++        self.assertEqual(contracts.parse_design_approval(old, "design-approval.json").note, "")
++
+     def test_parse_plan(self) -> None:
+         run = contracts.Run("T1-a1", "T1", 1)
+         plan = contracts.Plan("round-1-baseline", "baseline", 1, "0" * 64, "dev-orch", "/b", (run,))
+--- a/tests/test_designing.py
++++ b/tests/test_designing.py
+@@ -33,15 +33,28 @@
+             designing.design_check(self.where)
+         support.act_designer(self.where)
+         self.assertIn("役 2、手順 4、人の関所 1", designing.design_check(self.where))
+-        designing.design_approve(self.where, support.TODAY)
++        designing.design_approve(self.where, "", support.TODAY)
+         model, _sha = workspace.approved_charter(self.where)
+         self.assertEqual(workspace.build_progress(self.where, model).design_state, "approved")
++
++    def test_note(self) -> None:
++        designing.design_new(self.where, "")
++        support.act_designer(self.where)
++        designing.design_check(self.where)
++        designing.design_approve(self.where, "", support.TODAY)
++        approval = workspace.load_design_approval(self.where)
++        self.assertEqual(approval.note if approval else None, "")
++        fsops.write_text(self.where.builder_prompt_path, "前の構築役のプロンプト\n")
++        designing.design_approve(self.where, "検査コマンドは make check だけを使って", support.TODAY)
++        approval = workspace.load_design_approval(self.where)
++        self.assertEqual(approval.note if approval else None, "検査コマンドは make check だけを使って")
++        self.assertFalse(self.where.builder_prompt_path.exists())
+ 
+     def test_feedback(self) -> None:
+         designing.design_new(self.where, "")
+         support.act_designer(self.where)
+         designing.design_check(self.where)
+-        designing.design_approve(self.where, support.TODAY)
++        designing.design_approve(self.where, "", support.TODAY)
+         with self.assertRaises(StageError):
+             designing.design_new(self.where, "")
+         designing.design_new(self.where, "レビュー役を2人にして")
