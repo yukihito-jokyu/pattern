@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import unittest
 
@@ -13,8 +14,18 @@ from tests import support
 class ProcTest(unittest.TestCase):
     def test_shell_passes_ci(self) -> None:
         root = support.make_repo(self)
-        result = proc.shell("python3 -c \"import os; print(os.environ['CI'])\"", root, 30)
-        self.assertEqual((result.code, result.output.strip()), (0, "1"))
+        previous = os.environ.pop("CI", None)
+        try:
+            result = proc.shell("python3 -c \"import os; print(os.environ['CI'])\"", root, 30)
+            self.assertEqual((result.code, result.output.strip()), (0, "1"))
+            os.environ["CI"] = "true"
+            result = proc.shell("python3 -c \"import os; print(os.environ['CI'])\"", root, 30)
+            self.assertEqual((result.code, result.output.strip()), (0, "true"))
+        finally:
+            if previous is None:
+                os.environ.pop("CI", None)
+            else:
+                os.environ["CI"] = previous
         self.assertEqual(proc.shell("sleep 5", root, 1).code, proc.TIMEOUT_EXIT)
 
     def test_git_changed_and_patch(self) -> None:
