@@ -42,6 +42,10 @@ sidebars.ts                     # 自動生成サイドバー
 
 [追加・更新手順](docs/project/contributing.md)から始め、[文書テンプレート](docs/project/templates/index.md.template)と[READMEテンプレート](docs/project/templates/README.md.template)を使ってください。[AGENTS.md](AGENTS.md)に作業時のルール、[レビュー項目](docs/project/review.md)に人間が確認する内容をまとめています。支援スキルは[pattern-maintenance](.agents/skills/pattern-maintenance/SKILL.md)です。
 
+## Codexで移行・文書作成を進める
+
+Codexでパターン移行・文書作成を進める場合は、[オートフローの手順](docs/project/autoflow.md)を参照してください。初回は`$autoflow-setup`で検証条件を確認・承認し、その後`$pattern-autoflow`へ移行元と対象パターンを渡します。スキルは`.agents/skills/`に配置しています。
+
 ## 検証する
 
 ルートで実行します。
