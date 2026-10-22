@@ -37,6 +37,32 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  timing-report:
+    name: CI Timing Report
+    needs: [verify, discover-patterns, patterns]
+    if: >-
+      !cancelled() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    concurrency:
+      group: ci-timing-report-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Collect durations and update PR comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-timing-report.mjs
+
   deploy:
     if: >-
       always() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&

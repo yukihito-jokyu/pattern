@@ -20,6 +20,7 @@ sidebar_position: 3
 | `scripts/build-downloads.mjs` | 配置確認後、必要なファイルからパターンごとのZIPを生成 |
 | `scripts/verify-patterns.mjs` | ZIPを別の場所に展開し、明示された検証コマンドを実行 |
 | `scripts/pattern-ci.mjs` | 各パターンの`ci.json`を検証し、Git差分に基づくCIの実行対象一覧をJSONで出力 |
+| `scripts/ci-timing-report.mjs` | GitHub APIでJob・Stepの実行時間を集計し、Actions SummaryとPRの既存コメントを更新 |
 
 IDの命名・3階層の検証と文書・実装・ZIPのパス生成は、`scripts/lib/patterns.mjs`を共通の定義として使います。個別のコマンドで正規表現やZIPのURL規則を作り直しません。トップページは`plugins/pattern-list/`が文書の紹介情報を読み、掲載対象と画像をページへ渡します。
 
@@ -108,4 +109,30 @@ npm run verify:patterns -- --id backend/architecture/go-clean --ci --timeout-ms 
 
 `--ci`は`ci.json`のコマンドを選びます。手動のコマンド指定とは併用できません。従来の`--`以降にコマンドを書く方法も使えます。CIの検証時間は20分、準備を含むジョブ全体は25分です。各パターンを別のrunnerで実行し、1件が失敗しても他の検証を続けます。選ばれたパターンの成功を確認してから公開します。失敗ログを成果物として保存し、ブラウザーの結果など追加資料は`CI_ARTIFACTS_DIR`へ保存できます。Goの検証では通常の失敗時にもAPIと検証DBを終了します。時間切れやrunnerの強制停止時は終了処理が走らない場合があるため、使い捨てのCI環境で実行してください。
 
-仕様は[DocusaurusのDocs設定](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs)、[画像・ファイルの扱い](https://docusaurus.io/docs/markdown-features/assets)、[Playwrightのサーバー起動](https://playwright.dev/docs/test-webserver)、[GitHub Actionsのmatrix](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations)で確認できます。サイト、個別実装、人間の確認結果は分けて記録します。
+## PRのCI実行時間レポート
+
+同一リポジトリのブランチから作成した通常のPRでは、`CI Timing Report`ジョブが`verify`・`discover-patterns`・`patterns`の終了後に実行されます。品質検証が失敗した場合や、変更対象がなくZIP検証を省略した場合も集計します。Fork・DependabotのPR、mainへのpush、キャンセルされた実行は対象外です。公開ジョブはレポートに依存しません。
+
+`scripts/ci-timing-report.mjs`は、現在の実行IDを使ってGitHub APIのJob一覧を全ページ取得します。`filter=latest`により再実行前の古い一覧を混ぜず、matrixはパターンごとのJobとして表示します。集計ジョブ自身と、PRでは実行しない`deploy`は除外します。依存Jobの終了後も一覧APIへの反映が遅れる場合があるため、未完了のJobは詳細APIで再確認します。詳細APIも未反映なら10秒間隔で最大6回待って再取得し、それでも未完了なら最終結果を投稿せず失敗させます。
+
+レポートにはJobの時間・結果、全Jobを横断した遅いStep TOP 10、Job別に折りたためる全Stepの時間・結果を載せます。全Stepの詳細は実行順です。準備や終了処理のStepも含み、スキップや時刻欠落は「—」、実測0秒は「0秒」と区別します。時間は開始から終了までの差で、実行前の待ち時間や課金時間ではありません。並列Jobの時間を合計してPRの待ち時間として扱いません。
+
+計測単位はGitHub ActionsのJob・Stepです。`Verify standalone ZIP`内の依存導入・ビルド・テストや、`npm run build`内部の各コマンドは、それぞれのStep全体に含まれます。内部コマンドごとの計測は行いません。
+
+同じ内容をActions Summaryへ保存し、PRでは`github-actions[bot]`が投稿した`<!-- ci-timing-report -->`で始まるコメントを更新します。初回だけ新規投稿するため、追加pushや再実行でコメントが増えません。文字数上限を超える場合は、コメントの詳細を省略してその理由とSummaryへのリンクを載せ、全StepはSummaryに残します。
+
+コメント更新の競合を避けるため、集計ジョブだけをPR番号ごとの`concurrency`で直列化します。投稿前にPRが開いていることと最新コミットの一致を確認し、同じコミットの新しいCI実行や新しい試行のレポートがあれば古い結果を投稿しません。古い実行のSummaryは、その実行の記録として残ります。
+
+集計ジョブだけに`contents: read`・`actions: read`・`pull-requests: write`を付けます。認証は`GITHUB_TOKEN`を使い、追加のPATやnpm依存関係は不要です。投稿権限不足などAPIで失敗した場合は集計ジョブを失敗させます。集計済みのSummaryは残るため、`403 Resource not accessible by integration`などの原因をActionsのログとリポジトリの権限設定で確認してください。
+
+変更時には`node --test tests/scripts/ci-timing-report.test.mjs`を実行します。失敗・ZIP検証なし・Fork・Dependabot・古い実行の抑止は、APIの応答を使う共通テストでも検証します。実際のPRでは次の順で確認します。
+
+1. 通常PRでCIを完了させ、botのコメントにJob一覧・TOP 10・Job別の全Step詳細があることを確認します。コメントのパーマリンク末尾にある`issuecomment-`以降のIDを控えます。
+2. 同じPRへ追加pushし、対象コミットが更新され、コメントIDが変わらないことを確認します。
+3. Actionsで同じ実行の「Re-run all jobs」を実行し、コメントIDを維持したまま試行番号が増えることを確認します。
+
+古い実行などで投稿を省略した場合は、集計Stepのログに`posted: false`と理由を出力します。投稿に成功した場合は`posted: true`とコメントのURLを出力します。
+
+仕様は[GitHub ActionsのJob・Step取得API](https://docs.github.com/en/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run)と[PRコメントの作成・更新API](https://docs.github.com/en/rest/issues/comments)で確認できます。
+
+サイト、個別実装、人間の確認結果は分けて記録します。関連仕様は[DocusaurusのDocs設定](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs)、[画像・ファイルの扱い](https://docusaurus.io/docs/markdown-features/assets)、[Playwrightのサーバー起動](https://playwright.dev/docs/test-webserver)、[GitHub Actionsのmatrix](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations)で確認できます。
