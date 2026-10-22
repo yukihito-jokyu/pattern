@@ -85,7 +85,23 @@ function rows(pages, key) {
   return pages.flatMap(page => key ? page[key] : page);
 }
 
-export async function reportTiming({env = process.env, api = githubApi, summary = appendFile, event} = {}) {
+async function completedJobs(base, runId, api, pause) {
+  // The list endpoint can lag behind needs. Refresh unfinished jobs individually,
+  // then allow at most one minute for GitHub to reflect their completion.
+  for (let retry = 0; retry <= 6; retry++) {
+    const jobs = rows(await api(`${base}/actions/runs/${runId}/jobs?filter=latest&per_page=100`, {paginate: true}), 'jobs')
+      .filter(job => job.name !== 'CI Timing Report' && job.name !== 'deploy');
+    for (let index = 0; index < jobs.length; index++) {
+      if (jobs[index].status !== 'completed') jobs[index] = await api(`${base}/actions/jobs/${jobs[index].id}`);
+    }
+    if (jobs.every(job => job.status === 'completed')) return jobs;
+    if (retry < 6) await pause(10000);
+  }
+  throw new Error('未完了のJobがあるため、最大60秒の反映待ち後も集計できませんでした。');
+}
+
+export async function reportTiming({env = process.env, api = githubApi, summary = appendFile, event,
+  pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds))} = {}) {
   event ??= JSON.parse(await readFile(env.GITHUB_EVENT_PATH, 'utf8'));
   const pr = event.pull_request;
   if (env.GITHUB_EVENT_NAME !== 'pull_request' || !pr || pr.head.repo?.full_name !== env.GITHUB_REPOSITORY ||
@@ -101,17 +117,14 @@ export async function reportTiming({env = process.env, api = githubApi, summary 
   const base = `repos/${repo}`;
   const run = await api(`${base}/actions/runs/${runId}`);
   const runUrl = `${env.GITHUB_SERVER_URL}/${repo}/actions/runs/${runId}/attempts/${attempt}`;
-  const jobs = rows(await api(`${base}/actions/runs/${runId}/jobs?filter=latest&per_page=100`, {paginate: true}), 'jobs')
-    .filter(job => job.name !== 'CI Timing Report' && job.name !== 'deploy');
-  // needs waits for the whole matrix; never present an incomplete API snapshot as a final report.
-  if (jobs.some(job => job.status !== 'completed')) throw new Error('未完了のJobがあるため集計を中止しました。');
+  const jobs = await completedJobs(base, runId, api, pause);
   const options = {jobs, runUrl, headSha: pr.head.sha, runNumber: run.run_number, attempt};
   const report = renderReport(options);
   await summary(env.GITHUB_STEP_SUMMARY, report);
 
   const currentPr = await api(`${base}/pulls/${pr.number}`);
   if (currentPr.state !== 'open' || currentPr.head.sha !== pr.head.sha) return {posted: false, reason: 'PRが終了済み、または古いコミット'};
-  if (run.run_attempt !== attempt) return {posted: false, reason: '古い再実行'};
+  if (run.run_attempt > attempt) return {posted: false, reason: '古い再実行'};
   const runs = rows(await api(`${base}/actions/workflows/${run.workflow_id}/runs?event=pull_request&head_sha=${pr.head.sha}&per_page=100`, {paginate: true}), 'workflow_runs');
   if (runs.some(other => other.head_branch === run.head_branch && other.head_repository?.id === run.head_repository?.id &&
       other.run_number > run.run_number)) return {posted: false, reason: '新しいCI実行が存在'};

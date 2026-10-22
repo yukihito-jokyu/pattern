@@ -113,7 +113,7 @@ npm run verify:patterns -- --id backend/architecture/go-clean --ci --timeout-ms 
 
 同一リポジトリのブランチから作成した通常のPRでは、`CI Timing Report`ジョブが`verify`・`discover-patterns`・`patterns`の終了後に実行されます。品質検証が失敗した場合や、変更対象がなくZIP検証を省略した場合も集計します。Fork・DependabotのPR、mainへのpush、キャンセルされた実行は対象外です。公開ジョブはレポートに依存しません。
 
-`scripts/ci-timing-report.mjs`は、現在の実行IDを使ってGitHub APIのJob一覧を全ページ取得します。`filter=latest`により再実行前の古い一覧を混ぜず、matrixはパターンごとのJobとして表示します。集計ジョブ自身と、PRでは実行しない`deploy`は除外します。取得時点で未完了のJobがあれば、最終結果として投稿せず失敗させます。
+`scripts/ci-timing-report.mjs`は、現在の実行IDを使ってGitHub APIのJob一覧を全ページ取得します。`filter=latest`により再実行前の古い一覧を混ぜず、matrixはパターンごとのJobとして表示します。集計ジョブ自身と、PRでは実行しない`deploy`は除外します。依存Jobの終了後も一覧APIへの反映が遅れる場合があるため、未完了のJobは詳細APIで再確認します。詳細APIも未反映なら10秒間隔で最大6回待って再取得し、それでも未完了なら最終結果を投稿せず失敗させます。
 
 レポートにはJobの時間・結果、全Jobを横断した遅いStep TOP 10、Job別に折りたためる全Stepの時間・結果を載せます。全Stepの詳細は実行順です。準備や終了処理のStepも含み、スキップや時刻欠落は「—」、実測0秒は「0秒」と区別します。時間は開始から終了までの差で、実行前の待ち時間や課金時間ではありません。並列Jobの時間を合計してPRの待ち時間として扱いません。
 

@@ -17,10 +17,13 @@ function timed(name, seconds, extra = {}) {
 const job = timed('verify', 120, {steps: [timed('npm ci', 30, {number: 1}), timed('npm test', 60, {number: 2})]});
 
 function harness({jobs = [[job]], comments = [[]], pr = {state: 'open', head: {sha}},
-  run = {}, runs = [[]], failWrite = false} = {}) {
+  run = {}, runs = [[]], failWrite = false, details = {}, finishOnRetry = false} = {}) {
   const calls = [];
   const summaries = [];
+  const waits = [];
+  let jobReads = 0;
   const input = {env, event,
+    pause: async milliseconds => waits.push(milliseconds),
     summary: async (file, content) => summaries.push({file, content}),
     api: async (endpoint, options = {}) => {
       calls.push({endpoint, ...options});
@@ -30,13 +33,20 @@ function harness({jobs = [[job]], comments = [[]], pr = {state: 'open', head: {s
       }
       if (endpoint.endsWith('/actions/runs/100')) return {run_number: 10, run_attempt: 1, workflow_id: 1,
         head_branch: 'feature', head_repository: {id: 1}, ...run};
-      if (endpoint.includes('/jobs?')) return jobs.map(items => ({jobs: items}));
+      if (endpoint.includes('/jobs?')) {
+        jobReads++;
+        return jobs.map(items => ({jobs: items.map(item => finishOnRetry && jobReads > 1 ? {...item, status: 'completed'} : item)}));
+      }
+      if (endpoint.includes('/actions/jobs/')) {
+        const id = Number(endpoint.split('/').at(-1));
+        return details[id] || jobs.flat().find(item => item.id === id);
+      }
       if (endpoint.endsWith('/pulls/23')) return pr;
       if (endpoint.includes('/runs?')) return runs.map(items => ({workflow_runs: items}));
       if (endpoint.includes('/comments?')) return comments;
       throw new Error(`想定外のAPI: ${endpoint}`);
     }};
-  return {input, calls, summaries, write: () => calls.find(call => call.method)};
+  return {input, calls, summaries, waits, write: () => calls.find(call => call.method)};
 }
 
 test('実行時間は0秒・欠落・不正時刻・スキップを区別する', () => {
@@ -130,20 +140,38 @@ test('新コミット・終了済みPR・新実行・古い再実行では投稿
 });
 
 test('同じコミットの再実行では最新の試行番号で既存コメントを更新する', async () => {
-  const h = harness({run: {run_attempt: 2}, comments: [[{id: 3, user: {login: 'github-actions[bot]'},
-    body: marker + '\n<!-- ci-timing-report-run:10:1 -->'}]]});
-  await reportTiming({...h.input, env: {...env, GITHUB_RUN_ATTEMPT: '2'}});
-  assert.equal(h.write().method, 'PATCH');
-  assert.match(h.write().body.body, /試行 2/);
+  // API metadata may still show attempt 1 while attempt 2 is already executing.
+  for (const runAttempt of [1, 2]) {
+    const h = harness({run: {run_attempt: runAttempt}, comments: [[{id: 3, user: {login: 'github-actions[bot]'},
+      body: marker + '\n<!-- ci-timing-report-run:10:1 -->'}]]});
+    await reportTiming({...h.input, env: {...env, GITHUB_RUN_ATTEMPT: '2'}});
+    assert.equal(h.write().method, 'PATCH');
+    assert.match(h.write().body.body, /試行 2/);
+  }
 });
 
 test('未完了のJobやAPIの失敗を成功扱いしない', async () => {
-  const h = harness({jobs: [[timed('verify', 1, {status: 'in_progress'})]]});
+  const h = harness({jobs: [[timed('verify', 1, {id: 123, status: 'in_progress'})]]});
   await assert.rejects(reportTiming(h.input), /未完了/);
   assert.equal(h.write(), undefined);
+  assert.deepEqual(h.waits, Array(6).fill(10000));
   const failed = harness({failWrite: true});
   await assert.rejects(reportTiming(failed.input), /403/);
   assert.equal(failed.summaries.length, 1);
+});
+
+test('Job一覧の反映が遅れた場合は詳細APIで完了を確認して投稿する', async () => {
+  const h = harness({jobs: [[timed('verify', 60, {id: 123, status: 'in_progress'})]],
+    details: {123: timed('verify', 65, {id: 123})}});
+  assert.equal((await reportTiming(h.input)).posted, true);
+  assert.match(h.write().body.body, /\| verify \| 1分05秒/);
+  assert.equal(h.waits.length, 0);
+});
+
+test('詳細APIも未反映なら待って一覧を再取得し、完了後に投稿する', async () => {
+  const h = harness({jobs: [[timed('verify', 60, {id: 123, status: 'in_progress'})]], finishOnRetry: true});
+  assert.equal((await reportTiming(h.input)).posted, true);
+  assert.deepEqual(h.waits, [10000]);
 });
 
 test('大きなmatrixはコメント上限を守り、全StepをSummaryへ残す', async () => {
