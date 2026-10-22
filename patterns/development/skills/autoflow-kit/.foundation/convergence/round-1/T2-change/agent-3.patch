@@ -1,0 +1,57 @@
+--- a/kit/.autoflow/autoflow_kit/policy.py
++++ b/kit/.autoflow/autoflow_kit/policy.py
+@@ -138,12 +138,13 @@
+     Lens("security", "安全（入力の検証、認可、秘密情報）"),
+     Lens("intent", "依頼との一致（受け入れ条件、計画の範囲、リポジトリの決まり）"),
+     Lens("impact", "影響の範囲（呼び出し元、互換性、データ）"),
++    Lens("performance", "性能（計算量、ループの中の I/O、不要な再計算、メモリの使い方）"),
+ )
+ # レビューの深さ。threshold は、指摘を残すのに要る「本物」の票の数
+ DEPTHS = (
+     Depth("quick", ("correctness", "intent"), 2, 2),
+     Depth("standard", ("correctness", "security", "intent"), 3, 2),
+-    Depth("deep", ("correctness", "security", "intent", "impact"), 3, 2),
++    Depth("deep", ("correctness", "security", "intent", "impact", "performance"), 3, 2),
+ )
+ # 依頼の種類。repro が真なら、実装の前に再現のテストを書き、落ちることを verify で確かめる
+ KINDS = (
+--- a/kit/.autoflow/templates/prompts/finder.md
++++ b/kit/.autoflow/templates/prompts/finder.md
+@@ -19,6 +19,7 @@
+ | `security` | 入力の検証、注入、認可の抜け、秘密情報の露出、安全でない既定値 |
+ | `intent` | 計画の受け入れ条件を満たさない、範囲の外の変更、やらないことに反する、リポジトリの決まり（CLAUDE.md、レビューの指示）に反する |
+ | `impact` | 変えた関数・型・設定の呼び出し元への影響、互換性、データの形、他の箇所の同じ前提 |
++| `performance` | 入力の大きさに対する計算量、ループの中の I/O（ファイル、ネットワーク、DB）、同じ値の不要な再計算、メモリの使い方 |
+ 
+ ## 指摘にしないもの
+ 
+--- a/kit/claude/skills/autoflow/references/gates.md
++++ b/kit/claude/skills/autoflow/references/gates.md
+@@ -84,7 +84,7 @@
+ |---|---|---|---|
+ | quick | correctness, intent | 2 | 2 |
+ | standard | correctness, security, intent | 3 | 2 |
+-| deep | correctness, security, intent, impact | 3 | 2 |
++| deep | correctness, security, intent, impact, performance | 3 | 2 |
+ 
+ | 観点 | 見ること |
+ |---|---|
+@@ -92,6 +92,7 @@
+ | `security` | 安全（入力の検証、認可、秘密情報） |
+ | `intent` | 依頼との一致（受け入れ条件、計画の範囲、リポジトリの決まり） |
+ | `impact` | 影響の範囲（呼び出し元、互換性、データ） |
++| `performance` | 性能（計算量、ループの中の I/O、不要な再計算、メモリの使い方） |
+ 
+ - 指摘の種類: bug, security, criteria, fit（文体・整形・掃除だけの指摘は受け付けない）
+ - 重大度: important, pre_existing, nit。報告に進めないのは important が残るとき
+--- a/tests/test_policy.py
++++ b/tests/test_policy.py
+@@ -102,3 +102,8 @@
+         for depth in policy.DEPTHS:
+             self.assertLessEqual(set(depth.lenses), lenses)
+             self.assertLessEqual(depth.threshold, depth.verifiers)
++
++    def test_lens_performance(self) -> None:
++        self.assertIn("performance", policy.depth_of(policy.HIGH).lenses)
++        self.assertNotIn("performance", policy.depth_of(policy.MEDIUM).lenses)
++        self.assertNotIn("performance", policy.depth_of(policy.LOW).lenses)

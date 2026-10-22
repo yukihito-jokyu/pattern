@@ -1,0 +1,45 @@
+--- a/kit/.autoflow/autoflow_kit/policy.py
++++ b/kit/.autoflow/autoflow_kit/policy.py
+@@ -188,6 +188,10 @@
+     return any(has_match(path, settings.risk.always_human) for path in plan.scope)
+ 
+ 
++def _is_human_only(plan: contracts.Plan, _profile: profile.Profile) -> bool:
++    return all(criterion.check == contracts.HUMAN for criterion in plan.criteria)
++
++
+ def _is_blocked(progress: Progress, _limits: profile.Limits) -> bool:
+     return bool(progress.blockers)
+ 
+@@ -206,6 +210,7 @@
+     PlanRule("h1_dependency", "依存を足す計画である", _has_new_dependency),
+     PlanRule("h1_scope", "計画の範囲が limits.max_scope_files を超える", _is_wide),
+     PlanRule("h1_always_human", "計画の範囲が risk.always_human のパスに当たる", _has_human_paths),
++    PlanRule("h1_human_criteria", "受け入れ条件が全部、人が確かめるもの（check が human）である", _is_human_only),
+ )
+ # H2（行き詰まり）を起こす条件。記事の「3ラウンドで止まって方針を見直す」に当たる
+ H2_RULES = (
+--- a/kit/claude/skills/autoflow/references/gates.md
++++ b/kit/claude/skills/autoflow/references/gates.md
+@@ -57,6 +57,7 @@
+ | `h1_dependency` | 依存を足す計画である |
+ | `h1_scope` | 計画の範囲が limits.max_scope_files を超える |
+ | `h1_always_human` | 計画の範囲が risk.always_human のパスに当たる |
++| `h1_human_criteria` | 受け入れ条件が全部、人が確かめるもの（check が human）である |
+ 
+ ## H2 を起こす条件（どれか1つに当たれば聞く）
+ 
+--- a/tests/test_policy.py
++++ b/tests/test_policy.py
+@@ -102,3 +102,11 @@
+         for depth in policy.DEPTHS:
+             self.assertLessEqual(set(depth.lenses), lenses)
+             self.assertLessEqual(depth.threshold, depth.verifiers)
++
++    def test_h1_human_criteria(self) -> None:
++        human = {"id": "C1", "text": "画面の文言が自然である", "check": "human", "run": ""}
++        self.assertEqual(policy.h1_reasons(plan(criteria=[human]), SETTINGS), ("h1_human_criteria",))
++        review = {"id": "C2", "text": "既存の関数と同じ書き方である", "check": "review", "run": ""}
++        self.assertEqual(policy.h1_reasons(plan(criteria=[human, review]), SETTINGS), ())
++        command = {"id": "C2", "text": "テストが通る", "check": "command", "run": "make test"}
++        self.assertEqual(policy.h1_reasons(plan(criteria=[human, command]), SETTINGS), ())

@@ -1,0 +1,156 @@
+--- a/kit/.autoflow/autoflow_kit/building.py
++++ b/kit/.autoflow/autoflow_kit/building.py
+@@ -32,6 +32,10 @@
+     return tuple(item for item in result.kept if item.tag in ANSWERED_TAGS)
+ 
+ 
++def _findings_line(item: contracts.Kept) -> str:
++    return f"{views.finding_line(item)} — 直し方の案: {item.finding.suggested_fix or render.MISSING}"
++
++
+ def _failures(where: Layout, run_id: str, events: Sequence[trail.Event]) -> list[str]:
+     """最後の実装の後の検査が期待どおりでなかったときの、検査ごとの1行。"""
+     check = trail.last(trail.since_last_build(events), trail.VERIFIED)
+@@ -61,7 +65,7 @@
+         "reason": reason,
+         "tests": render.bullets([f"`{pattern}`" for pattern in ctx.profile.paths.tests]),
+         "failures": render.bullets(_failures(where, run_id, ctx.events)),
+-        "findings": render.bullets([views.finding_line(item) for item in _pending_findings(where, run_id, ctx.events)]),
++        "findings": render.bullets([_findings_line(item) for item in _pending_findings(where, run_id, ctx.events)]),
+         "answer": _answer(ctx.events, reason),
+         "report_path": where.relative(where.report_path(run_id, attempt)),
+     }
+--- a/kit/.autoflow/autoflow_kit/contracts.py
++++ b/kit/.autoflow/autoflow_kit/contracts.py
+@@ -95,6 +95,7 @@
+     bug_class: str
+     other_locations: tuple[str, ...]
+     pre_existing: bool
++    suggested_fix: str
+ 
+ 
+ @dataclass(frozen=True)
+@@ -275,7 +276,17 @@
+ 
+ 
+ def _parse_finding(where: str, item: dict[str, object], categories: tuple[str, ...], problems: list[str]) -> Finding:
+-    keys = ("title", "file", "line", "category", "evidence", "bug_class", "other_locations", "pre_existing")
++    keys = (
++        "title",
++        "file",
++        "line",
++        "category",
++        "evidence",
++        "bug_class",
++        "other_locations",
++        "pre_existing",
++        "suggested_fix",
++    )
+     shape.unknown_keys(item, keys, where, problems)
+     return Finding(
+         title=shape.filled(item, "title", where, problems),
+@@ -286,6 +297,7 @@
+         bug_class=shape.filled(item, "bug_class", where, problems),
+         other_locations=shape.texts(item, "other_locations", where, problems),
+         pre_existing=shape.boolean(item, "pre_existing", where, problems),
++        suggested_fix=shape.text(item, "suggested_fix", where, problems),
+     )
+ 
+ 
+--- a/kit/.autoflow/autoflow_kit/views.py
++++ b/kit/.autoflow/autoflow_kit/views.py
+@@ -145,6 +145,7 @@
+     details = []
+     for item in result.kept:
+         details += [f"### {item.id} {item.finding.title}", "", item.finding.evidence, ""]
++        details += [f"- 直し方の案: {item.finding.suggested_fix or render.MISSING}", ""]
+         if item.finding.other_locations:
+             details += [render.bullets(item.finding.other_locations), ""]
+     return "\n".join(
+--- a/kit/.autoflow/templates/prompts/builder.md
++++ b/kit/.autoflow/templates/prompts/builder.md
+@@ -32,7 +32,7 @@
+ 
+ ## 回答が要る指摘
+ 
+-一覧が `- なし` なら、回答の要る指摘は無い。各行は「id [重大度] 題名 — 場所、バグの種類（同じ種類の他の箇所）」である。
++一覧が `- なし` なら、回答の要る指摘は無い。各行は「id [重大度] 題名 — 場所、バグの種類（同じ種類の他の箇所） — 直し方の案」である。直し方の案が `—` なら、探索役の案は無い。
+ 
+ ${findings}
+ 
+--- a/kit/.autoflow/templates/prompts/finder.md
++++ b/kit/.autoflow/templates/prompts/finder.md
+@@ -38,6 +38,7 @@
+ - 根拠のあるバグだけを書く。`file` と `line` は変更後のファイルの場所にし、`evidence` に、そのバグが起きる入力や手順を書く
+ - `bug_class` にバグの種類を短い名詞で書く（例：境界の値の取り違え、null の確かめ漏れ）。同じ種類のバグが他の箇所にもあれば、`other_locations` に `file:line` で全部書く。作者が1行ではなく全部を直せるようにするため
+ - この差分が持ち込んだのではない、前からあるバグは `pre_existing` を `true` にする
++- `suggested_fix` に直し方の案を短く書く。実装役に渡す指摘の一覧と、レビューの結果に載る。直し方が分からなければ空の文字列にする
+ - `category` は `bug`（振る舞いの誤り）・`security`（安全の問題）・`criteria`（受け入れ条件を満たさない）・`fit`（範囲の外の変更か、リポジトリの決まりに反する）のどれか
+ - 見つからなければ空の配列にする。数を出すために弱い指摘を書かない
+ 
+@@ -56,7 +57,8 @@
+       "evidence": "合計 100、割引 150 のとき total() は -50 を返す。注文の確定（src/order/confirm.py:55）は負の金額を想定していない",
+       "bug_class": "下限の確かめ漏れ",
+       "other_locations": ["src/cart/tax.py:17"],
+-      "pre_existing": false
++      "pre_existing": false,
++      "suggested_fix": "total() で割引を引いた後、0 を下限にする"
+     }
+   ]
+ }
+--- a/tests/support.py
++++ b/tests/support.py
+@@ -208,6 +208,7 @@
+         "bug_class": "境界の値",
+         "other_locations": [],
+         "pre_existing": False,
++        "suggested_fix": "",
+     }
+     item.update(overrides)
+     return item
+--- a/tests/test_building.py
++++ b/tests/test_building.py
+@@ -38,9 +38,11 @@
+ 
+     def test_findings_must_be_answered(self) -> None:
+         where, run_id = support.risked(self)
+-        support.review_round(where, run_id, {"correctness": [support.finding()]})
++        support.review_round(where, run_id, {"correctness": [support.finding(suggested_fix="0 を下限にする")]})
+         building.build_new(where, run_id, NOW)
+-        self.assertIn("R1-1 [Important]", fsops.read_text(where.build_prompt_path(run_id, 2)))
++        prompt = fsops.read_text(where.build_prompt_path(run_id, 2))
++        self.assertIn("R1-1 [Important]", prompt)
++        self.assertIn("— 直し方の案: 0 を下限にする", prompt)
+         support.act_builder(where, run_id)
+         with self.assertRaisesRegex(InvalidFileError, "R1-1 への回答"):
+             building.build_check(where, run_id, NOW)
+--- a/tests/test_contracts.py
++++ b/tests/test_contracts.py
+@@ -84,3 +84,17 @@
+         )
+         self.assertEqual(contracts.parse_evidence(shape.to_data(evidence), problems), evidence)
+         self.assertEqual(problems, [])
++
++    def test_parse_findings(self) -> None:
++        problems: list[str] = []
++        found = contracts.parse_findings(
++            {"findings": [support.finding(suggested_fix="0 を下限にする"), support.finding()]},
++            policy.REVIEW.categories,
++            problems,
++        )
++        self.assertEqual(problems, [])
++        self.assertEqual([item.suggested_fix for item in found], ["0 を下限にする", ""])
++        missing = support.finding()
++        del missing["suggested_fix"]
++        contracts.parse_findings({"findings": [missing]}, policy.REVIEW.categories, problems)
++        self.assertEqual(problems, ["findings[0].suggested_fix は文字列にしてください"])
+--- a/tests/test_views.py
++++ b/tests/test_views.py
+@@ -42,6 +42,7 @@
+         self.assertIn("# レビュー ラウンド 2", text)
+         self.assertIn("| R1-1 | Nit |", text)
+         self.assertIn("票で落ちた候補: R2-2", text)
++        self.assertIn("- 直し方の案: —", text)
+ 
+     def test_gate(self) -> None:
+         text = views.render_gate(policy.H2, ("h2_fix_attempts",), ("続いた検査の失敗: 3 回",))

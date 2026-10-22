@@ -1,0 +1,47 @@
+# 開発用の検査の設定。配布物（kit/）は Python 3.9 以上の標準ライブラリだけで動かす
+[project]
+name = "autoflow-kit"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+src = ["kit/.autoflow", "scripts", "tests"]
+extend-exclude = [".foundation", "docs/design/enforcement-matrix.md", "tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "RUF", "C90", "PTH", "T20", "PL", "TID", "BLE", "ARG", "ERA", "D100", "D104"]
+ignore = [
+  "RUF001", "RUF002", "RUF003",  # 日本語の全角記号を誤検出するため
+  "PLR2004",                     # 終了コード 0/1/2 などの小さな定数を許す
+]
+
+[tool.ruff.lint.per-file-ignores]
+"kit/.autoflow/autoflow_kit/cli.py" = ["T201"]
+"scripts/*.py" = ["T201"]
+"install.py" = ["T201"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 6
+max-branches = 12
+max-returns = 6
+max-statements = 50
+
+[tool.ruff.lint.isort]
+known-first-party = ["autoflow_kit"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+mypy_path = "kit/.autoflow"
+files = ["kit/.autoflow/autoflow_kit", "kit/.autoflow/autoflow.py", "scripts", "tests", "install.py"]
+exclude = ["tests/fixtures/"]
+warn_unreachable = true

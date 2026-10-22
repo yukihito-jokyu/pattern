@@ -1,0 +1,155 @@
+{
+  "prompt": "未コミットの変更をレビューして",
+  "probes": [
+    {
+      "id": "S-NAM-02",
+      "rule": "NAM-02",
+      "level": "review",
+      "description": "ファイルを読まない関数を load_ で始める",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/learning.py",
+          "mode": "append",
+          "content": "\n\ndef load_summary(events: Sequence[trail.Event]) -> str:\n    \"\"\"実行の要約の1行。\"\"\"\n    return f\"{_outcome(events)}（人の決定 {trail.count(events, trail.DECIDED)} 回）\"\n"
+        }
+      ]
+    },
+    {
+      "id": "S-CODE-01",
+      "rule": "CODE-01",
+      "level": "review",
+      "description": "引数の list に足して返す",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef padded(items: list[str], size: int) -> list[str]:\n    \"\"\"一覧を size 件にそろえる。\"\"\"\n    while len(items) < size:\n        items.append(MISSING)\n    return items\n"
+        }
+      ]
+    },
+    {
+      "id": "S-STATE-01",
+      "rule": "STATE-01",
+      "level": "review",
+      "description": "段の判断を記録ではなくファイルの有無で行う",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/status.py",
+          "mode": "append",
+          "content": "\n\ndef is_reviewed(ctx: context.Context) -> bool:\n    \"\"\"結果のファイルがあれば、このラウンドのレビューは済んだとみなす。\"\"\"\n    return ctx.where.result_path(ctx.run_id, ctx.next.number).is_file()\n"
+        }
+      ]
+    },
+    {
+      "id": "S-STATE-02",
+      "rule": "STATE-02",
+      "level": "review",
+      "description": "プロンプトの文を段のモジュールに書く",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\n\ndef lens_note(lens: str) -> str:\n    \"\"\"探索役に渡す観点の説明。\"\"\"\n    return f\"あなたは探索役です。{lens} の観点だけで差分を読み、指摘を JSON で書いてください。\"\n"
+        }
+      ]
+    },
+    {
+      "id": "S-OPS-03",
+      "rule": "OPS-03",
+      "level": "review",
+      "description": "表を render.table を使わずに手で組む",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/handoff.py",
+          "mode": "append",
+          "content": "\n\ndef stat_rows(found: Sequence[changes.Stat]) -> str:\n    \"\"\"変えたファイルの表。\"\"\"\n    lines = [\"| ファイル | 足した行 | 消した行 |\", \"|---|---|---|\"]\n    lines += [f\"| {stat.path} | {stat.added} | {stat.deleted} |\" for stat in found]\n    return \"\\n\".join(lines)\n"
+        }
+      ]
+    },
+    {
+      "id": "S-TEST-03",
+      "rule": "TEST-03",
+      "level": "review",
+      "description": "公開の関数を足し、テストを足さない",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/policy.py",
+          "mode": "append",
+          "content": "\n\ndef is_lower_tier(left: str, right: str) -> bool:\n    \"\"\"left の段が right の段より低いか。\"\"\"\n    return tier_order(left) < tier_order(right)\n"
+        }
+      ]
+    },
+    {
+      "id": "S-PROC-02",
+      "rule": "PROC-02",
+      "level": "review",
+      "description": "取得元を足し、sources.md の表を直さない",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/layout.py",
+          "mode": "append",
+          "content": "\n\nSOURCES = {**SOURCES, \"jira\": True}\n"
+        },
+        {
+          "path": "tests/test_intake.py",
+          "mode": "append",
+          "content": "\n\nclass SourceJiraTest(unittest.TestCase):\n    def test_source_jira(self) -> None:\n        where = support.make_repo(self)\n        origin = trail.Origin(\"jira\", \"\", \"\", \"題名\")\n        with self.assertRaisesRegex(StageError, \"--ref\"):\n            intake.start(where, origin, support.body_file(where), support.NOW)\n"
+        }
+      ]
+    },
+    {
+      "id": "S-PROC-06",
+      "rule": "PROC-06",
+      "level": "review",
+      "description": "プロファイルにキーを足し、SCHEMA_VERSION を上げない",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/profile.py",
+          "mode": "replace",
+          "content": "\"\"\"プロファイル（.autoflow/profile.json）の型・既定値・検証と、承認の記録の型を定義する。\n\nプロファイルは H0 で人が承認する。形を変えたら SCHEMA_VERSION を上げる（PROC-06）。\n\"\"\"\n\nfrom __future__ import annotations\n\nimport hashlib\nfrom dataclasses import dataclass\n\nfrom autoflow_kit import shape\n\nSCHEMA_VERSION = 1\nCOMMAND_ID = r\"[a-z0-9]+(-[a-z0-9]+)*\"\nDEFAULT_TIMEOUT_SEC = 600\nMAX_TIMEOUT_SEC = 3600\nMAX_LIMIT = 100_000\n\n\n@dataclass(frozen=True)\nclass Command:\n    id: str\n    run: str\n    timeout_sec: int\n\n\n@dataclass(frozen=True)\nclass Verify:\n    commands: tuple[Command, ...]\n\n\n@dataclass(frozen=True)\nclass Paths:\n    tests: tuple[str, ...]\n\n\n@dataclass(frozen=True)\nclass Risk:\n    always_human: tuple[str, ...]\n    high: tuple[str, ...]\n    low: tuple[str, ...]\n\n\n@dataclass(frozen=True)\nclass Review:\n    guide_files: tuple[str, ...]\n    skip: tuple[str, ...]\n\n\n@dataclass(frozen=True)\nclass Limits:\n    fix_attempts: int\n    review_rounds: int\n    max_scope_files: int\n    large_diff_lines: int\n    huge_diff_lines: int\n    max_criteria: int\n\n\n@dataclass(frozen=True)\nclass Commit:\n    trailers: tuple[str, ...]\n\n\n@dataclass(frozen=True)\nclass Profile:\n    schema_version: int\n    verify: Verify\n    paths: Paths\n    risk: Risk\n    review: Review\n    limits: Limits\n    commit: Commit\n\n\n@dataclass(frozen=True)\nclass Approval:\n    \"\"\"profile-approval.json。承認したプロファイルの sha256 と、人の回答の原文。\"\"\"\n\n    sha256: str\n    who: str\n    answer: str\n    at: str\n\n\n@dataclass(frozen=True)\nclass Field:\n    \"\"\"profile-schema.md に載せる項目の説明。\"\"\"\n\n    key: str\n    kind: str\n    meaning: str\n\n\nDEFAULT_TESTS = (\n    \"tests/**\",\n    \"test/**\",\n    \"**/__tests__/**\",\n    \"**/*_test.go\",\n    \"**/*.test.*\",\n    \"**/*.spec.*\",\n    \"**/test_*.py\",\n)\nDEFAULT_RISK = Risk(\n    always_human=(\n        \".github/workflows/**\",\n        \".gitlab-ci.yml\",\n        \".circleci/**\",\n        \"Jenkinsfile\",\n        \"**/auth/**\",\n        \"**/billing/**\",\n        \"**/payment*/**\",\n        \"**/migrations/**\",\n        \"**/.env*\",\n        \"**/*secret*\",\n        \"**/*.pem\",\n        \"**/*.key\",\n        \".autoflow/**\",\n        \".claude/**\",\n        \"**/CLAUDE.md\",\n        \"**/AGENTS.md\",\n        \"**/REVIEW.md\",\n    ),\n    high=(\n        \"**/package.json\",\n        \"**/package-lock.json\",\n        \"**/pnpm-lock.yaml\",\n        \"**/yarn.lock\",\n        \"**/go.mod\",\n        \"**/go.sum\",\n        \"**/pyproject.toml\",\n        \"**/requirements*.txt\",\n        \"**/poetry.lock\",\n        \"**/uv.lock\",\n        \"**/Cargo.toml\",\n        \"**/Cargo.lock\",\n        \"**/Gemfile*\",\n        \"**/Dockerfile*\",\n        \"**/docker-compose*.yml\",\n        \"**/*.tf\",\n    ),\n    low=(\"docs/**\", \"**/*.md\"),\n)\nDEFAULT_REVIEW = Review(\n    guide_files=(),\n    skip=(\"**/*.lock\", \"**/package-lock.json\", \"**/pnpm-lock.yaml\", \"**/dist/**\", \"**/vendor/**\", \"**/*.min.js\"),\n)\nDEFAULT_LIMITS = Limits(\n    fix_attempts=3, review_rounds=3, max_scope_files=20, large_diff_lines=400, huge_diff_lines=1000, max_criteria=20\n)\nFIELDS = (\n    Field(\"schema_version\", \"整数\", f\"プロファイルの形の版。今は {SCHEMA_VERSION}\"),\n    Field(\"verify.commands[].id\", \"文字列\", \"検査の名前（kebab-case）。証拠のログのファイル名になる\"),\n    Field(\"verify.commands[].run\", \"文字列\", \"リポジトリのルートで実行するシェルのコマンド。CI=1 を付けて実行する\"),\n    Field(\"verify.commands[].timeout_sec\", \"整数\", f\"時間の上限（秒、1〜{MAX_TIMEOUT_SEC}）\"),\n    Field(\"paths.tests\", \"glob の配列\", \"テストのファイル。不具合の修正で、最初に再現のテストだけを書く範囲\"),\n    Field(\"risk.always_human\", \"glob の配列\", \"常に人が差分を読むパス。計画で触ると H1、変更に含むと H3 で全文を読む\"),\n    Field(\"risk.high\", \"glob の配列\", \"変更に含むとリスクの段を high にするパス\"),\n    Field(\"risk.low\", \"glob の配列\", \"変更がこれとテストだけなら、リスクの段を low にするパス\"),\n    Field(\"review.guide_files\", \"パスの配列\", \"探索役と検証役に渡すレビューの指示（開始時の版を写す）\"),\n    Field(\"review.skip\", \"glob の配列\", \"レビューで指摘しないパス（生成物、lockfile）\"),\n    Field(\"limits.fix_attempts\", \"整数\", \"検査の失敗がこの回数続いたら H2\"),\n    Field(\"limits.review_rounds\", \"整数\", \"Important が残るレビューがこの回数続いたら H2\"),\n    Field(\"limits.max_scope_files\", \"整数\", \"計画の範囲がこのファイル数を超えたら H1\"),\n    Field(\"limits.large_diff_lines\", \"整数\", \"差分の行数がこれを超えたら、リスクの段を少なくとも medium にする\"),\n    Field(\"limits.huge_diff_lines\", \"整数\", \"差分の行数がこれを超えたら、リスクの段を high にする\"),\n    Field(\"limits.max_criteria\", \"整数\", \"計画の受け入れ条件の数の上限\"),\n    Field(\"commit.trailers\", \"文字列の配列\", \"コミットの文の最後に足す行（Co-Authored-By など）\"),\n)\n\n\ndef make_profile(commands: tuple[Command, ...], guide_files: tuple[str, ...]) -> Profile:\n    \"\"\"setup が検出した値と既定値から、承認の前の案を作る。\"\"\"\n    return Profile(\n        schema_version=SCHEMA_VERSION,\n        verify=Verify(commands),\n        paths=Paths(DEFAULT_TESTS),\n        risk=DEFAULT_RISK,\n        review=Review(guide_files, DEFAULT_REVIEW.skip),\n        limits=DEFAULT_LIMITS,\n        commit=Commit(()),\n    )\n\n\ndef digest(text: str) -> str:\n    return hashlib.sha256(text.encode(\"utf-8\")).hexdigest()\n\n\ndef parse(value: object, problems: list[str]) -> Profile:\n    data = shape.as_object(value, \"\", problems)\n    shape.unknown_keys(data, (\"schema_version\", \"verify\", \"paths\", \"risk\", \"review\", \"limits\", \"commit\"), \"\", problems)\n    version = data.get(\"schema_version\")\n    if version != SCHEMA_VERSION:\n        problems.append(f\"schema_version が {version!r} です。今の版は {SCHEMA_VERSION}。setup-new --force で作り直す\")\n    return Profile(\n        schema_version=SCHEMA_VERSION,\n        verify=_parse_verify(shape.as_object(data.get(\"verify\"), \"verify\", problems), problems),\n        paths=Paths(_globs(data, \"paths\", (\"tests\",), problems)[0]),\n        risk=Risk(*_globs(data, \"risk\", (\"always_human\", \"high\", \"low\"), problems)),\n        review=Review(*_globs(data, \"review\", (\"guide_files\", \"skip\"), problems)),\n        limits=_parse_limits(shape.as_object(data.get(\"limits\"), \"limits\", problems), problems),\n        commit=Commit(*_globs(data, \"commit\", (\"trailers\",), problems)),\n    )\n\n\ndef _parse_verify(data: dict[str, object], problems: list[str]) -> Verify:\n    shape.unknown_keys(data, (\"commands\",), \"verify\", problems)\n    commands = []\n    for where, item in shape.objects(data, \"commands\", \"verify\", problems):\n        shape.unknown_keys(item, (\"id\", \"run\", \"timeout_sec\"), where, problems)\n        commands.append(\n            Command(\n                id=shape.text(item, \"id\", where, problems, pattern=COMMAND_ID),\n                run=shape.filled(item, \"run\", where, problems),\n                timeout_sec=shape.integer(item, \"timeout_sec\", where, problems, bounds=(1, MAX_TIMEOUT_SEC)),\n            )\n        )\n    if not commands:\n        problems.append(\"verify.commands が空です。検査コマンドが無いと証拠を作れない。1つ以上書く\")\n    for repeated in shape.duplicates(command.id for command in commands):\n        problems.append(f\"verify.commands の id {repeated!r} が重なっています\")\n    return Verify(tuple(commands))\n\n\ndef _globs(\n    data: dict[str, object], key: str, names: tuple[str, ...], problems: list[str]\n) -> tuple[tuple[str, ...], ...]:\n    section = shape.as_object(data.get(key), key, problems)\n    shape.unknown_keys(section, names, key, problems)\n    return tuple(shape.texts(section, name, key, problems) for name in names)\n\n\ndef _parse_limits(data: dict[str, object], problems: list[str]) -> Limits:\n    keys = (\"fix_attempts\", \"review_rounds\", \"max_scope_files\", \"large_diff_lines\", \"huge_diff_lines\", \"max_criteria\")\n    shape.unknown_keys(data, keys, \"limits\", problems)\n    values = [shape.integer(data, key, \"limits\", problems, bounds=(1, MAX_LIMIT)) for key in keys]\n    limits = Limits(*values)\n    if limits.large_diff_lines > limits.huge_diff_lines:\n        problems.append(\"limits.large_diff_lines は limits.huge_diff_lines 以下にする\")\n    return limits\n\n\ndef parse_approval(value: object, problems: list[str]) -> Approval:\n    data = shape.as_object(value, \"\", problems)\n    shape.unknown_keys(data, (\"sha256\", \"who\", \"answer\", \"at\"), \"\", problems)\n    return Approval(\n        sha256=shape.text(data, \"sha256\", \"\", problems, pattern=r\"[0-9a-f]{64}\"),\n        who=shape.text(data, \"who\", \"\", problems),\n        answer=shape.filled(data, \"answer\", \"\", problems),\n        at=shape.filled(data, \"at\", \"\", problems),\n    )\n"
+        },
+        {
+          "path": "kit/.autoflow/autoflow_kit/views.py",
+          "mode": "replace",
+          "content": "\"\"\"人とサブエージェントが読む版（計画、プロファイル、レビューの結果、関所の理由、表）を Markdown で作る。\"\"\"\n\nfrom __future__ import annotations\n\nfrom autoflow_kit import contracts, policy, profile, render\n\nTAG_LABELS = {policy.IMPORTANT: \"Important\", policy.NIT: \"Nit\", policy.PRE_EXISTING: \"Pre-existing\"}\n\n\ndef render_kinds() -> str:\n    rows = [[f\"`{kind.name}`\", kind.label, \"要る\" if kind.repro else \"—\", kind.checks] for kind in policy.KINDS]\n    return render.table([\"種類\", \"意味\", \"再現のテスト\", \"確かめること\"], rows)\n\n\ndef render_tiers() -> str:\n    rows = [[f\"`{tier.name}`\", tier.depth, tier.human] for tier in policy.TIERS]\n    return render.table([\"段\", \"レビューの深さ\", \"H3 で人がすること\"], rows)\n\n\ndef render_plan(plan: contracts.Plan, flow: policy.Flow) -> str:\n    kind = policy.kind_of(plan.kind)\n    criteria = [[item.id, item.text, item.check, item.run or render.MISSING] for item in plan.criteria]\n    questions = [[item.question, item.default, item.impact] for item in plan.open_questions]\n    parts = [\n        \"# 計画\",\n        \"\",\n        f\"- 種類: `{plan.kind}`（{kind.label}）\",\n        f\"- ゴール: {plan.goal}\",\n        f\"- 予測のリスクの段: `{flow.forecast_tier}`\",\n        f\"- コミットの件名の案: {plan.commit_subject}\",\n        \"\",\n        \"## 組んだ手順\",\n        \"\",\n        render.bullets(flow.steps),\n        \"\",\n        \"## H1 に当たった条件\",\n        \"\",\n        render.bullets([f\"`{rule}` {policy.rule_text(rule)}\" for rule in flow.h1_reasons]),\n        \"\",\n        \"## 範囲\",\n        \"\",\n        render.bullets([f\"`{path}`\" for path in plan.scope]),\n        \"\",\n        \"## やらないこと\",\n        \"\",\n        render.bullets(plan.non_goals),\n        \"\",\n        \"## 受け入れ条件と確かめ方\",\n        \"\",\n        render.table([\"id\", \"条件\", \"確かめ方\", \"コマンド\"], criteria),\n        \"\",\n        \"## 依頼から決まらなかった値\",\n        \"\",\n        render.table([\"問い\", \"既定で使う値\", \"影響\"], questions) if questions else render.bullets([]),\n        \"\",\n        \"## 足す依存\",\n        \"\",\n        render.bullets(plan.dependencies_to_add),\n        \"\",\n        \"## 戻し方\",\n        \"\",\n        plan.revert,\n        \"\",\n    ]\n    if kind.repro:\n        parts += [\"## 再現と原因\", \"\", f\"- 再現のコマンド: `{plan.repro}`\", f\"- 原因の見立て: {plan.root_cause}\", \"\"]\n    return \"\\n\".join(parts)\n\n\ndef render_profile(settings: profile.Profile) -> str:\n    commands = [\n        [command.id, f\"`{command.run}`\", render.number(command.timeout_sec)] for command in settings.verify.commands\n    ]\n    limits = settings.limits\n    limit_rows = [\n        [\"検査の失敗が続いたら H2\", render.number(limits.fix_attempts)],\n        [\"Important が残るレビューが続いたら H2\", render.number(limits.review_rounds)],\n        [\"計画の範囲のファイル数がこれを超えたら H1\", render.number(limits.max_scope_files)],\n        [\"差分の行数がこれを超えたら少なくとも medium\", render.number(limits.large_diff_lines)],\n        [\"差分の行数がこれを超えたら high\", render.number(limits.huge_diff_lines)],\n        [\"受け入れ条件の数の上限\", render.number(limits.max_criteria)],\n    ]\n    return \"\\n\".join(\n        [\n            \"# プロファイル\",\n            \"\",\n            \"## 検査コマンド（verify が順に実行する）\",\n            \"\",\n            render.table([\"id\", \"コマンド\", \"上限（秒）\"], commands),\n            \"\",\n            \"## 常に人が差分を読むパス（risk.always_human）\",\n            \"\",\n            render.bullets([f\"`{path}`\" for path in settings.risk.always_human]),\n            \"\",\n            \"## リスクの段を high にするパス（risk.high）\",\n            \"\",\n            render.bullets([f\"`{path}`\" for path in settings.risk.high]),\n            \"\",\n            \"## これとテストだけなら low にするパス（risk.low）\",\n            \"\",\n            render.bullets([f\"`{path}`\" for path in settings.risk.low]),\n            \"\",\n            \"## テストのパス（paths.tests）\",\n            \"\",\n            render.bullets([f\"`{path}`\" for path in settings.paths.tests]),\n            \"\",\n            \"## レビュー\",\n            \"\",\n            f\"- 探索役と検証役に渡す指示: {', '.join(settings.review.guide_files) or render.MISSING}\",\n            f\"- 指摘しないパス: {', '.join(settings.review.skip) or render.MISSING}\",\n            \"\",\n            \"## 上限\",\n            \"\",\n            render.table([\"条件\", \"値\"], limit_rows),\n            \"\",\n            \"## コミットの文の最後に足す行\",\n            \"\",\n            render.bullets(settings.commit.trailers),\n            \"\",\n        ]\n    )\n\n\ndef finding_line(item: contracts.Kept) -> str:\n    \"\"\"指摘の1行。プロンプトと報告書で同じ書き方にする。\"\"\"\n    finding = item.finding\n    others = f\"（同じ種類の他の箇所: {', '.join(finding.other_locations)}）\" if finding.other_locations else \"\"\n    return (\n        f\"{item.id} [{TAG_LABELS.get(item.tag, item.tag)}] {finding.title} — `{finding.file}:{finding.line}`、\"\n        f\"種類 {finding.bug_class}{others}\"\n    )\n\n\ndef render_review(result: contracts.ReviewResult) -> str:\n    rows = [\n        [\n            item.id,\n            TAG_LABELS.get(item.tag, item.tag),\n            item.finding.title,\n            f\"{item.finding.file}:{item.finding.line}\",\n            item.finding.bug_class,\n            f\"{item.real_votes}/{item.voters}\",\n        ]\n        for item in result.kept\n    ]\n    details = []\n    for item in result.kept:\n        details += [f\"### {item.id} {item.finding.title}\", \"\", item.finding.evidence, \"\"]\n        if item.finding.other_locations:\n            details += [render.bullets(item.finding.other_locations), \"\"]\n    return \"\\n\".join(\n        [\n            f\"# レビュー ラウンド {result.round_no}\",\n            \"\",\n            f\"- 深さ: {result.depth}\",\n            f\"- 差分: `{result.base[:12]}` → `{result.tree[:12]}`\",\n            f\"- 票で落ちた候補: {', '.join(result.dropped) or render.MISSING}\",\n            \"\",\n            render.table([\"id\", \"重大度\", \"指摘\", \"場所\", \"バグの種類\", \"本物の票\"], rows),\n            \"\",\n            *details,\n        ]\n    )\n\n\ndef render_gate(gate_id: str, reasons: tuple[str, ...], details: tuple[str, ...]) -> str:\n    \"\"\"H1・H2 の関所で人に見せる理由と選択肢。\"\"\"\n    gate = policy.gate_of(gate_id)\n    options = [[f\"`{option.name}`\", option.label, option.then] for option in gate.options]\n    return \"\\n\".join(\n        [\n            f\"# {gate.id} {gate.label}\",\n            \"\",\n            \"## 当たった条件\",\n            \"\",\n            render.bullets([f\"`{rule}` {policy.rule_text(rule)}\" for rule in reasons]),\n            \"\",\n            \"## 今の状況\",\n            \"\",\n            render.bullets(details),\n            \"\",\n            \"## 選べること\",\n            \"\",\n            render.table([\"選択\", \"意味\", \"その後\"], options),\n            \"\",\n        ]\n    )\n"
+        },
+        {
+          "path": "kit/claude/skills/autoflow-setup/references/profile-schema.md",
+          "mode": "replace",
+          "content": "<!-- 生成物。scripts/gen_docs.py が profile.py の FIELDS と既定値から作る。手で編集しない（make docs で作り直す） -->\n\n# プロファイルの項目\n\n`.autoflow/profile.json` の項目である。形の版は `schema_version` で、今は 1 である。glob の `*` は `/` もまたぎ、`**/` で始まる glob はルートの直下のファイルにも当たる。\n\n| 項目 | 型 | 意味 |\n|---|---|---|\n| `schema_version` | 整数 | プロファイルの形の版。今は 1 |\n| `verify.commands[].id` | 文字列 | 検査の名前（kebab-case）。証拠のログのファイル名になる |\n| `verify.commands[].run` | 文字列 | リポジトリのルートで実行するシェルのコマンド。CI=1 を付けて実行する |\n| `verify.commands[].timeout_sec` | 整数 | 時間の上限（秒、1〜3600） |\n| `paths.tests` | glob の配列 | テストのファイル。不具合の修正で、最初に再現のテストだけを書く範囲 |\n| `risk.always_human` | glob の配列 | 常に人が差分を読むパス。計画で触ると H1、変更に含むと H3 で全文を読む |\n| `risk.high` | glob の配列 | 変更に含むとリスクの段を high にするパス |\n| `risk.low` | glob の配列 | 変更がこれとテストだけなら、リスクの段を low にするパス |\n| `review.guide_files` | パスの配列 | 探索役と検証役に渡すレビューの指示（開始時の版を写す） |\n| `review.skip` | glob の配列 | レビューで指摘しないパス（生成物、lockfile） |\n| `limits.fix_attempts` | 整数 | 検査の失敗がこの回数続いたら H2 |\n| `limits.review_rounds` | 整数 | Important が残るレビューがこの回数続いたら H2 |\n| `limits.max_scope_files` | 整数 | 計画の範囲がこのファイル数を超えたら H1 |\n| `limits.large_diff_lines` | 整数 | 差分の行数がこれを超えたら、リスクの段を少なくとも medium にする |\n| `limits.huge_diff_lines` | 整数 | 差分の行数がこれを超えたら、リスクの段を high にする |\n| `limits.max_criteria` | 整数 | 計画の受け入れ条件の数の上限 |\n| `commit.trailers` | 文字列の配列 | コミットの文の最後に足す行（Co-Authored-By など） |\n\n## 既定値\n\nsetup-new は、検出した検査コマンドとレビューの指示のファイルを、次の既定値に足す。\n\n```text\n{\n  \"schema_version\": 1,\n  \"verify\": {\n    \"commands\": []\n  },\n  \"paths\": {\n    \"tests\": [\n      \"tests/**\",\n      \"test/**\",\n      \"**/__tests__/**\",\n      \"**/*_test.go\",\n      \"**/*.test.*\",\n      \"**/*.spec.*\",\n      \"**/test_*.py\"\n    ]\n  },\n  \"risk\": {\n    \"always_human\": [\n      \".github/workflows/**\",\n      \".gitlab-ci.yml\",\n      \".circleci/**\",\n      \"Jenkinsfile\",\n      \"**/auth/**\",\n      \"**/billing/**\",\n      \"**/payment*/**\",\n      \"**/migrations/**\",\n      \"**/.env*\",\n      \"**/*secret*\",\n      \"**/*.pem\",\n      \"**/*.key\",\n      \".autoflow/**\",\n      \".claude/**\",\n      \"**/CLAUDE.md\",\n      \"**/AGENTS.md\",\n      \"**/REVIEW.md\"\n    ],\n    \"high\": [\n      \"**/package.json\",\n      \"**/package-lock.json\",\n      \"**/pnpm-lock.yaml\",\n      \"**/yarn.lock\",\n      \"**/go.mod\",\n      \"**/go.sum\",\n      \"**/pyproject.toml\",\n      \"**/requirements*.txt\",\n      \"**/poetry.lock\",\n      \"**/uv.lock\",\n      \"**/Cargo.toml\",\n      \"**/Cargo.lock\",\n      \"**/Gemfile*\",\n      \"**/Dockerfile*\",\n      \"**/docker-compose*.yml\",\n      \"**/*.tf\"\n    ],\n    \"low\": [\n      \"docs/**\",\n      \"**/*.md\"\n    ]\n  },\n  \"review\": {\n    \"guide_files\": [],\n    \"skip\": [\n      \"**/*.lock\",\n      \"**/package-lock.json\",\n      \"**/pnpm-lock.yaml\",\n      \"**/dist/**\",\n      \"**/vendor/**\",\n      \"**/*.min.js\"\n    ]\n  },\n  \"limits\": {\n    \"fix_attempts\": 3,\n    \"review_rounds\": 3,\n    \"max_scope_files\": 20,\n    \"large_diff_lines\": 400,\n    \"huge_diff_lines\": 1000,\n    \"max_criteria\": 20\n  },\n  \"commit\": {\n    \"trailers\": []\n  }\n}\n```\n"
+        },
+        {
+          "path": "tests/test_profile.py",
+          "mode": "append",
+          "content": "\n\nclass MaxCriteriaTest(unittest.TestCase):\n    def test_max_criteria(self) -> None:\n        data = default_data()\n        limits = data[\"limits\"]\n        assert isinstance(limits, dict)\n        limits[\"max_criteria\"] = 0\n        problems: list[str] = []\n        profile.parse(data, problems)\n        self.assertEqual(len(problems), 1)\n"
+        }
+      ]
+    },
+    {
+      "id": "S-TOOL-04",
+      "rule": "TOOL-04",
+      "level": "review",
+      "description": "lint の設定で関数の大きさの検査を外す",
+      "files": [
+        {
+          "path": "pyproject.toml",
+          "mode": "replace",
+          "content": "# 開発用の検査の設定。配布物（kit/）は Python 3.9 以上の標準ライブラリだけで動かす\n[project]\nname = \"autoflow-kit\"\nversion = \"0.1.0\"\nrequires-python = \">=3.9\"\ndependencies = []\n\n[tool.ruff]\ntarget-version = \"py39\"\nline-length = 120\nsrc = [\"kit/.autoflow\", \"scripts\", \"tests\"]\nextend-exclude = [\".foundation\", \"docs/design/enforcement-matrix.md\", \"tests/fixtures\"]\n\n[tool.ruff.lint]\nselect = [\"E\", \"W\", \"F\", \"I\", \"N\", \"UP\", \"B\", \"SIM\", \"RUF\", \"C90\", \"PTH\", \"T20\", \"PL\", \"TID\", \"BLE\", \"ARG\", \"ERA\", \"D100\", \"D104\"]\nignore = [\n  \"C901\",\n  \"RUF001\", \"RUF002\", \"RUF003\",  # 日本語の全角記号を誤検出するため\n  \"PLR2004\",                     # 終了コード 0/1/2 などの小さな定数を許す\n]\n\n[tool.ruff.lint.per-file-ignores]\n\"kit/.autoflow/autoflow_kit/cli.py\" = [\"T201\"]\n\"scripts/*.py\" = [\"T201\"]\n\"install.py\" = [\"T201\"]\n\n[tool.ruff.lint.flake8-tidy-imports]\nban-relative-imports = \"all\"\n\n[tool.ruff.lint.mccabe]\nmax-complexity = 10\n\n[tool.ruff.lint.pylint]\nmax-args = 6\nmax-branches = 12\nmax-returns = 6\nmax-statements = 50\n\n[tool.ruff.lint.isort]\nknown-first-party = [\"autoflow_kit\"]\n\n[tool.mypy]\npython_version = \"3.9\"\nstrict = true\nmypy_path = \"kit/.autoflow\"\nfiles = [\"kit/.autoflow/autoflow_kit\", \"kit/.autoflow/autoflow.py\", \"scripts\", \"tests\", \"install.py\"]\nexclude = [\"tests/fixtures/\"]\nwarn_unreachable = true\n"
+        }
+      ]
+    },
+    {
+      "id": "S-TOOL-03",
+      "rule": "TOOL-03",
+      "level": "review",
+      "description": "抑止コメントで lint を黙らせる",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/shape.py",
+          "mode": "append",
+          "content": "\n\nMAX_DEPTH = 10  # noqa: PLR2004\n"
+        }
+      ]
+    }
+  ]
+}

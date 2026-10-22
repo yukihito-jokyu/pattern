@@ -1,0 +1,36 @@
+--- a/kit/.autoflow/autoflow_kit/layout.py
++++ b/kit/.autoflow/autoflow_kit/layout.py
+@@ -43,7 +43,7 @@
+ GUIDE_FILES = ("REVIEW.md",)
+ 
+ # 取得元の種類と、ref（課題の番号）が要るか。取り方はスキルの references/sources.md の表に書く
+-SOURCES = {"text": False, "backlog": True, "redmine": True, "gitlab": True, "github": True}
++SOURCES = {"text": False, "backlog": True, "redmine": True, "gitlab": True, "github": True, "jira": True}
+ RUN_ID = re.compile(r"^[0-9]{8}-[0-9]{6}(-[a-z0-9]+(-[a-z0-9]+)*)?$")
+ REF_SLUG = re.compile(r"[^a-z0-9]+")
+ SLUG_CHARS = 30
+--- a/kit/claude/skills/autoflow/references/sources.md
++++ b/kit/claude/skills/autoflow/references/sources.md
+@@ -9,6 +9,7 @@
+ | `redmine` | `/autoflow redmine 456` | Redmine の MCP のチケットを取るツール（`getIssue`、`include` に `journals`）。サーバー名が違う環境では、同じ働きのツールを使う | チケットの番号 | チケットの URL（分かれば） |
+ | `gitlab` | `/autoflow gitlab 78` | `glab issue view 78 --comments -F json` | Issue の番号 | `web_url` |
+ | `github` | `/autoflow github 90` | `gh issue view 90 --comments --json number,title,body,comments,url` | Issue の番号 | `url` |
++| `jira` | `/autoflow jira PROJ-123` | Atlassian の MCP の課題を取るツール（`getJiraIssue`、引数 `cloudId` と `issueIdOrKey`。`cloudId` は `getAccessibleAtlassianResources` で取る）。コメントは課題の `comment` の項目から取る。サーバー名が違う環境では、同じ働きのツールを使う | 課題キー（`PROJ-123`） | 課題の URL（分かれば） |
+ 
+ ## intake.md の書き方
+ 
+--- a/tests/test_intake.py
++++ b/tests/test_intake.py
+@@ -58,3 +58,12 @@
+         support.commit_all(where, "レビューの指示")
+         intake.start(where, ORIGIN, support.body_file(where), support.NOW)
+         self.assertIn("必ず境界の値を確かめる", fsops.read_text(where.guide_path("20261021-143000-proj-12")))
++
++    def test_source_jira(self) -> None:
++        where = support.make_repo(self)
++        no_ref = trail.Origin("jira", "", "", "題名")
++        with self.assertRaisesRegex(StageError, "--ref"):
++            intake.start(where, no_ref, support.body_file(where), support.NOW)
++        origin = trail.Origin("jira", "PROJ-123", "https://example.atlassian.net/browse/PROJ-123", "掛け算を足す")
++        text = intake.start(where, origin, support.body_file(where), support.NOW)
++        self.assertIn("実行: 20261021-143000-proj-123", text)

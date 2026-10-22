@@ -1,0 +1,769 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "autoflow_kit にサブパッケージを作る",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/stages/__init__.py",
+          "mode": "create",
+          "content": "\"\"\"段のモジュールをまとめる。\"\"\"\n"
+        }
+      ],
+      "expect": "STR-01 "
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "表に無いモジュールを足す",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/cache.py",
+          "mode": "create",
+          "content": "\"\"\"計算の結果を覚える。\"\"\"\n\nfrom __future__ import annotations\n"
+        }
+      ],
+      "expect": "STR-02 "
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "level": "structure",
+      "description": "__init__.py で名前を再 export する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/__init__.py",
+          "mode": "append",
+          "content": "\n__all__ = [\"cli\"]\n"
+        }
+      ],
+      "expect": "STR-03 "
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "生成物の gates.md を手で直す",
+      "command": "make docs-check",
+      "files": [
+        {
+          "path": "kit/claude/skills/autoflow/references/gates.md",
+          "mode": "append",
+          "content": "\n手で足した行。\n"
+        }
+      ],
+      "expect": "gates\\.md が古い"
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "リスク判定役の tools に Agent を入れる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/agents/autoflow-risk.md",
+          "mode": "replace",
+          "content": "---\nname: autoflow-risk\ndescription: autoflow のリスク判定役。変更の差分を読み、リスクの段（low・medium・high）と、人が差分を全部読む必要があるかを、根拠付きで judgment.json に書く。規則の段より下げることはできない。コードは変えない。autoflow スキルが status の job の行から起動する。それ以外の場面では使わない。\ntools: Read, Grep, Glob, Write, Agent\n---\n\nあなたは autoflow のリスク判定役です。変更が何に触れるかを読み、規則が見落としたリスクを探します。\n\n起動のメッセージには、プロンプトのファイルのパスが書かれています。最初にそのファイルを読み、書かれた指示だけに従ってください。\n\n- 書いてよいのは、プロンプトが示す出力のファイル1つだけ。作業ツリーのファイルを変えると、補助 CLI が止まる\n- 判定の根拠には、差分の file:line を添える\n- 終えたら、プロンプトが示す1行だけを返す\n"
+        }
+      ],
+      "expect": "STR-05 kit/claude/agents/autoflow-risk\\.md"
+    },
+    {
+      "id": "STR-05-b",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "配布するスキルを自動で呼べるようにする",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/skills/autoflow-learn/SKILL.md",
+          "mode": "replace",
+          "content": "---\nname: autoflow-learn\ndescription: autoflow の全実行の記録から、人の介入の回数とガードレール（差し戻し、中止、インシデント）を数え、繰り返したバグの種類・退けた指摘・人の直しの依頼から、発生源（CLAUDE.md、REVIEW.md、プロファイル、検査）を直す案を作る。コミットした変更に後で見つかった問題（インシデント）の記録にも使う。人が /autoflow-learn で呼ぶ。\nargument-hint: \"[incident <実行の id> <見つかった問題>]\"\nallowed-tools: Bash(python3 .autoflow/autoflow.py *)\n---\n\n# autoflow-learn\n\n見逃しや手戻りを、その実行だけで直して終わりにしない。AI が何を知らなかったかを考え、次の実行が読む場所（CLAUDE.md、REVIEW.md、プロファイル、検査）を直す。ゴールは、差し戻しとインシデントを増やさずに、人の時間を減らすことである。\n\n## インシデントを記録する\n\n引数が `incident <実行の id> <見つかった問題>` なら、`python3 .autoflow/autoflow.py incident --run <実行の id> --text '<見つかった問題>'` を実行し、続けて「材料を集める」へ進む。\n\n## 材料を集める\n\n1. `python3 .autoflow/autoflow.py metrics` を実行し、人の決定の回数、最初の H3 で承認された割合、差し戻し・中止・インシデントを読む\n2. `python3 .autoflow/autoflow.py learn` を実行し、繰り返したバグの種類、退けた指摘、人の直しの依頼、H2 に当たった条件、インシデントを読む\n3. 必要なら、実行の記録（`.autoflow/runs/<id>/` の報告書、レビューの結果）を Read で読む\n\n## 直す案を作る\n\n材料ごとに、次の表で直す場所を選び、案を作る。案には、根拠（どの実行の、どの指摘や回答か）と、直す文面を書く。\n\n| 材料 | 直す場所 |\n|---|---|\n| 同じバグの種類が繰り返し出る | CLAUDE.md（書き方の決まり）か、そのバグを落とす検査（lint のルール、テスト） |\n| レビューが見逃した（インシデント） | REVIEW.md（必ず確かめること）、`risk.always_human`、検査 |\n| 退けた指摘が多い観点・種類 | REVIEW.md（指摘しないこと） |\n| 人の直しの依頼が同じ方向 | CLAUDE.md（方向の決まり）、計画の受け入れ条件の書き方 |\n| H2 の検査の失敗が多い | 検査コマンド、テストの書き方の決まり |\n| 差し戻しもインシデントも無く、H3 が常に1回で承認される段がある | プロファイルの上限やパスの分類を緩める案（証拠に応じて緩める） |\n\n## 人に確かめること\n\n1. 案を一覧にして示す（直す場所、文面、根拠）\n2. AskUserQuestion（複数選択）で、取り入れる案を選んでもらう\n3. 選ばれた案だけを Edit で直す。プロファイル（`.autoflow/profile.json`）を直したら、/autoflow-setup の setup-check と承認（H0）をやり直すよう人に伝える\n\n回答が無い・空・自動で閉じた質問は、承認にも選択にもしない。関所のファイルの場所を報告して止まる。\n\n## してはいけないこと\n\n- 人が選んでいない案を直す\n- `.autoflow/runs/` の記録を書き換える\n- コミットする（直した変更のコミットは人が行う）\n"
+        }
+      ],
+      "expect": "STR-05 kit/claude/skills/autoflow-learn/SKILL\\.md"
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "段のモジュールから別の段のモジュールを import する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/handoff.py",
+          "mode": "append",
+          "content": "\nfrom autoflow_kit import reviewing\n"
+        }
+      ],
+      "expect": "DEP-01 .*reviewing"
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "level": "structure",
+      "description": "他のモジュールの _ で始まる関数を使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\n\ndef is_skipped(path: str) -> bool:\n    return policy._is_match(path, \"dist/**\")\n"
+        }
+      ],
+      "expect": "DEP-02 "
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "level": "structure",
+      "description": "標準ライブラリでないものを import する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\nimport yaml\n"
+        }
+      ],
+      "expect": "DEP-03 .*yaml"
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "level": "structure",
+      "description": "段のモジュールでファイルを直に書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/verifying.py",
+          "mode": "append",
+          "content": "\n\ndef note(ctx: context.Context) -> None:\n    ctx.where.task_path(ctx.run_id).write_text(\"\")\n"
+        }
+      ],
+      "expect": "DEP-04 .*write_text"
+    },
+    {
+      "id": "DEP-04-b",
+      "rule": "DEP-04",
+      "level": "lint",
+      "description": "段のモジュールで print する",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/status.py",
+          "mode": "append",
+          "content": "\n\ndef show(text: str) -> None:\n    print(text)\n"
+        }
+      ],
+      "expect": "T201"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "lint",
+      "description": "関数名を PascalCase にする",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef MeanValue() -> None:\n    return None\n"
+        }
+      ],
+      "expect": "N802"
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "level": "structure",
+      "description": "語彙表の別名の動詞で関数名を始める",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/workspace.py",
+          "mode": "append",
+          "content": "\n\ndef get_plan(where: Layout, run_id: str) -> contracts.Plan:\n    return load_plan(where, run_id, 1)\n"
+        }
+      ],
+      "expect": "NAM-02 .*get_plan"
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "JSON のキーを camelCase にする",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/contracts.py",
+          "mode": "append",
+          "content": "\n\ndef parse_bug_class(data: dict[str, object], problems: list[str]) -> str:\n    return shape.text(data, \"bugClass\", \"\", problems)\n"
+        }
+      ],
+      "expect": "NAM-03 .*bugClass"
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "structure",
+      "description": "可変の状態を持つクラスを書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/views.py",
+          "mode": "append",
+          "content": "\n\nclass Cache:\n    items: dict[str, str] = {}\n"
+        }
+      ],
+      "expect": "CODE-01 .*Cache"
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "lint",
+      "description": "相対 import を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\nfrom . import shape\n"
+        }
+      ],
+      "expect": "TID252"
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "level": "type",
+      "description": "型注釈の無い関数を書く",
+      "command": "make typecheck",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef double(value):\n    return value * 2\n"
+        }
+      ],
+      "expect": "no-untyped-def|missing a type annotation"
+    },
+    {
+      "id": "CODE-03-b",
+      "rule": "CODE-03",
+      "level": "lint",
+      "description": "Optional で省略可能な値を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\nimport typing\n\n\ndef first(values: list[str]) -> typing.Optional[str]:\n    return values[0] if values else None\n"
+        }
+      ],
+      "expect": "UP045"
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "level": "lint",
+      "description": "引数が7つの関数を書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef total(a: int, b: int, c: int, d: int, e: int, f: int, g: int) -> int:\n    return a + b + c + d + e + f + g\n"
+        }
+      ],
+      "expect": "PLR0913"
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "docstring の無いモジュールを書く",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "scripts/helper.py",
+          "mode": "create",
+          "content": "from __future__ import annotations\n\nVALUE = 1\n"
+        }
+      ],
+      "expect": "D100"
+    },
+    {
+      "id": "CODE-05-b",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "コメントアウトしたコードを残す",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n# value = number(1.0)\n"
+        }
+      ],
+      "expect": "ERA001"
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "level": "structure",
+      "description": "ファイル名の文字列を段のモジュールに書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/handoff.py",
+          "mode": "append",
+          "content": "\n\ndef legacy_path(where: Layout, run_id: str) -> str:\n    return str(where.run_dir(run_id) / \"handoff.md\")\n"
+        }
+      ],
+      "expect": "CODE-06 .*handoff\\.md"
+    },
+    {
+      "id": "CODE-06-b",
+      "rule": "CODE-06",
+      "level": "structure",
+      "description": "ファイル名の定数を layout の外で / でつなぐ",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/planning.py",
+          "mode": "append",
+          "content": "\n\ndef task_file(where: Layout, run_id: str) -> str:\n    return str(where.run_dir(run_id) / layout.TASK_MD)\n"
+        }
+      ],
+      "expect": "CODE-06 .*layout\\.TASK_MD"
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "errors.py に無い例外を投げる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef ratio(part: int, whole: int) -> float:\n    if whole == 0:\n        raise ValueError(\"whole が0\")\n    return part / whole\n"
+        }
+      ],
+      "expect": "ERR-01 .*ValueError"
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "level": "lint",
+      "description": "Exception を捕まえる",
+      "command": "make lint",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/learning.py",
+          "mode": "append",
+          "content": "\n\ndef safe_metrics(where: Layout) -> str:\n    try:\n        return metrics(where)\n    except Exception:\n        return \"\"\n"
+        }
+      ],
+      "expect": "BLE001"
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "level": "structure",
+      "description": "サブエージェントの JSON を検証せずに読む",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\n\ndef raw_votes(where: Layout, run_id: str) -> object:\n    return fsops.read_json(where.votes_path(run_id, 1, 1))\n"
+        }
+      ],
+      "expect": "ERR-02 "
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "level": "test",
+      "description": "ひな形に表に無い置き換えの名前を足す",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/templates/prompts/verifier.md",
+          "mode": "append",
+          "content": "\n補足: ${extra}\n"
+        }
+      ],
+      "expect": "test_templates_match_table"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "structure",
+      "description": "検査コマンドを並行で回すために threading を使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/verifying.py",
+          "mode": "append",
+          "content": "\nimport threading\n"
+        }
+      ],
+      "expect": "ASYNC-01 .*threading"
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "structure",
+      "description": "段のモジュールで標準エラーに書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/verifying.py",
+          "mode": "append",
+          "content": "\nimport sys\n\n\ndef warn(text: str) -> None:\n    sys.stderr.write(text)\n"
+        }
+      ],
+      "expect": "OPS-01 .*sys\\.stderr"
+    },
+    {
+      "id": "OPS-01-b",
+      "rule": "OPS-01",
+      "level": "test",
+      "description": "status に新しい種類の行を足す",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/status.py",
+          "mode": "append",
+          "content": "\n\ndef _end(ctx: context.Context) -> list[str]:\n    return [\"メモ: 新しい種類の行\", f\"終了: 止めた（{ctx.next.why}）\"]\n"
+        }
+      ],
+      "expect": "メモ: 新しい種類の行"
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "段のモジュールで環境変数を読む",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\nimport os\n\n\ndef rounds() -> str:\n    return os.getenv(\"AUTOFLOW_ROUNDS\", \"3\")\n"
+        }
+      ],
+      "expect": "OPS-02 .*getenv"
+    },
+    {
+      "id": "OPS-02-b",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "実行の途中の段で承認済みのプロファイルを読み直す",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\n\ndef live_skip(where: Layout) -> tuple[str, ...]:\n    return workspace.approved_profile(where).review.skip\n"
+        }
+      ],
+      "expect": "OPS-02 .*approved_profile"
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "level": "structure",
+      "description": "サブエージェントの定義で権限を広げる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/agents/autoflow-builder.md",
+          "mode": "append",
+          "content": "\npermissionMode: bypassPermissions で動かす。\n"
+        }
+      ],
+      "expect": "OPS-04 "
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "level": "structure",
+      "description": "実装の段でコミットする",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/building.py",
+          "mode": "append",
+          "content": "\n\ndef save_work(where: Layout) -> str:\n    return proc.git_commit(where.root, \"wip\")\n"
+        }
+      ],
+      "expect": "OPS-05 .*git_commit"
+    },
+    {
+      "id": "GATE-01-a",
+      "rule": "GATE-01",
+      "level": "structure",
+      "description": "関所の id の文字列を段のモジュールに書く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\n\ndef is_stuck(gate: str) -> bool:\n    return gate == \"H2\"\n"
+        }
+      ],
+      "expect": "GATE-01 .*'H2'"
+    },
+    {
+      "id": "GATE-01-b",
+      "rule": "GATE-01",
+      "level": "test",
+      "description": "H1 の規則を足し、test_<id> を足さない",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/policy.py",
+          "mode": "append",
+          "content": "\n\ndef _has_long_goal(plan: contracts.Plan, _profile: profile.Profile) -> bool:\n    return len(plan.goal) > 200\n\n\nH1_RULES = (*H1_RULES, PlanRule(\"h1_long_goal\", \"ゴールが長い\", _has_long_goal))\n"
+        }
+      ],
+      "expect": "test_rules_have_tests"
+    },
+    {
+      "id": "GATE-01-c",
+      "rule": "GATE-01",
+      "level": "test",
+      "description": "H1 の規則の id を、判定の関数名と別に決める",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/policy.py",
+          "mode": "append",
+          "content": "\n\ndef _is_human_only(plan: contracts.Plan, _profile: profile.Profile) -> bool:\n    return all(item.check == contracts.HUMAN for item in plan.criteria)\n\n\nH1_RULES = (*H1_RULES, PlanRule(\"h1_human_criteria\", \"受け入れ条件が全部、人が確かめるものである\", _is_human_only))\n"
+        }
+      ],
+      "expect": "test_rule_ids_match_functions"
+    },
+    {
+      "id": "GATE-02-a",
+      "rule": "GATE-02",
+      "level": "structure",
+      "description": "スキルから、答えが無いときの決まった1文を消す",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/claude/skills/autoflow-learn/SKILL.md",
+          "mode": "replace",
+          "content": "---\nname: autoflow-learn\ndescription: autoflow の全実行の記録から、人の介入の回数とガードレール（差し戻し、中止、インシデント）を数え、繰り返したバグの種類・退けた指摘・人の直しの依頼から、発生源（CLAUDE.md、REVIEW.md、プロファイル、検査）を直す案を作る。コミットした変更に後で見つかった問題（インシデント）の記録にも使う。人が /autoflow-learn で呼ぶ。\nargument-hint: \"[incident <実行の id> <見つかった問題>]\"\ndisable-model-invocation: true\nallowed-tools: Bash(python3 .autoflow/autoflow.py *)\n---\n\n# autoflow-learn\n\n見逃しや手戻りを、その実行だけで直して終わりにしない。AI が何を知らなかったかを考え、次の実行が読む場所（CLAUDE.md、REVIEW.md、プロファイル、検査）を直す。ゴールは、差し戻しとインシデントを増やさずに、人の時間を減らすことである。\n\n## インシデントを記録する\n\n引数が `incident <実行の id> <見つかった問題>` なら、`python3 .autoflow/autoflow.py incident --run <実行の id> --text '<見つかった問題>'` を実行し、続けて「材料を集める」へ進む。\n\n## 材料を集める\n\n1. `python3 .autoflow/autoflow.py metrics` を実行し、人の決定の回数、最初の H3 で承認された割合、差し戻し・中止・インシデントを読む\n2. `python3 .autoflow/autoflow.py learn` を実行し、繰り返したバグの種類、退けた指摘、人の直しの依頼、H2 に当たった条件、インシデントを読む\n3. 必要なら、実行の記録（`.autoflow/runs/<id>/` の報告書、レビューの結果）を Read で読む\n\n## 直す案を作る\n\n材料ごとに、次の表で直す場所を選び、案を作る。案には、根拠（どの実行の、どの指摘や回答か）と、直す文面を書く。\n\n| 材料 | 直す場所 |\n|---|---|\n| 同じバグの種類が繰り返し出る | CLAUDE.md（書き方の決まり）か、そのバグを落とす検査（lint のルール、テスト） |\n| レビューが見逃した（インシデント） | REVIEW.md（必ず確かめること）、`risk.always_human`、検査 |\n| 退けた指摘が多い観点・種類 | REVIEW.md（指摘しないこと） |\n| 人の直しの依頼が同じ方向 | CLAUDE.md（方向の決まり）、計画の受け入れ条件の書き方 |\n| H2 の検査の失敗が多い | 検査コマンド、テストの書き方の決まり |\n| 差し戻しもインシデントも無く、H3 が常に1回で承認される段がある | プロファイルの上限やパスの分類を緩める案（証拠に応じて緩める） |\n\n## 人に確かめること\n\n1. 案を一覧にして示す（直す場所、文面、根拠）\n2. AskUserQuestion（複数選択）で、取り入れる案を選んでもらう\n3. 選ばれた案だけを Edit で直す。プロファイル（`.autoflow/profile.json`）を直したら、/autoflow-setup の setup-check と承認（H0）をやり直すよう人に伝える\n\n\n## してはいけないこと\n\n- 人が選んでいない案を直す\n- `.autoflow/runs/` の記録を書き換える\n- コミットする（直した変更のコミットは人が行う）\n"
+        }
+      ],
+      "expect": "GATE-02 "
+    },
+    {
+      "id": "GATE-03-a",
+      "rule": "GATE-03",
+      "level": "structure",
+      "description": "段の入口で context.begin を呼ばずに集計する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/reviewing.py",
+          "mode": "append",
+          "content": "\n\ndef review_tally(where: Layout, run_id: str, now: str) -> str:\n    events = workspace.load_trail(where, run_id)\n    return f\"{now} {len(events)}\"\n"
+        }
+      ],
+      "expect": "GATE-03 .*review_tally"
+    },
+    {
+      "id": "GATE-04-a",
+      "rule": "GATE-04",
+      "level": "structure",
+      "description": "報告の段で検査コマンドを実行する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/handoff.py",
+          "mode": "append",
+          "content": "\n\ndef rerun(where: Layout) -> int:\n    return proc.shell(\"make test\", where.root, 600).exit_code\n"
+        }
+      ],
+      "expect": "GATE-04 .*proc\\.shell"
+    },
+    {
+      "id": "GATE-04-b",
+      "rule": "GATE-04",
+      "level": "test",
+      "description": "検査の後に作業ツリーが変わっても verify に戻らない",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/trail.py",
+          "mode": "append",
+          "content": "\n\ndef _is_stale(current: Next, tree: str, events: Sequence[Event]) -> bool:\n    return False\n"
+        }
+      ],
+      "expect": "test_changed_after_verify"
+    },
+    {
+      "id": "GATE-05-a",
+      "rule": "GATE-05",
+      "level": "structure",
+      "description": "報告の段で人の承認を自分で記録する",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/handoff.py",
+          "mode": "append",
+          "content": "\n\ndef self_approve(tree: str, now: str) -> trail.Event:\n    return trail.decided(policy.H3, policy.APPROVE, \"\", tree, \"\", now)\n"
+        }
+      ],
+      "expect": "GATE-05 .*trail\\.decided"
+    },
+    {
+      "id": "GATE-05-b",
+      "rule": "GATE-05",
+      "level": "test",
+      "description": "承認の後に作業ツリーが変わってもコミットさせる",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/trail.py",
+          "mode": "append",
+          "content": "\n\ndef _is_unapproved(current: Next, tree: str, events: Sequence[Event]) -> bool:\n    return False\n"
+        }
+      ],
+      "expect": "test_commit_requires_same_tree"
+    },
+    {
+      "id": "GATE-06-a",
+      "rule": "GATE-06",
+      "level": "test",
+      "description": "AI の判定でリスクの段を下げられるようにする",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/policy.py",
+          "mode": "append",
+          "content": "\n\ndef merge_tier(rule_tier: str, ai_tier: str) -> str:\n    return ai_tier\n"
+        }
+      ],
+      "expect": "test_merge_tier"
+    },
+    {
+      "id": "GATE-07-a",
+      "rule": "GATE-07",
+      "level": "test",
+      "description": "読み取りだけの役の前後で tree を比べない",
+      "command": "make test",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/context.py",
+          "mode": "append",
+          "content": "\n\ndef require_same_tree(expected: str, actual: str) -> None:\n    return None\n"
+        }
+      ],
+      "expect": "test_tree_changed_during_review"
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "level": "structure",
+      "description": "対応するモジュールの無いテストを置く",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "tests/test_misc.py",
+          "mode": "create",
+          "content": "\"\"\"いろいろのテスト。\"\"\"\n\nfrom __future__ import annotations\n\nimport unittest\n\n\nclass MiscTest(unittest.TestCase):\n    def test_one(self) -> None:\n        self.assertEqual(1, 1)\n"
+        }
+      ],
+      "expect": "TEST-01 tests/test_misc\\.py"
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "level": "structure",
+      "description": "テストでモックを使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "tests/test_render.py",
+          "mode": "append",
+          "content": "\nfrom unittest import mock\n"
+        }
+      ],
+      "expect": "TEST-02 "
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "level": "structure",
+      "description": "ひな形だけを足し、prompts.TEMPLATES に足さない",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "kit/.autoflow/templates/prompts/explainer.md",
+          "mode": "create",
+          "content": "あなたは説明役です。\n\n完了: ${output_path}\n"
+        }
+      ],
+      "expect": "PROC-02 .*explainer\\.md"
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "format",
+      "description": "整形していないコードを書く",
+      "command": "make format-check",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\nVALUE=1\n"
+        }
+      ],
+      "expect": "would be reformatted"
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "抑止コメントを書く",
+      "command": "make guard",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\nLIMIT = 1  # pragma: no cover\n"
+        }
+      ],
+      "expect": "TOOL-03"
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "level": "type",
+      "description": "Python 3.10 の match 文を書く",
+      "command": "make typecheck",
+      "files": [
+        {
+          "path": "kit/.autoflow/autoflow_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef kind(value: int) -> str:\n    match value:\n        case 0:\n            return \"zero\"\n    return \"other\"\n"
+        }
+      ],
+      "expect": "Python 3\\.10"
+    }
+  ]
+}
