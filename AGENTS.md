@@ -22,6 +22,12 @@
 
 検証規約は[検証と配布](docs/project/verification.md)。準備に失敗したら検証を続けない。未対応環境は未実施として扱う。成功、失敗、未実施、人間の確認待ちを区別する。
 
+## Codexでオートフローを使う
+
+パターン移行・文書作成をオートフローで進める場合は、`.agents/skills/pattern-autoflow/SKILL.md`と`docs/project/autoflow.md`を読む。初回とプロファイル変更時は`.agents/skills/autoflow-setup/SKILL.md`でH0を確認する。計画・実装・レビューの各担当にも、このファイルとpattern-maintenanceのスキルを読ませる。
+
+実行中は`.autoflow/`、`.agents/`を実装役に変更させない。運用基盤の変更が必要なら、停止理由と影響を示して人の判断を待つ。
+
 ## 完了までの確認
 
 ルートで`npm run check:dir`、`npm run check:docs`、`npm test`、`npm run typecheck`、`npm run build`、`npm run test:e2e`を実行する。環境上実行できない項目は理由と再現コマンドを報告する。テストは一時ディレクトリで行い、本物の文書・実装を変更しない。

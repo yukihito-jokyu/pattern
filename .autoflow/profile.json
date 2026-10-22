@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "verify": {
+    "commands": [
+      {
+        "id": "check-dir",
+        "run": "npm run check:dir",
+        "timeout_sec": 600
+      },
+      {
+        "id": "check-docs",
+        "run": "npm run check:docs",
+        "timeout_sec": 600
+      },
+      {
+        "id": "test",
+        "run": "npm test",
+        "timeout_sec": 600
+      },
+      {
+        "id": "typecheck",
+        "run": "npm run typecheck",
+        "timeout_sec": 600
+      },
+      {
+        "id": "build",
+        "run": "npm run build",
+        "timeout_sec": 600
+      },
+      {
+        "id": "test-e2e",
+        "run": "npm run test:e2e",
+        "timeout_sec": 600
+      }
+    ]
+  },
+  "paths": {
+    "tests": [
+      "tests/**",
+      "test/**",
+      "**/__tests__/**",
+      "**/*_test.go",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/test_*.py",
+      "patterns/**/tests/**"
+    ]
+  },
+  "risk": {
+    "always_human": [
+      ".github/workflows/**",
+      ".gitlab-ci.yml",
+      ".circleci/**",
+      "Jenkinsfile",
+      "**/auth/**",
+      "**/billing/**",
+      "**/payment*/**",
+      "**/migrations/**",
+      "**/.env*",
+      "**/*secret*",
+      "**/*.pem",
+      "**/*.key",
+      ".autoflow/**",
+      "**/CLAUDE.md",
+      "**/AGENTS.md",
+      "**/REVIEW.md",
+      ".agents/**",
+      "docs/project/**",
+      "scripts/**",
+      "src/**",
+      "plugins/**",
+      "docusaurus.config.*",
+      ".codex/**",
+      "**/.claude/**"
+    ],
+    "high": [
+      "**/package.json",
+      "**/package-lock.json",
+      "**/pnpm-lock.yaml",
+      "**/yarn.lock",
+      "**/go.mod",
+      "**/go.sum",
+      "**/pyproject.toml",
+      "**/requirements*.txt",
+      "**/poetry.lock",
+      "**/uv.lock",
+      "**/Cargo.toml",
+      "**/Cargo.lock",
+      "**/Gemfile*",
+      "**/Dockerfile*",
+      "**/docker-compose*.yml",
+      "**/*.tf"
+    ],
+    "low": [
+      "docs/**",
+      "**/*.md"
+    ]
+  },
+  "review": {
+    "guide_files": [
+      "AGENTS.md",
+      ".agents/skills/pattern-autoflow/SKILL.md",
+      ".agents/skills/pattern-maintenance/SKILL.md",
+      "docs/project/autoflow.md",
+      "docs/project/contributing.md",
+      "docs/project/review.md",
+      "docs/project/verification.md",
+      "docs/project/templates/index.md.template",
+      "docs/project/templates/README.md.template"
+    ],
+    "skip": [
+      "**/*.lock",
+      "**/package-lock.json",
+      "**/pnpm-lock.yaml",
+      "**/dist/**",
+      "**/vendor/**",
+      "**/*.min.js"
+    ]
+  },
+  "limits": {
+    "fix_attempts": 3,
+    "review_rounds": 3,
+    "max_scope_files": 20,
+    "large_diff_lines": 400,
+    "huge_diff_lines": 1000
+  },
+  "commit": {
+    "trailers": []
+  }
+}
