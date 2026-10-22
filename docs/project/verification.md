@@ -125,7 +125,13 @@ npm run verify:patterns -- --id backend/architecture/go-clean --ci --timeout-ms 
 
 集計ジョブだけに`contents: read`・`actions: read`・`pull-requests: write`を付けます。認証は`GITHUB_TOKEN`を使い、追加のPATやnpm依存関係は不要です。投稿権限不足などAPIで失敗した場合は集計ジョブを失敗させます。集計済みのSummaryは残るため、`403 Resource not accessible by integration`などの原因をActionsのログとリポジトリの権限設定で確認してください。
 
-変更時には`node --test tests/scripts/ci-timing-report.test.mjs`を実行します。実際のPRでも、初回のコメント投稿、追加push後の同じコメントIDの更新、再実行時の試行番号更新を確認します。失敗・ZIP検証なし・Fork・Dependabot・古い実行の抑止はAPIの応答を使う共通テストでも検証します。
+変更時には`node --test tests/scripts/ci-timing-report.test.mjs`を実行します。失敗・ZIP検証なし・Fork・Dependabot・古い実行の抑止は、APIの応答を使う共通テストでも検証します。実際のPRでは次の順で確認します。
+
+1. 通常PRでCIを完了させ、botのコメントにJob一覧・TOP 10・Job別の全Step詳細があることを確認します。コメントのパーマリンク末尾にある`issuecomment-`以降のIDを控えます。
+2. 同じPRへ追加pushし、対象コミットが更新され、コメントIDが変わらないことを確認します。
+3. Actionsで同じ実行の「Re-run all jobs」を実行し、コメントIDを維持したまま試行番号が増えることを確認します。
+
+古い実行などで投稿を省略した場合は、集計Stepのログに`posted: false`と理由を出力します。投稿に成功した場合は`posted: true`とコメントのURLを出力します。
 
 仕様は[GitHub ActionsのJob・Step取得API](https://docs.github.com/en/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run)と[PRコメントの作成・更新API](https://docs.github.com/en/rest/issues/comments)で確認できます。
 
