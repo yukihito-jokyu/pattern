@@ -1,0 +1,502 @@
+{
+  "probes_sha256": "cdef257b0bdbf3fd07c794046555f08266154ba9b6756e3394e94289f9b3d8f6",
+  "command": "make check",
+  "results": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-05-b",
+      "rule": "STR-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-04-b",
+      "rule": "DEP-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-b",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-05-b",
+      "rule": "CODE-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-06-b",
+      "rule": "CODE-06",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-b",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-b",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-01-a",
+      "rule": "GATE-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-01-b",
+      "rule": "GATE-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-01-c",
+      "rule": "GATE-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-02-a",
+      "rule": "GATE-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-03-a",
+      "rule": "GATE-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-04-a",
+      "rule": "GATE-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-04-b",
+      "rule": "GATE-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-05-a",
+      "rule": "GATE-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-05-b",
+      "rule": "GATE-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-06-a",
+      "rule": "GATE-06",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "GATE-07-a",
+      "rule": "GATE-07",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    }
+  ],
+  "wiring": [
+    {
+      "command": "make structure",
+      "probe": "STR-01-a",
+      "passed": true
+    },
+    {
+      "command": "make docs-check",
+      "probe": "STR-04-a",
+      "passed": true
+    },
+    {
+      "command": "make lint",
+      "probe": "DEP-04-b",
+      "passed": true
+    },
+    {
+      "command": "make typecheck",
+      "probe": "CODE-03-a",
+      "passed": true
+    },
+    {
+      "command": "make test",
+      "probe": "STATE-02-a",
+      "passed": true
+    },
+    {
+      "command": "make format-check",
+      "probe": "TOOL-01-a",
+      "passed": true
+    },
+    {
+      "command": "make guard",
+      "probe": "TOOL-03-a",
+      "passed": true
+    }
+  ]
+}
