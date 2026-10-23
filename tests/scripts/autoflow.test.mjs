@@ -4,6 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {mkdtemp, mkdir, readFile, writeFile, rm, access, cp} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {repository} from '../helpers/temporary-project.mjs';
 
 const template = JSON.parse(await readFile(path.join(repository, '.autoflow/profile.json'), 'utf8'));
@@ -57,7 +58,7 @@ async function fixture(t) {
   git(root, 'config', 'user.name', 'autoflow test');
   git(root, 'config', 'user.email', 'autoflow@example.invalid');
   git(root, 'config', 'commit.gpgsign', 'false');
-  await put(root, '.gitignore', '.autoflow/runs/\n');
+  await put(root, '.gitignore', '.autoflow/runs/\n.autoflow/profile-approval.json\n');
   await put(root, 'AGENTS.md', '開始時点のレビュー基準\n');
   const settings = structuredClone(template);
   settings.verify.commands = [{id: 'baseline', run: 'node -e "process.exit(0)"', timeout_sec: 10}];
@@ -70,6 +71,13 @@ async function fixture(t) {
 function commitAll(root) {
   git(root, 'add', '-A');
   git(root, 'commit', '-qm', 'fixture');
+}
+
+async function approvalPath(root) {
+  const text = await readFile(path.join(root, '.autoflow/profile.json'), 'utf8');
+  const digest = createHash('sha256').update(text).digest('hex');
+  const common = git(root, 'rev-parse', '--git-common-dir');
+  return path.resolve(root, common, 'autoflow/profile-approvals', `${digest}.json`);
 }
 
 function start(root) {
@@ -86,13 +94,50 @@ test('Codexの入口はClaude用の権限変更を拒否し、H0未承認・変�
   assert.equal(cli(root, 'start', '--source', 'text', '--title', 'fixture', '--body-file', path.join(root, '.autoflow/runs/intake.md')).status, 1);
   assert.equal(cli(root, 'setup-approve', '--answer', '').status, 1);
   ok(root, 'setup-approve', '--answer', 'テスト用の承認');
-  const approval = JSON.parse(await readFile(path.join(root, '.autoflow/profile-approval.json')));
+  const approval = JSON.parse(await readFile(await approvalPath(root)));
   assert.equal(approval.answer, 'テスト用の承認');
   settings.limits.fix_attempts += 1;
   await put(root, '.autoflow/profile.json', settings);
   commitAll(root);
   assert.equal(cli(root, 'start', '--source', 'text', '--title', 'fixture', '--body-file', path.join(root, '.autoflow/runs/intake.md')).status, 1);
   assert.equal(git(root, 'branch', '--show-current'), 'main');
+});
+
+test('H0記録は差分に入らず、次のタスクのworktreeでも同じ設定の承認を引き継ぐ', async t => {
+  const {root} = await fixture(t);
+  commitAll(root);
+  ok(root, 'setup-approve', '--answer', '一度だけの承認');
+  const record = await readFile(await approvalPath(root), 'utf8');
+  assert.equal(git(root, 'status', '--porcelain', '--untracked-files=all'), '');
+  await assert.rejects(access(path.join(root, '.autoflow/profile-approval.json')));
+  const next = path.join(root, 'next task');
+  git(root, 'worktree', 'add', '-qb', 'next-task', next);
+  const check = ok(next, 'setup-check');
+  assert.match(check, /承認済み/);
+  assert.doesNotMatch(check, /setup-approve/);
+  assert.equal(await readFile(await approvalPath(next), 'utf8'), record);
+  await put(next, '.autoflow/runs/intake.md', '次のタスク。');
+  start(next);
+  assert.equal(git(next, 'status', '--porcelain', '--untracked-files=all'), '');
+});
+
+test('従来の承認記録は回答と日時を保持して移し、設定が違えば流用しない', async t => {
+  const {root, settings} = await fixture(t);
+  commitAll(root);
+  const text = await readFile(path.join(root, '.autoflow/profile.json'), 'utf8');
+  const legacy = {
+    sha256: createHash('sha256').update(text).digest('hex'),
+    who: 'existing@example.invalid', answer: '以前の承認', at: '2026-10-23T08:00:00+09:00',
+  };
+  await put(root, '.autoflow/profile-approval.json', legacy);
+  assert.match(ok(root, 'setup-check'), /承認済み/);
+  assert.deepEqual(JSON.parse(await readFile(await approvalPath(root))), legacy);
+  assert.deepEqual(JSON.parse(await readFile(path.join(root, '.autoflow/profile-approval.json'))), legacy);
+  settings.limits.fix_attempts += 1;
+  await put(root, '.autoflow/profile.json', settings);
+  assert.match(ok(root, 'setup-check'), /setup-approve/);
+  assert.equal(cli(root, 'start', '--source', 'text', '--title', '未承認の設定', '--body-file', path.join(root, '.autoflow/runs/intake.md')).status, 1);
+  await assert.rejects(access(await approvalPath(root)));
 });
 
 test('実行はCodex用のレビュー指示を写し、検証前の計画とH1承認前の実装を拒否する', async t => {
@@ -125,7 +170,6 @@ for (const dirty of [false, true]) test(`補助CLIが開始前の変更を保持
   await put(root, 'deleted.txt', '削除予定\n');
   commitAll(root);
   ok(root, 'setup-approve', '--answer', 'テスト用の承認');
-  if (!dirty) commitAll(root);
   if (dirty) {
     await put(root, 'existing.txt', 'ステージ済みの編集\n');
     git(root, 'add', 'existing.txt');

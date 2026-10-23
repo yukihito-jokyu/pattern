@@ -81,6 +81,12 @@ def git_toplevel(directory: Path) -> Path:
     return Path(_git(directory, ["rev-parse", "--show-toplevel"]).strip()).resolve()
 
 
+def git_common_dir(directory: Path) -> Path:
+    """同じリポジトリの全 worktree が共有する Git の管理領域。"""
+    common = Path(_git(directory, ["rev-parse", "--git-common-dir"]).strip())
+    return (directory / common).resolve()
+
+
 def git_branch(directory: Path) -> str:
     return _git(directory, ["rev-parse", "--abbrev-ref", "HEAD"]).strip()
 

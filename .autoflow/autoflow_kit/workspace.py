@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Callable, TypeVar
 
-from autoflow_kit import contracts, fsops, layout, policy, profile, shape, trail
+from autoflow_kit import contracts, fsops, layout, policy, proc, profile, shape, trail
 from autoflow_kit.errors import InvalidFileError, StageError
 from autoflow_kit.layout import Layout
 
@@ -29,17 +29,24 @@ def load_profile_file(path: Path) -> profile.Profile:
 
 
 def approved_profile(where: Layout) -> profile.Profile:
-    """H0 で人が承認したプロファイル。承認の後に中身が変わっていれば StageError にする。"""
+    """リポジトリ共通の記録を読み、同じ設定の H0 承認を次のタスクへ引き継ぐ。"""
     if not where.profile_path.is_file():
         raise StageError(f"{where.relative(where.profile_path)} がありません。/autoflow-setup で作り、承認を得る")
     settings = load_profile_file(where.profile_path)
-    if not where.approval_path.is_file():
-        raise StageError("プロファイルが承認されていません。/autoflow-setup で人の承認を得る（H0）")
-    approval = _load(where.approval_path, profile.parse_approval)
-    if profile.digest(fsops.read_text(where.profile_path)) != approval.sha256:
+    digest = profile.digest(fsops.read_text(where.profile_path))
+    path = where.approval_path(proc.git_common_dir(where.root), digest)
+    if not path.is_file() and where.legacy_approval_path.is_file():
+        # 旧記録は承認済みの内容に一致するときだけ移す。原文・記録者・日時は変えない。
+        legacy = _load(where.legacy_approval_path, profile.parse_approval)
+        if legacy.sha256 == digest:
+            fsops.write_json(path, shape.to_data(legacy))
+    if not path.is_file():
         raise StageError(
-            "profile.json が承認の後に変わりました。/autoflow-setup で setup-check と setup-approve をやり直す"
+            "現在の profile.json に対応する承認記録がありません。/autoflow-setup で設定を確認し、人の承認を得る（H0）"
         )
+    approval = _load(path, profile.parse_approval)
+    if digest != approval.sha256:
+        raise StageError("承認記録と profile.json が一致しません。/autoflow-setup で記録を確認する")
     return settings
 
 

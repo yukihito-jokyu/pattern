@@ -82,8 +82,11 @@ class Layout:
         return self.kit_dir / PROFILE_FILE
 
     @property
-    def approval_path(self) -> Path:
+    def legacy_approval_path(self) -> Path:
         return self.kit_dir / APPROVAL_FILE
+
+    def approval_path(self, common_dir: Path, digest: str) -> Path:
+        return common_dir / "autoflow" / "profile-approvals" / f"{digest}.json"
 
     @property
     def intake_path(self) -> Path:
