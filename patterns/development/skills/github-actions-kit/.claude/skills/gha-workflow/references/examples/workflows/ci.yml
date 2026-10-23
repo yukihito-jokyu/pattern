@@ -1,0 +1,39 @@
+# プルリクエストと main への push で、キットの全検査の合否と、全ジョブ・全ステップの処理時間を PR に出す
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+defaults:
+  run:
+    shell: bash
+jobs:
+  check:
+    uses: ./.github/workflows/reusable-check.yml
+    permissions:
+      contents: read
+  report:
+    needs:
+      - check
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions/run-report
+      - name: Report run timings
+        uses: ./.github/actions/run-report
+        with:
+          needs: ${{ toJSON(needs) }}

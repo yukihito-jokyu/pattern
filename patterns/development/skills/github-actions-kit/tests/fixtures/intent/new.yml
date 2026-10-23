@@ -1,0 +1,12 @@
+# 毎晩ビルドする
+name: nightly
+on:
+  schedule:
+    - cron: 17 15 * * *
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Run build
+        run: npm ci

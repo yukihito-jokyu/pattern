@@ -1,0 +1,78 @@
+# 呼ばれると、キットの全検査を並べて回し、1つでも落ちたら失敗する
+name: reusable-check
+on:
+  workflow_call:
+    inputs:
+      enable-cache:
+        description: uv のキャッシュを使うか（release.yml から呼ぶときは false にする）
+        required: false
+        type: boolean
+        default: true
+permissions: {}
+defaults:
+  run:
+    shell: bash
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install kit dependencies
+        uses: ./.github/actions/setup-kit
+        with:
+          enable-cache: ${{ inputs.enable-cache }}
+      - name: Check formatting
+        run: make format-check
+      - name: Run linters
+        run: make lint
+      - name: Check workflows
+        run: make workflows
+      - name: Check structure
+        run: make structure docs-check
+      - name: Check rules
+        run: make guard rules
+  typecheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install kit dependencies
+        uses: ./.github/actions/setup-kit
+        with:
+          enable-cache: ${{ inputs.enable-cache }}
+      - name: Run type checker
+        run: make typecheck
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.13"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install kit dependencies
+        uses: ./.github/actions/setup-kit
+        with:
+          enable-cache: ${{ inputs.enable-cache }}
+          python-version: ${{ matrix.python-version }}
+      - name: Run unit tests
+        run: make test

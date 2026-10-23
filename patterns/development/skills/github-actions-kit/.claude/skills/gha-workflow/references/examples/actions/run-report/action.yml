@@ -1,0 +1,20 @@
+# ワークフローの全ジョブと全ステップの処理時間をジョブサマリーと PR のコメントに出し、needs の結果で合否を決める
+name: run-report
+description: 全ジョブ・全ステップの処理時間を PR とジョブサマリーに出し、needs の結果で合否を決める
+inputs:
+  github-token:
+    description: REST API に使うトークン（actions の read と pull-requests の write が要る）
+    required: false
+    default: ${{ github.token }}
+  needs:
+    description: 呼び出し元のジョブの toJSON(needs)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Report run timings
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        NEEDS: ${{ inputs.needs }}
+      run: python3 "$GITHUB_ACTION_PATH/run_report.py"

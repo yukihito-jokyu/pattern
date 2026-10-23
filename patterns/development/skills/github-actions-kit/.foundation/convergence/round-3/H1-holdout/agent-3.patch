@@ -1,0 +1,104 @@
+--- /dev/null
++++ b/.claude/skills/gha-workflow/references/examples/workflows/test-python-3-14.yml
+@@ -0,0 +1,49 @@
++# 毎週月曜と手動の実行で、Python 3.14 でのキットのテストの合否を出し、失敗したら Issue で知らせる
++name: test-python-3-14
++on:
++  schedule:
++    - cron: 17 9 * * 1
++      timezone: Asia/Tokyo
++  workflow_dispatch:
++permissions: {}
++concurrency:
++  group: ${{ github.workflow }}
++  cancel-in-progress: false
++defaults:
++  run:
++    shell: bash
++jobs:
++  test:
++    runs-on: ubuntu-24.04
++    timeout-minutes: 10
++    permissions:
++      contents: read
++    steps:
++      - name: Check out repository
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          persist-credentials: false
++      - name: Install kit dependencies
++        uses: ./.github/actions/setup-kit
++        with:
++          python-version: "3.14"
++      - name: Run unit tests
++        run: make test
++  notification:
++    needs:
++      - test
++    if: ${{ failure() }}
++    runs-on: ubuntu-24.04
++    timeout-minutes: 10
++    permissions:
++      issues: write
++    steps:
++      - name: Create failure issue
++        env:
++          GH_TOKEN: ${{ github.token }}
++          REPOSITORY: ${{ github.repository }}
++          RUN_ID: ${{ github.run_id }}
++          SERVER_URL: ${{ github.server_url }}
++        run: |
++          gh issue create --repo "$REPOSITORY" --title "Python 3.14 でテストが失敗した" \
++            --body "失敗した実行: $SERVER_URL/$REPOSITORY/actions/runs/$RUN_ID"
+--- /dev/null
++++ b/.github/workflows/test-python-3-14.yml
+@@ -0,0 +1,49 @@
++# 毎週月曜と手動の実行で、Python 3.14 でのキットのテストの合否を出し、失敗したら Issue で知らせる
++name: test-python-3-14
++on:
++  schedule:
++    - cron: 17 9 * * 1
++      timezone: Asia/Tokyo
++  workflow_dispatch:
++permissions: {}
++concurrency:
++  group: ${{ github.workflow }}
++  cancel-in-progress: false
++defaults:
++  run:
++    shell: bash
++jobs:
++  test:
++    runs-on: ubuntu-24.04
++    timeout-minutes: 10
++    permissions:
++      contents: read
++    steps:
++      - name: Check out repository
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          persist-credentials: false
++      - name: Install kit dependencies
++        uses: ./.github/actions/setup-kit
++        with:
++          python-version: "3.14"
++      - name: Run unit tests
++        run: make test
++  notification:
++    needs:
++      - test
++    if: ${{ failure() }}
++    runs-on: ubuntu-24.04
++    timeout-minutes: 10
++    permissions:
++      issues: write
++    steps:
++      - name: Create failure issue
++        env:
++          GH_TOKEN: ${{ github.token }}
++          REPOSITORY: ${{ github.repository }}
++          RUN_ID: ${{ github.run_id }}
++          SERVER_URL: ${{ github.server_url }}
++        run: |
++          gh issue create --repo "$REPOSITORY" --title "Python 3.14 でテストが失敗した" \
++            --body "失敗した実行: $SERVER_URL/$REPOSITORY/actions/runs/$RUN_ID"

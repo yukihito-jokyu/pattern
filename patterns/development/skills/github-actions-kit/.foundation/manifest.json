@@ -1,0 +1,251 @@
+{
+  "name": "github-actions-kit",
+  "status": "ready",
+  "mode": "new",
+  "domain": [
+    "iac",
+    "cli-library"
+  ],
+  "language": "ja",
+  "stack": [
+    {
+      "name": "GitHub Actions",
+      "version": "docs.github.com（2026-10-23 時点）、ランナー ubuntu-24.04",
+      "role": "ci-platform",
+      "pinned": true
+    },
+    {
+      "name": "Claude Code skills",
+      "version": "Claude Code 2.1.308",
+      "role": "agent-skill",
+      "pinned": true
+    }
+  ],
+  "tools": [
+    {
+      "role": "runtime",
+      "language": "python",
+      "name": "CPython（uv が管理）",
+      "version": "3.12（.python-version）",
+      "pinned": false
+    },
+    {
+      "role": "package-manager",
+      "language": "python",
+      "name": "uv",
+      "version": "0.13.4",
+      "pinned": false
+    },
+    {
+      "role": "formatter",
+      "language": "python",
+      "name": "ruff",
+      "version": "0.17.2",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "python",
+      "name": "ruff",
+      "version": "0.17.2",
+      "pinned": false
+    },
+    {
+      "role": "typecheck",
+      "language": "python",
+      "name": "mypy",
+      "version": "2.4.0",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "python",
+      "name": "unittest",
+      "version": "CPython 3.12 の標準",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "yaml",
+      "name": "yamllint",
+      "version": "1.38.0",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "github-actions",
+      "name": "actionlint（actionlint-py）",
+      "version": "1.7.12（actionlint-py 1.7.12.25）",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "shell",
+      "name": "shellcheck（shellcheck-py）",
+      "version": "0.11.0（shellcheck-py 0.11.0.1）",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "github-actions",
+      "name": "zizmor",
+      "version": "1.31.1",
+      "pinned": false
+    },
+    {
+      "role": "other",
+      "language": "python",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "pinned": false
+    },
+    {
+      "role": "structure",
+      "language": "github-actions",
+      "name": ".gha/gha_kit/policy.py",
+      "version": "版なし（基盤のスクリプト）",
+      "pinned": false
+    },
+    {
+      "role": "structure",
+      "language": "python",
+      "name": "scripts/structure_check.py",
+      "version": "版なし（基盤のスクリプト）",
+      "pinned": false
+    }
+  ],
+  "skills": {
+    "impl": "gha-workflow",
+    "review": "gha-review"
+  },
+  "commands": {
+    "check": "make check",
+    "fix": "make fix"
+  },
+  "protected": [
+    "Makefile",
+    "pyproject.toml",
+    "uv.lock",
+    ".python-version",
+    ".gitignore",
+    ".gha/**",
+    "scripts/structure_check.py",
+    "scripts/gen_docs.py",
+    ".claude/settings.json",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": [
+      ".mypy_cache",
+      ".ruff_cache",
+      "/docs/design/convergence-report.md"
+    ]
+  },
+  "guard": {
+    "rule": "TOOL-03",
+    "include": [
+      ".github/**",
+      ".gha/**",
+      "scripts/**",
+      "tests/**",
+      "install.py"
+    ],
+    "exclude": [
+      "tests/fixtures/**"
+    ],
+    "suppressions": [
+      {
+        "pattern": "#\\s*zizmor:\\s*ignore",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*yamllint\\s+disable",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*shellcheck\\s+disable",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*noqa",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*ruff\\s*:",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*type:\\s*ignore",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*mypy:",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*pragma:\\s*no\\s*cover",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "#\\s*fmt:\\s*(off|skip)",
+        "rule": "TOOL-03"
+      },
+      {
+        "pattern": "unittest\\.skip|skipTest\\(|@skip",
+        "rule": "TOOL-03"
+      }
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {
+        "glob": "**/*.py",
+        "command": "make fix-file FILE={file}"
+      },
+      {
+        "glob": ".github/**/*.yml",
+        "command": "make fix-file FILE={file}"
+      }
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 1800,
+    "runner": [
+      "claude",
+      "-p",
+      "{prompt}",
+      "--output-format",
+      "json",
+      "--permission-mode",
+      "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools",
+      "Skill",
+      "Bash(make check)",
+      "Bash(make fix)",
+      "Bash(make *)",
+      "Bash(uv run --locked --script .gha/gha.py *)",
+      "Bash(git diff *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(tail *)"
+    ],
+    "ignore": [],
+    "thresholds": {
+      "files": 1.0,
+      "names": 0.8,
+      "content": 0.0
+    }
+  }
+}

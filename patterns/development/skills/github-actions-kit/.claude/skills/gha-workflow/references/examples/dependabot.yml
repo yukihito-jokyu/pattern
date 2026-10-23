@@ -1,0 +1,15 @@
+# 外部アクションの版を週に1回、1つのプルリクエストにまとめて上げる
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"

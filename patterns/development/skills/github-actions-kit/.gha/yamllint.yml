@@ -1,0 +1,34 @@
+# yamllint の設定（TOOL-01）。ワークフローの YAML の整形を、この設定で縛る。変えるにはユーザーの承認が要る
+extends: default
+rules:
+  anchors:
+    forbid-undeclared-aliases: true
+    forbid-duplicated-anchors: true
+    forbid-unused-anchors: true
+  braces:
+    forbid: non-empty
+  brackets:
+    forbid: non-empty
+  comments:
+    min-spaces-from-content: 1
+  document-start: disable
+  float-values:
+    forbid-inf: true
+    forbid-nan: true
+    forbid-scientific-notation: true
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  key-duplicates:
+    forbid-duplicated-merge-keys: true
+  line-length:
+    max: 120
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+  quoted-strings:
+    quote-type: double
+    required: only-when-needed
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false

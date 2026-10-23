@@ -1,0 +1,3 @@
+# actionlint の設定（TEST-01）。自前のランナーのラベルを足すときだけ変える。変えるにはユーザーの承認が要る
+self-hosted-runner:
+  labels: []

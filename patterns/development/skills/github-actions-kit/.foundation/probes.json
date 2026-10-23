@@ -1,0 +1,919 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "ワークフローを workflows のサブディレクトリに置く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/deploy/production.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: production\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "STR-01 \\.github/workflows/deploy/production\\.yml"
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "PR の検証を ci.yml と別のワークフローにする",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/docs-lint.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: docs-lint\non:\n  pull_request:\n    paths:\n      - docs/**\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "STR-02 \\.github/workflows/docs-lint\\.yml"
+    },
+    {
+      "id": "STR-02-b",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "ci.yml の pull_request に paths の絞り込みを書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "mode": "replace",
+          "content": "# プルリクエストと main への push で、キットの全検査の合否と、全ジョブ・全ステップの処理時間を PR に出す\nname: ci\non:\n  pull_request:\n    paths:\n      - src/**\n  push:\n    branches:\n      - main\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n  report:\n    needs:\n      - check\n    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    permissions:\n      actions: read\n      contents: read\n      pull-requests: write\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n          sparse-checkout: .github/actions/run-report\n      - name: Report run timings\n        uses: ./.github/actions/run-report\n        with:\n          needs: ${{ toJSON(needs) }}\n"
+        }
+      ],
+      "expect": "STR-02 \\.github/workflows/ci\\.yml"
+    },
+    {
+      "id": "STR-02-c",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "目的の表に無いトリガー（release）でワークフローを動かす",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/notify-release.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: notify-release\non:\n  release:\n    types:\n      - published\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "STR-02 \\.github/workflows/notify-release\\.yml:\\d+ トリガー release"
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "level": "structure",
+      "description": "YAML のアンカーとエイリアスで permissions を共有する",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions: &read-only\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n  lint:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions: *read-only\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "STR-03 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "11 行の run をワークフローに埋め込む",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: |\n          echo step-0\n          echo step-1\n          echo step-2\n          echo step-3\n          echo step-4\n          echo step-5\n          echo step-6\n          echo step-7\n          echo step-8\n          echo step-9\n          echo step-10\n"
+        }
+      ],
+      "expect": "STR-04 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "contents: write を持つジョブに environment を付けない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: write\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "STR-05 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "再利用ワークフローから別の再利用ワークフローを呼ぶ",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/reusable-nightly.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: reusable-nightly\non:\n  workflow_call:\npermissions: {}\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n"
+        }
+      ],
+      "expect": "DEP-01 \\.github/workflows/reusable-nightly\\.yml"
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "level": "structure",
+      "description": "workflow_dispatch の入力に description・required・type を書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\n    inputs:\n      environment:\n        default: staging\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "DEP-02 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "level": "structure",
+      "description": "workflow_run でワークフロー同士をつなぐ",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\n  workflow_run:\n    workflows:\n      - ci\n    types:\n      - completed\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "DEP-03 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "level": "lint",
+      "description": "許可表に無い外部アクションで Release を作る",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n      - name: Create release\n        uses: softprops/action-gh-release@1111111111111111111111111111111111111111 # v2.0.0\n"
+        }
+      ],
+      "expect": "DEP-04 .*\\[zizmor:forbidden-uses\\]"
+    },
+    {
+      "id": "DEP-05-a",
+      "rule": "DEP-05",
+      "level": "structure",
+      "description": "ci.yml の report 以外のジョブに書き込み権限を付ける",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "mode": "replace",
+          "content": "# プルリクエストと main への push で、キットの全検査の合否と、全ジョブ・全ステップの処理時間を PR に出す\nname: ci\non:\n  pull_request:\n  push:\n    branches:\n      - main\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n      issues: write\n  report:\n    needs:\n      - check\n    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    permissions:\n      actions: read\n      contents: read\n      pull-requests: write\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n          sparse-checkout: .github/actions/run-report\n      - name: Report run timings\n        uses: ./.github/actions/run-report\n        with:\n          needs: ${{ toJSON(needs) }}\n"
+        }
+      ],
+      "expect": "DEP-05 \\.github/workflows/ci\\.yml"
+    },
+    {
+      "id": "DEP-06-a",
+      "rule": "DEP-06",
+      "level": "structure",
+      "description": "外部アクションをメジャー版のタグで参照する",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@v7\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "DEP-06 \\S+ actions/checkout@v7 を 40 桁"
+    },
+    {
+      "id": "DEP-06-b",
+      "rule": "DEP-06",
+      "level": "lint",
+      "description": "外部アクションを版のタグで参照する（zizmor の hash-pin）",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "DEP-06 .*\\[zizmor:unpinned-uses\\]"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "structure",
+      "description": "ワークフローのファイル名を snake_case と大文字にする",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/Security_Audit.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: Security_Audit\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "NAM-01 \\.github/workflows/Security_Audit\\.yml"
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "level": "structure",
+      "description": "ジョブの ID を snake_case にし、name を付ける",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  unit_test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "NAM-02 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "NAM-04-a",
+      "rule": "NAM-04",
+      "level": "structure",
+      "description": "ステップに name を付けない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - run: make test\n"
+        }
+      ],
+      "expect": "NAM-04 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "NAM-05-a",
+      "rule": "NAM-05",
+      "level": "structure",
+      "description": "式を渡す環境変数に短い独自の名前を付ける",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        env:\n          PR: ${{ github.event.pull_request.number }}\n        run: make test PR=\"$PR\"\n"
+        }
+      ],
+      "expect": "NAM-05 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "NAM-06-a",
+      "rule": "NAM-06",
+      "level": "structure",
+      "description": "runs-on に ubuntu-latest を書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "NAM-06 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "structure",
+      "description": "ステップの run を name より前に書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - run: make test\n        name: Run unit tests\n"
+        }
+      ],
+      "expect": "CODE-01 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "CODE-01-b",
+      "rule": "CODE-01",
+      "level": "structure",
+      "description": "if: を ${{ }} で囲まない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        if: github.ref == 'refs/heads/main'\n        run: make test\n"
+        }
+      ],
+      "expect": "CODE-01 \\S+ if: の値"
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "structure",
+      "description": "値が1つの matrix を fail-fast を書かずに作る",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    strategy:\n      matrix:\n        python-version:\n          - \"3.12\"\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "CODE-02 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "level": "structure",
+      "description": "1行目に目的のコメントを書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "name: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "CODE-03 \\.github/workflows/probe\\.yml:1"
+    },
+    {
+      "id": "CODE-03-b",
+      "rule": "CODE-03",
+      "level": "structure",
+      "description": "1行目に呼び出し元のファイル名を書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、テストを回す。ci.yml からも呼ぶ\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "CODE-03 \\.github/workflows/probe\\.yml:1 1行目にファイル名"
+    },
+    {
+      "id": "CODE-03-c",
+      "rule": "CODE-03",
+      "level": "structure",
+      "description": "再利用ワークフローの1行目を `# 呼ばれると、` で始めない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/reusable-check.yml",
+          "mode": "replace",
+          "content": "# キットの全検査を並べて回し、1つでも落ちたら失敗する\nname: reusable-check\non:\n  workflow_call:\n    inputs:\n      enable-cache:\n        description: uv のキャッシュを使うか（release.yml から呼ぶときは false にする）\n        required: false\n        type: boolean\n        default: true\npermissions: {}\ndefaults:\n  run:\n    shell: bash\njobs:\n  lint:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Install kit dependencies\n        uses: ./.github/actions/setup-kit\n        with:\n          enable-cache: ${{ inputs.enable-cache }}\n      - name: Check formatting\n        run: make format-check\n      - name: Run linters\n        run: make lint\n      - name: Check workflows\n        run: make workflows\n      - name: Check structure\n        run: make structure docs-check\n      - name: Check rules\n        run: make guard rules\n  typecheck:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Install kit dependencies\n        uses: ./.github/actions/setup-kit\n        with:\n          enable-cache: ${{ inputs.enable-cache }}\n      - name: Run type checker\n        run: make typecheck\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    strategy:\n      fail-fast: false\n      matrix:\n        python-version:\n          - \"3.12\"\n          - \"3.13\"\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Install kit dependencies\n        uses: ./.github/actions/setup-kit\n        with:\n          enable-cache: ${{ inputs.enable-cache }}\n          python-version: ${{ matrix.python-version }}\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "CODE-03 \\.github/workflows/reusable-check\\.yml:1 再利用ワークフローの1行目"
+    },
+    {
+      "id": "CODE-03-d",
+      "rule": "CODE-03",
+      "level": "structure",
+      "description": "1行目に YAML 以外のファイル名を書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、rules.md のとおりにテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "CODE-03 \\.github/workflows/probe\\.yml:1 1行目にファイル名"
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "defaults.run.shell: bash を書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "ERR-01 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "ステップに continue-on-error を書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        continue-on-error: true\n        run: make test\n"
+        }
+      ],
+      "expect": "ERR-01 \\S+ ステップに continue-on-error"
+    },
+    {
+      "id": "ERR-01-c",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "run の失敗を || true で握りつぶす",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test || true\n"
+        }
+      ],
+      "expect": "ERR-01 \\S+ run で失敗を握りつぶさない"
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "level": "structure",
+      "description": "run に式を埋め込む",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test REF=\"${{ github.ref_name }}\"\n"
+        }
+      ],
+      "expect": "ERR-02 \\S+ 本文に"
+    },
+    {
+      "id": "ERR-02-b",
+      "rule": "ERR-02",
+      "level": "lint",
+      "description": "run に PR の題名を埋め込む",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: echo \"${{ github.event.pull_request.title }}\"\n"
+        }
+      ],
+      "expect": "ERR-02 .*\\[(actionlint:expression|zizmor:template-injection)\\]"
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "level": "structure",
+      "description": "$GITHUB_ENV に値を書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: echo \"MODE=ci\" >> \"$GITHUB_ENV\"\n"
+        }
+      ],
+      "expect": "STATE-01 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "level": "structure",
+      "description": "upload-artifact に retention-days と if-no-files-found を書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n      - name: Upload dist\n        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2\n        with:\n          name: dist\n          path: dist\n"
+        }
+      ],
+      "expect": "STATE-02 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "STATE-02-b",
+      "rule": "STATE-02",
+      "level": "lint",
+      "description": "リリースのワークフローで setup-go のキャッシュを切らない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/release.yml",
+          "mode": "replace",
+          "content": "# v から始まるタグの push で、キットのアーカイブを来歴の証明付きで GitHub Release に公開する\nname: release\non:\n  push:\n    tags:\n      - v*\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n    with:\n      enable-cache: false\n  build:\n    needs:\n      - check\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Set up Go\n        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0\n      - name: Build kit archive\n        env:\n          REF_NAME: ${{ github.ref_name }}\n        run: |\n          archive=\"github-actions-kit-$REF_NAME\"\n          git archive --format=tar.gz --prefix=\"$archive/\" --output=\"$archive.tar.gz\" HEAD\n      - name: Upload kit archive\n        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2\n        with:\n          if-no-files-found: error\n          name: kit-archive\n          path: github-actions-kit-*.tar.gz\n          retention-days: 1\n  publish:\n    needs:\n      - build\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    environment: release\n    permissions:\n      attestations: write\n      contents: write\n      id-token: write\n    steps:\n      - name: Download kit archive\n        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2\n        with:\n          name: kit-archive\n      - name: Attest kit archive\n        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2\n        with:\n          subject-path: github-actions-kit-*.tar.gz\n      - name: Create release\n        env:\n          GH_TOKEN: ${{ github.token }}\n          REF_NAME: ${{ github.ref_name }}\n          REPOSITORY: ${{ github.repository }}\n        run: |\n          gh release create \"$REF_NAME\" github-actions-kit-*.tar.gz \\\n            --repo \"$REPOSITORY\" --verify-tag --generate-notes\n"
+        }
+      ],
+      "expect": "STATE-02 .*\\[zizmor:cache-poisoning\\]"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "structure",
+      "description": "リリースの concurrency を ref ごとにし、途中で止める",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: release-${{ github.ref }}\n  cancel-in-progress: true\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "ASYNC-01 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "ASYNC-02-a",
+      "rule": "ASYNC-02",
+      "level": "structure",
+      "description": "ジョブに timeout-minutes を書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "ASYNC-02 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "structure",
+      "description": "report ジョブの if を always() にする",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "mode": "replace",
+          "content": "# プルリクエストと main への push で、キットの全検査の合否と、全ジョブ・全ステップの処理時間を PR に出す\nname: ci\non:\n  pull_request:\n  push:\n    branches:\n      - main\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n  report:\n    needs:\n      - check\n    if: ${{ always() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    permissions:\n      actions: read\n      contents: read\n      pull-requests: write\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n          sparse-checkout: .github/actions/run-report\n      - name: Report run timings\n        uses: ./.github/actions/run-report\n        with:\n          needs: ${{ toJSON(needs) }}\n"
+        }
+      ],
+      "expect": "OPS-01 \\.github/workflows/ci\\.yml"
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "secrets をワークフローの env に置く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\nenv:\n  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "OPS-02 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "OPS-02-b",
+      "rule": "OPS-02",
+      "level": "lint",
+      "description": "再利用ワークフローに secrets: inherit で全部の secrets を渡す",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/nightly.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: nightly\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n    secrets: inherit\n"
+        }
+      ],
+      "expect": "OPS-02 .*\\[zizmor:secrets-inherit\\]"
+    },
+    {
+      "id": "OPS-03-a",
+      "rule": "OPS-03",
+      "level": "structure",
+      "description": "matrix の版を引用せずに書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    strategy:\n      fail-fast: false\n      matrix:\n        python-version:\n          - 3.10\n          - 3.11\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "OPS-03 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "level": "structure",
+      "description": "schedule に timezone を書かず、0分に動かす",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  schedule:\n    - cron: 0 0 * * 1\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "OPS-04 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "level": "lint",
+      "description": "checkout に persist-credentials: false を書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "OPS-05 .*\\[zizmor:artipacked\\]"
+    },
+    {
+      "id": "OPS-06-a",
+      "rule": "OPS-06",
+      "level": "structure",
+      "description": "ワークフローの permissions を空にしない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions:\n  contents: read\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "OPS-06 \\S+ ワークフローの先頭に"
+    },
+    {
+      "id": "OPS-06-b",
+      "rule": "OPS-06",
+      "level": "lint",
+      "description": "ジョブに write-all を付ける",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions: write-all\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "OPS-06 .*\\[zizmor:excessive-permissions\\]"
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "level": "lint",
+      "description": "run の変数を引用しない（shellcheck の SC2086）",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run unit tests\n        run: cat $GITHUB_EVENT_PATH\n"
+        }
+      ],
+      "expect": "TEST-01 .*\\[actionlint:shellcheck\\]"
+    },
+    {
+      "id": "TEST-01-b",
+      "rule": "TEST-01",
+      "level": "lint",
+      "description": "スクリプトの変数を引用しない（shellcheck の SC2086）",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/scripts/build-archive.sh",
+          "mode": "create",
+          "content": "#!/usr/bin/env bash\nset -euo pipefail\ntar -czf $1 .gha\n"
+        }
+      ],
+      "expect": "TEST-01 \\.github/scripts/build-archive\\.sh:3 \\[shellcheck:SC2086\\]"
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "level": "structure",
+      "description": "ci.yml にジョブを足し、report の needs に足さない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "mode": "replace",
+          "content": "# プルリクエストと main への push で、キットの全検査の合否と、全ジョブ・全ステップの処理時間を PR に出す\nname: ci\non:\n  pull_request:\n  push:\n    branches:\n      - main\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n  lint:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      - name: Run linters\n        run: make lint\n  report:\n    needs:\n      - check\n    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    permissions:\n      actions: read\n      contents: read\n      pull-requests: write\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n          sparse-checkout: .github/actions/run-report\n      - name: Report run timings\n        uses: ./.github/actions/run-report\n        with:\n          needs: ${{ toJSON(needs) }}\n"
+        }
+      ],
+      "expect": "PROC-02 \\.github/workflows/ci\\.yml"
+    },
+    {
+      "id": "PROC-02-b",
+      "rule": "PROC-02",
+      "level": "lint",
+      "description": "report の needs に存在しないジョブを書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "mode": "replace",
+          "content": "# プルリクエストと main への push で、キットの全検査の合否と、全ジョブ・全ステップの処理時間を PR に出す\nname: ci\non:\n  pull_request:\n  push:\n    branches:\n      - main\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\ndefaults:\n  run:\n    shell: bash\njobs:\n  check:\n    uses: ./.github/workflows/reusable-check.yml\n    permissions:\n      contents: read\n  report:\n    needs:\n      - check\n      - lint\n    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    permissions:\n      actions: read\n      contents: read\n      pull-requests: write\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n          sparse-checkout: .github/actions/run-report\n      - name: Report run timings\n        uses: ./.github/actions/run-report\n        with:\n          needs: ${{ toJSON(needs) }}\n"
+        }
+      ],
+      "expect": "PROC-02 .*\\[actionlint:job-needs\\]"
+    },
+    {
+      "id": "PROC-03-a",
+      "rule": "PROC-03",
+      "level": "structure",
+      "description": "Dependabot を毎日にし、composite を対象から外す",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/dependabot.yml",
+          "mode": "replace",
+          "content": "# 外部アクションの版を上げる\nversion: 2\nupdates:\n  - package-ecosystem: github-actions\n    directory: /\n    schedule:\n      interval: daily\n    cooldown:\n      default-days: 7\n"
+        }
+      ],
+      "expect": "PROC-03 \\.github/dependabot\\.yml"
+    },
+    {
+      "id": "PROC-03-b",
+      "rule": "PROC-03",
+      "level": "lint",
+      "description": "Dependabot の cooldown を書かない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/dependabot.yml",
+          "mode": "replace",
+          "content": "# 外部アクションの版を週に1回、1つのプルリクエストにまとめて上げる\nversion: 2\nupdates:\n  - package-ecosystem: github-actions\n    directories:\n      - /\n      - /.github/actions/*\n    schedule:\n      interval: weekly\n    groups:\n      github-actions:\n        patterns:\n          - \"*\"\n"
+        }
+      ],
+      "expect": "PROC-03 .*\\[zizmor:dependabot-cooldown\\]"
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "lint",
+      "description": "with を 1 行の {} で書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with: {persist-credentials: false}\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "TOOL-01 .*\\[yamllint:braces\\]"
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "ワークフローに zizmor の抑止コメントを書く",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".github/workflows/probe.yml",
+          "mode": "create",
+          "content": "# 手動の実行で、リポジトリを取ってテストを回す\nname: probe\non:\n  workflow_dispatch:\npermissions: {}\nconcurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false\ndefaults:\n  run:\n    shell: bash\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n      # zizmor: ignore[artipacked]\n      - name: Run unit tests\n        run: make test\n"
+        }
+      ],
+      "expect": "TOOL-03 \\.github/workflows/probe\\.yml"
+    },
+    {
+      "id": "TOOL-03-b",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "キットの Python に noqa を書く",
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "files": [
+        {
+          "path": ".gha/gha_kit/layout.py",
+          "mode": "append",
+          "content": "UNUSED = 1  # noqa: F841\n"
+        }
+      ],
+      "expect": "TOOL-03 \\.gha/gha_kit/layout\\.py"
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "level": "structure",
+      "description": "検査の道具の版を宣言だけ変え、ロックファイルを更新しない",
+      "command": "uv run --locked --script .gha/gha.py check",
+      "files": [
+        {
+          "path": ".gha/gha.py",
+          "mode": "replace",
+          "content": "# /// script\n# requires-python = \">=3.12\"\n# dependencies = [\n#   \"actionlint-py==1.7.12.25\",\n#   \"pyyaml==6.0.3\",\n#   \"shellcheck-py==0.11.0.1\",\n#   \"yamllint==1.37.1\",\n#   \"zizmor==1.31.1\",\n# ]\n# ///\n\"\"\"gha の入口。`uv run --locked --script .gha/gha.py <サブコマンド>` で起動する。\n\n依存の版は上の宣言と gha.py.lock で固定する。\n\"\"\"\n\nimport sys\n\nfrom gha_kit.cli import main\n\nif __name__ == \"__main__\":\n    sys.exit(main(sys.argv[1:]))\n"
+        }
+      ],
+      "expect": "needs to be updated"
+    },
+    {
+      "id": "KIT-01-a",
+      "rule": "KIT-01",
+      "level": "structure",
+      "description": "gha_kit にサブディレクトリを作る",
+      "command": "make structure",
+      "files": [
+        {
+          "path": ".gha/gha_kit/checks_extra/__init__.py",
+          "mode": "create",
+          "content": "\"\"\"追加の検査。\"\"\"\n"
+        }
+      ],
+      "expect": "KIT-01 \\.gha/gha_kit/checks_extra"
+    },
+    {
+      "id": "KIT-02-a",
+      "rule": "KIT-02",
+      "level": "structure",
+      "description": "rules_ops.py で subprocess を直接使う",
+      "command": "make structure",
+      "files": [
+        {
+          "path": ".gha/gha_kit/rules_ops.py",
+          "mode": "append",
+          "content": "\nimport subprocess\n"
+        }
+      ],
+      "expect": "KIT-02 \\.gha/gha_kit/rules_ops\\.py"
+    },
+    {
+      "id": "KIT-03-a",
+      "rule": "KIT-03",
+      "level": "lint",
+      "description": "関数名を CamelCase にする",
+      "command": "make lint",
+      "files": [
+        {
+          "path": ".gha/gha_kit/layout.py",
+          "mode": "append",
+          "content": "\n\ndef ReportPath() -> str:\n    return WORKFLOWS\n"
+        }
+      ],
+      "expect": "N802"
+    },
+    {
+      "id": "KIT-03-b",
+      "rule": "KIT-03",
+      "level": "type",
+      "description": "戻り値の型と違う値を返す",
+      "command": "make typecheck",
+      "files": [
+        {
+          "path": ".gha/gha_kit/layout.py",
+          "mode": "append",
+          "content": "\n\ndef report_path() -> int:\n    return WORKFLOWS\n"
+        }
+      ],
+      "expect": "error: Incompatible return value type"
+    },
+    {
+      "id": "KIT-04-a",
+      "rule": "KIT-04",
+      "level": "test",
+      "description": "CLI の出力の形を変える",
+      "command": "make test",
+      "files": [
+        {
+          "path": ".gha/gha_kit/cli.py",
+          "mode": "append",
+          "content": "\n\ndef run_check(root: Path, paths: Sequence[str], ref: str | None, online: bool, runner: proc.Runner) -> int:\n    findings = checks.run(root, paths, online, runner)\n    for finding in findings:\n        print(f\"Error: {finding.message} ({finding.path})\")\n    return 1 if findings else 0\n"
+        }
+      ],
+      "expect": "FAIL: test_prints_one_line_per_finding_and_the_count_and_exits_1"
+    },
+    {
+      "id": "KIT-05-a",
+      "rule": "KIT-05",
+      "level": "structure",
+      "description": "複数のモジュールのテストを test_misc.py に入れる",
+      "command": "make structure",
+      "files": [
+        {
+          "path": "tests/test_misc.py",
+          "mode": "create",
+          "content": "\"\"\"いろいろのテスト。\"\"\"\n"
+        }
+      ],
+      "expect": "KIT-05 tests/test_misc\\.py"
+    },
+    {
+      "id": "KIT-06-a",
+      "rule": "KIT-06",
+      "level": "structure",
+      "description": "スキルの references/rules.md を手で直す",
+      "command": "make docs-check",
+      "files": [
+        {
+          "path": ".claude/skills/gha-workflow/references/rules.md",
+          "mode": "append",
+          "content": "\n手で足した行\n"
+        }
+      ],
+      "expect": "KIT-06 \\.claude/skills/gha-workflow/references/rules\\.md"
+    }
+  ]
+}
