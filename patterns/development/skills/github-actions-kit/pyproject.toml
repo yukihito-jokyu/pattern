@@ -1,0 +1,59 @@
+# 開発用の検査の設定。配布物（.gha/、.github/actions/run-report/）の依存は .gha/gha.py の先頭のスクリプト依存に書く
+[project]
+name = "github-actions-kit"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "mypy==2.4.0",
+  "pyyaml==6.0.3",
+  "ruff==0.17.2",
+  "types-pyyaml==6.0.12.20260906",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = [".gha", ".github/actions/run-report", "scripts", "tests"]
+extend-exclude = [".foundation", "docs/design/enforcement-matrix.md", "tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "RUF", "C90", "PTH", "T20", "PL", "TID", "BLE", "ARG", "ERA", "D100", "D104"]
+ignore = [
+  "RUF001", "RUF002", "RUF003",  # 日本語の全角記号を誤検出するため
+  "PLR2004",                     # 終了コード 0/1/2 などの小さな定数を許す
+]
+
+[tool.ruff.lint.per-file-ignores]
+".gha/gha_kit/cli.py" = ["T201"]
+".github/actions/run-report/run_report.py" = ["T201"]
+"scripts/*.py" = ["T201"]
+"install.py" = ["T201"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 6
+max-branches = 12
+max-returns = 6
+max-statements = 50
+
+[tool.ruff.lint.isort]
+known-first-party = ["gha_kit", "install", "run_report", "tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = ".gha:.github/actions/run-report"
+files = [".gha/gha_kit", ".gha/gha.py", ".github/actions/run-report/run_report.py", "scripts", "tests", "install.py"]
+exclude = ["tests/fixtures/"]
+warn_unreachable = true

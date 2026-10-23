@@ -1,0 +1,592 @@
+{
+  "probes_sha256": "ccb5e69668b480b4a968b086aaf6d0ff37a288d1b3145e651f70b58cc6ff260f",
+  "command": "make check",
+  "results": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-02-b",
+      "rule": "STR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-02-c",
+      "rule": "STR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-05-a",
+      "rule": "DEP-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-06-a",
+      "rule": "DEP-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-06-b",
+      "rule": "DEP-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-04-a",
+      "rule": "NAM-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-05-a",
+      "rule": "NAM-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-06-a",
+      "rule": "NAM-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-b",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-b",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-c",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-d",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-c",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-02-b",
+      "rule": "ERR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-02-b",
+      "rule": "STATE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ASYNC-02-a",
+      "rule": "ASYNC-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-b",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-03-a",
+      "rule": "OPS-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-06-a",
+      "rule": "OPS-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-06-b",
+      "rule": "OPS-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-01-b",
+      "rule": "TEST-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-02-a",
+      "rule": "PROC-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-02-b",
+      "rule": "PROC-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-03-a",
+      "rule": "PROC-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-03-b",
+      "rule": "PROC-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-b",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-01-a",
+      "rule": "KIT-01",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-02-a",
+      "rule": "KIT-02",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-03-a",
+      "rule": "KIT-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-03-b",
+      "rule": "KIT-03",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-04-a",
+      "rule": "KIT-04",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-05-a",
+      "rule": "KIT-05",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "KIT-06-a",
+      "rule": "KIT-06",
+      "passed": true,
+      "exit": 2,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    }
+  ],
+  "wiring": [
+    {
+      "command": "uv run --locked --script .gha/gha.py check",
+      "probe": "STR-01-a",
+      "passed": true
+    },
+    {
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "probe": "TOOL-03-b",
+      "passed": true
+    },
+    {
+      "command": "make structure",
+      "probe": "KIT-01-a",
+      "passed": true
+    },
+    {
+      "command": "make lint",
+      "probe": "KIT-03-a",
+      "passed": true
+    },
+    {
+      "command": "make typecheck",
+      "probe": "KIT-03-b",
+      "passed": true
+    },
+    {
+      "command": "make test",
+      "probe": "KIT-04-a",
+      "passed": true
+    },
+    {
+      "command": "make docs-check",
+      "probe": "KIT-06-a",
+      "passed": true
+    }
+  ]
+}

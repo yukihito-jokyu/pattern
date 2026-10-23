@@ -1,0 +1,64 @@
+--- a/.claude/skills/gha-workflow/references/examples/workflows/ci.yml
++++ b/.claude/skills/gha-workflow/references/examples/workflows/ci.yml
+@@ -17,9 +17,29 @@
+     uses: ./.github/workflows/reusable-check.yml
+     permissions:
+       contents: read
++  test-install:
++    runs-on: ubuntu-24.04
++    timeout-minutes: 10
++    permissions:
++      contents: read
++    steps:
++      - name: Check out repository
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          persist-credentials: false
++      - name: Set up uv
++        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
++      - name: Install kit into empty repository
++        run: |
++          git init "$RUNNER_TEMP/target"
++          python3 install.py "$RUNNER_TEMP/target"
++      - name: Check workflows in installed repository
++        working-directory: ${{ runner.temp }}/target
++        run: uv run --locked --script .gha/gha.py check
+   report:
+     needs:
+       - check
++      - test-install
+     if: ${{ !cancelled() }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 5
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -17,9 +17,29 @@
+     uses: ./.github/workflows/reusable-check.yml
+     permissions:
+       contents: read
++  test-install:
++    runs-on: ubuntu-24.04
++    timeout-minutes: 10
++    permissions:
++      contents: read
++    steps:
++      - name: Check out repository
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          persist-credentials: false
++      - name: Set up uv
++        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
++      - name: Install kit into empty repository
++        run: |
++          git init "$RUNNER_TEMP/target"
++          python3 install.py "$RUNNER_TEMP/target"
++      - name: Check workflows in installed repository
++        working-directory: ${{ runner.temp }}/target
++        run: uv run --locked --script .gha/gha.py check
+   report:
+     needs:
+       - check
++      - test-install
+     if: ${{ !cancelled() }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 5

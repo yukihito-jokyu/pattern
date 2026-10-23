@@ -1,0 +1,59 @@
+--- a/.github/actions/run-report/run_report.py
++++ b/.github/actions/run-report/run_report.py
+@@ -198,13 +198,13 @@
+         f"ジョブの実行の合計 {duration(sum(job.seconds for job in jobs))}、"
+         f"待ちの合計 {duration(sum(job.queued for job in jobs))}",
+         "",
+-        "| ジョブ | 結果 | 待ち | 実行 | 割合 |",
+-        "|---|---|---:|---:|---|",
++        "| ジョブ | 結果 | 待ち | 実行 | 割合 | 失敗したステップ |",
++        "|---|---|---:|---:|---|---|",
+     ]
+     longest = max(job.seconds for job in jobs)
+     lines += [
+         f"| [{_cell(job.name)}]({job.url}) | {label(job.conclusion)} | {duration(job.queued)} | "
+-        f"{duration(job.seconds)} | {bar(job.seconds, longest)} |"
++        f"{duration(job.seconds)} | {bar(job.seconds, longest)} | {failed_steps(job)} |"
+         for job in jobs
+     ]
+     lines += ["", *render_slowest(jobs), *render_timeline(jobs)]
+@@ -212,6 +212,13 @@
+         for job in jobs:
+             lines += render_steps(job)
+     return "\n".join(lines)
++
++
++def failed_steps(job: Job) -> str:
++    """失敗したジョブなら、失敗したステップの名前を「、」でつなぐ。それ以外のジョブは空にする。"""
++    if job.conclusion != "failure":
++        return ""
++    return "、".join(_cell(step.name) for step in job.steps if step.conclusion == "failure")
+ 
+ 
+ def render_slowest(jobs: Sequence[Job]) -> list[str]:
+--- a/tests/test_run_report.py
++++ b/tests/test_run_report.py
+@@ -50,6 +50,23 @@
+         self.assertIn("| [lint](https://example.test/lint) | ✅ 成功 | 2秒 | 1分0秒 |", body)
+         self.assertIn("<summary>test のステップ（2分0秒）</summary>", body)
+         self.assertIn("    test : done, j2, 3, 123", body)
++
++    def test_lists_failed_steps_only_in_failed_job_rows(self) -> None:
++        steps = (
++            run_report.Step(1, "Unit", "failure", 10),
++            run_report.Step(2, "E2E", "failure", 20),
++            run_report.Step(3, "Upload", "success", 5),
++        )
++        jobs = [
++            run_report.Job("lint", "https://example.test/lint", "success", 0, 1, 30, steps[2:]),
++            run_report.Job("test", "https://example.test/test", "failure", 0, 1, 35, steps),
++        ]
++
++        body = run_report.render(run_report.Run("ci", "https://example.test/run", "7", "1"), jobs, ["test"])
++
++        self.assertIn("| 割合 | 失敗したステップ |", body)
++        self.assertRegex(body, r"\| \[lint\]\(https://example\.test/lint\) \|.* \|  \|\n")
++        self.assertRegex(body, r"\| \[test\]\(https://example\.test/test\) \|.* \| Unit、E2E \|\n")
+ 
+     def test_fit_drops_step_details_over_the_limit(self) -> None:
+         jobs = run_report.to_jobs(

@@ -1,0 +1,15 @@
+# zizmor の設定（OPS-05、DEP-04、DEP-06）。使ってよい外部アクションの表を兼ねる。変えるにはユーザーの承認が要る
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": hash-pin
+  forbidden-uses:
+    config:
+      allow:
+        - actions/*
+        - github/*
+        - astral-sh/setup-uv
+  # actionlint 1.7.12 が $/ を受け付けないので ./ で参照する（ADR 0006）
+  self-repository:
+    disable: true

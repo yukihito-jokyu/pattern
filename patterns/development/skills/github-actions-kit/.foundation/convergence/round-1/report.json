@@ -1,0 +1,440 @@
+{
+  "round": 1,
+  "thresholds": {
+    "files": 1.0,
+    "names": 0.8,
+    "content": 0.0
+  },
+  "tasks": [
+    {
+      "id": "T1-add",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 0.778,
+      "names": 1.0,
+      "content": 0.943,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          ".github/workflows/ci.yml",
+          "docs/design/architecture.md"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          ".github/workflows/ci.yml"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          ".github/workflows/ci.yml"
+        ]
+      },
+      "partial_files": [
+        {
+          "path": "docs/design/architecture.md",
+          "agents": [
+            "agent-1"
+          ]
+        }
+      ],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          "similarity": 0.943,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.923
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "similarity": 0.943,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.923
+        }
+      ],
+      "excerpts": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.923,
+          "diff": [
+            "--- agent-1/.claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+            "+++ agent-2/.claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+            "@@ -33,13 +33,11 @@",
+            "         run: git init \"$RUNNER_TEMP/target\"",
+            "       - name: Install kit into empty repository",
+            "         run: python3 install.py \"$RUNNER_TEMP/target\"",
+            "-      # 導入しただけでは dependabot.yml が無く（PROC-03）、ワークフローも無いので actionlint が動かない。配布先の作者と同じく見本を写す",
+            "-      - name: Create workflows from installed examples",
+            "+      - name: Create workflows from examples",
+            "         working-directory: ${{ runner.temp }}/target",
+            "-        run: |",
+            "-          mkdir -p .github/workflows",
+            "-          cp .claude/skills/gha-workflow/references/examples/dependabot.yml .github/",
+            "-          cp .claude/skills/gha-workflow/references/examples/workflows/security-audit.yml .github/workflows/",
+            "+        env:",
+            "+          EXAMPLES: .claude/skills/gha-workflow/references/examples",
+            "+        run: cp -R --update=none \"$EXAMPLES/.\" .github/ # 導入した run-report を見本の写しで上書きしない",
+            "       - name: Check workflows in installed repository",
+            "         working-directory: ${{ runner.temp }}/target",
+            "         run: uv run --locked --script .gha/gha.py check"
+          ]
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.923,
+          "diff": [
+            "--- agent-1/.github/workflows/ci.yml",
+            "+++ agent-2/.github/workflows/ci.yml",
+            "@@ -33,13 +33,11 @@",
+            "         run: git init \"$RUNNER_TEMP/target\"",
+            "       - name: Install kit into empty repository",
+            "         run: python3 install.py \"$RUNNER_TEMP/target\"",
+            "-      # 導入しただけでは dependabot.yml が無く（PROC-03）、ワークフローも無いので actionlint が動かない。配布先の作者と同じく見本を写す",
+            "-      - name: Create workflows from installed examples",
+            "+      - name: Create workflows from examples",
+            "         working-directory: ${{ runner.temp }}/target",
+            "-        run: |",
+            "-          mkdir -p .github/workflows",
+            "-          cp .claude/skills/gha-workflow/references/examples/dependabot.yml .github/",
+            "-          cp .claude/skills/gha-workflow/references/examples/workflows/security-audit.yml .github/workflows/",
+            "+        env:",
+            "+          EXAMPLES: .claude/skills/gha-workflow/references/examples",
+            "+        run: cp -R --update=none \"$EXAMPLES/.\" .github/ # 導入した run-report を見本の写しで上書きしない",
+            "       - name: Check workflows in installed repository",
+            "         working-directory: ${{ runner.temp }}/target",
+            "         run: uv run --locked --script .gha/gha.py check"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml"
+        ]
+      }
+    },
+    {
+      "id": "T2-change",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 0.333,
+      "content": 0.94,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          ".github/actions/run-report/run_report.py",
+          "tests/test_run_report.py"
+        ],
+        "agent-2": [
+          ".github/actions/run-report/run_report.py",
+          "tests/test_run_report.py"
+        ],
+        "agent-3": [
+          ".github/actions/run-report/run_report.py",
+          "tests/test_run_report.py"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 1,
+      "partial_new_names": {
+        "agent-1": [
+          "assertRegex",
+          "test_lists_failed_steps_only_in_failed_job_rows"
+        ],
+        "agent-2": [
+          "test_lists_failed_steps_only_in_the_rows_of_failed_jobs"
+        ],
+        "agent-3": [
+          "Lint",
+          "test_lists_failed_steps_only_in_failed_job_rows"
+        ]
+      },
+      "file_similarity": [
+        {
+          "path": ".github/actions/run-report/run_report.py",
+          "similarity": 0.988,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.983
+        },
+        {
+          "path": "tests/test_run_report.py",
+          "similarity": 0.892,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.89
+        }
+      ],
+      "excerpts": [
+        {
+          "path": "tests/test_run_report.py",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.89,
+          "diff": [
+            "--- agent-1/tests/test_run_report.py",
+            "+++ agent-2/tests/test_run_report.py",
+            "@@ -51,22 +51,24 @@",
+            "         self.assertIn(\"<summary>test のステップ（2分0秒）</summary>\", body)",
+            "         self.assertIn(\"    test : done, j2, 3, 123\", body)",
+            " ",
+            "-    def test_lists_failed_steps_only_in_failed_job_rows(self) -> None:",
+            "-        steps = (",
+            "-            run_report.Step(1, \"Unit\", \"failure\", 10),",
+            "-            run_report.Step(2, \"E2E\", \"failure\", 20),",
+            "-            run_report.Step(3, \"Upload\", \"success\", 5),",
+            "+    def test_lists_failed_steps_only_in_the_rows_of_failed_jobs(self) -> None:",
+            "+        failed = job_payload(\"test\", \"2026-10-23T00:00:00Z\", \"2026-10-23T00:00:03Z\", \"2026-10-23T00:02:03Z\")",
+            "+        failed[\"conclusion\"] = \"failure\"",
+            "+        failed[\"steps\"] = [",
+            "+            {\"number\": 1, \"name\": \"Run unit tests\", \"conclusion\": \"failure\"},",
+            "+            {\"number\": 2, \"name\": \"Run e2e tests\", \"conclusion\": \"failure\"},",
+            "+            {\"number\": 3, \"name\": \"Upload results\", \"conclusion\": \"skipped\"},",
+            "+        ]",
+            "+        jobs = run_report.to_jobs(",
+            "+            [job_payload(\"lint\", \"2026-10-23T00:00:00Z\", \"2026-10-23T00:00:02Z\", \"2026-10-23T00:01:02Z\"), failed]",
+            "         )",
+            "-        jobs = [",
+            "-            run_report.Job(\"lint\", \"https://example.test/lint\", \"success\", 0, 1, 30, steps[2:]),",
+            "-            run_report.Job(\"test\", \"https://example.test/test\", \"failure\", 0, 1, 35, steps),",
+            "-        ]",
+            " ",
+            "         body = run_report.render(run_report.Run(\"ci\", \"https://example.test/run\", \"7\", \"1\"), jobs, [\"test\"])",
+            "+        rows = {line.split(\"]\")[0]: line for line in body.splitlines() if line.startswith(\"| [\")}",
+            " ",
+            "-        self.assertIn(\"| 割合 | 失敗したステップ |\", body)",
+            "-        self.assertRegex(body, r\"\\| \\[lint\\]\\(https://example\\.test/lint\\) \\|.* \\|  \\|\\n\")",
+            "-        self.assertRegex(body, r\"\\| \\[test\\]\\(https://example\\.test/test\\) \\|.* \\| Unit、E2E \\|\\n\")",
+            "+        self.assertIn(\"| ジョブ | 結果 | 待ち | 実行 | 割合 | 失敗したステップ |\", body)",
+            "+        self.assertTrue(rows[\"| [lint\"].endswith(\"|  |\"))",
+            "+        self.assertTrue(rows[\"| [test\"].endswith(\"| Run unit tests、Run e2e tests |\"))",
+            " ",
+            "     def test_fit_drops_step_details_over_the_limit(self) -> None:",
+            "         jobs = run_report.to_jobs("
+          ]
+        },
+        {
+          "path": ".github/actions/run-report/run_report.py",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.983,
+          "diff": [
+            "--- agent-1/.github/actions/run-report/run_report.py",
+            "+++ agent-2/.github/actions/run-report/run_report.py",
+            "@@ -171,6 +171,13 @@",
+            "     return \"`\" + \"█\" * filled + \"·\" * (BAR_WIDTH - filled) + \"`\"",
+            " ",
+            " ",
+            "+def failed_steps(job: Job) -> str:",
+            "+    \"\"\"失敗したジョブなら、失敗したステップの名前を「、」でつなぐ。それ以外のジョブは空にする。\"\"\"",
+            "+    if job.conclusion != \"failure\":",
+            "+        return \"\"",
+            "+    return \"、\".join(_cell(step.name) for step in job.steps if step.conclusion == \"failure\")",
+            "+",
+            "+",
+            " def failed_needs(needs_json: str) -> list[str]:",
+            "     \"\"\"needs のうち、結果が success でも skipped でもないジョブの ID を返す。\"\"\"",
+            "     needs = json.loads(needs_json or \"{}\")",
+            "@@ -214,13 +221,6 @@",
+            "     return \"\\n\".join(lines)",
+            " ",
+            " ",
+            "-def failed_steps(job: Job) -> str:",
+            "-    \"\"\"失敗したジョブなら、失敗したステップの名前を「、」でつなぐ。それ以外のジョブは空にする。\"\"\"",
+            "-    if job.conclusion != \"failure\":",
+            "-        return \"\"",
+            "-    return \"、\".join(_cell(step.name) for step in job.steps if step.conclusion == \"failure\")",
+            "-",
+            "-",
+            " def render_slowest(jobs: Sequence[Job]) -> list[str]:",
+            "     steps = sorted(((step, job) for job in jobs for step in job.steps), key=lambda pair: -pair[0].seconds)[:SLOWEST]",
+            "     lines = [f\"<details><summary>遅いステップ（上位 {SLOWEST} 件）</summary>\", \"\", \"| ステップ | ジョブ | 時間 |\"]"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T3-cross",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 0.6,
+      "names": 1.0,
+      "content": 0.988,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".github/workflows/deploy-pages.yml"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".claude/skills/gha-workflow/references/examples/workflows/reusable-check.yml",
+          ".github/workflows/deploy-pages.yml",
+          ".github/workflows/reusable-check.yml",
+          "docs/design/architecture.md"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".github/workflows/deploy-pages.yml"
+        ]
+      },
+      "partial_files": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/reusable-check.yml",
+          "agents": [
+            "agent-2"
+          ]
+        },
+        {
+          "path": ".github/workflows/reusable-check.yml",
+          "agents": [
+            "agent-2"
+          ]
+        },
+        {
+          "path": "docs/design/architecture.md",
+          "agents": [
+            "agent-2"
+          ]
+        }
+      ],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          "similarity": 0.988,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.982
+        },
+        {
+          "path": ".github/workflows/deploy-pages.yml",
+          "similarity": 0.988,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.982
+        }
+      ],
+      "excerpts": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.982,
+          "diff": [
+            "--- agent-1/.claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+            "+++ agent-2/.claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+            "@@ -1,4 +1,4 @@",
+            "-# main への push と手動の実行で、docs/ を Jekyll で HTML にして GitHub Pages に公開する",
+            "+# main への push と手動の実行で、検査を回してから docs/ を Jekyll で HTML にして GitHub Pages に公開する",
+            " name: deploy-pages",
+            " on:",
+            "   push:"
+          ]
+        },
+        {
+          "path": ".github/workflows/deploy-pages.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.982,
+          "diff": [
+            "--- agent-1/.github/workflows/deploy-pages.yml",
+            "+++ agent-2/.github/workflows/deploy-pages.yml",
+            "@@ -1,4 +1,4 @@",
+            "-# main への push と手動の実行で、docs/ を Jekyll で HTML にして GitHub Pages に公開する",
+            "+# main への push と手動の実行で、検査を回してから docs/ を Jekyll で HTML にして GitHub Pages に公開する",
+            " name: deploy-pages",
+            " on:",
+            "   push:"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".claude/skills/gha-workflow/references/examples/workflows/reusable-check.yml"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml"
+        ]
+      }
+    }
+  ]
+}

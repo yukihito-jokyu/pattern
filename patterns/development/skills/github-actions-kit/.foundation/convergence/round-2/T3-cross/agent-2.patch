@@ -1,0 +1,36 @@
+--- a/.claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml
++++ b/.claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml
+@@ -13,7 +13,15 @@
+   run:
+     shell: bash
+ jobs:
++  check:
++    uses: ./.github/workflows/reusable-check.yml
++    permissions:
++      contents: read
++    with:
++      enable-cache: false
+   build:
++    needs:
++      - check
+     runs-on: ubuntu-24.04
+     timeout-minutes: 10
+     permissions:
+--- a/.github/workflows/deploy-pages.yml
++++ b/.github/workflows/deploy-pages.yml
+@@ -13,7 +13,15 @@
+   run:
+     shell: bash
+ jobs:
++  check:
++    uses: ./.github/workflows/reusable-check.yml
++    permissions:
++      contents: read
++    with:
++      enable-cache: false
+   build:
++    needs:
++      - check
+     runs-on: ubuntu-24.04
+     timeout-minutes: 10
+     permissions:

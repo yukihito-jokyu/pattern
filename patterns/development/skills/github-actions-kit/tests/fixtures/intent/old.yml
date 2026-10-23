@@ -1,0 +1,19 @@
+name: Nightly
+on:
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          npm ci
+          npm run build
+        env:
+          TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist

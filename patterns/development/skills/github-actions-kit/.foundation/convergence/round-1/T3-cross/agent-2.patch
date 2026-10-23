@@ -1,0 +1,84 @@
+--- a/.claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml
++++ b/.claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml
+@@ -1,4 +1,4 @@
+-# main への push と手動の実行で、docs/ を Jekyll で HTML にして GitHub Pages に公開する
++# main への push と手動の実行で、検査を回してから docs/ を Jekyll で HTML にして GitHub Pages に公開する
+ name: deploy-pages
+ on:
+   push:
+@@ -13,7 +13,15 @@
+   run:
+     shell: bash
+ jobs:
++  check:
++    uses: ./.github/workflows/reusable-check.yml
++    permissions:
++      contents: read
++    with:
++      enable-cache: false
+   build:
++    needs:
++      - check
+     runs-on: ubuntu-24.04
+     timeout-minutes: 10
+     permissions:
+--- a/.claude/skills/gha-workflow/references/examples/workflows/reusable-check.yml
++++ b/.claude/skills/gha-workflow/references/examples/workflows/reusable-check.yml
+@@ -1,4 +1,4 @@
+-# キットの全検査（lint、型検査、テスト）を3つのジョブで並べて回す。ci.yml と release.yml から呼ぶ
++# キットの全検査（lint、型検査、テスト）を3つのジョブで並べて回す。ci.yml、release.yml、deploy-pages.yml から呼ぶ
+ name: reusable-check
+ on:
+   workflow_call:
+--- a/.github/workflows/deploy-pages.yml
++++ b/.github/workflows/deploy-pages.yml
+@@ -1,4 +1,4 @@
+-# main への push と手動の実行で、docs/ を Jekyll で HTML にして GitHub Pages に公開する
++# main への push と手動の実行で、検査を回してから docs/ を Jekyll で HTML にして GitHub Pages に公開する
+ name: deploy-pages
+ on:
+   push:
+@@ -13,7 +13,15 @@
+   run:
+     shell: bash
+ jobs:
++  check:
++    uses: ./.github/workflows/reusable-check.yml
++    permissions:
++      contents: read
++    with:
++      enable-cache: false
+   build:
++    needs:
++      - check
+     runs-on: ubuntu-24.04
+     timeout-minutes: 10
+     permissions:
+--- a/.github/workflows/reusable-check.yml
++++ b/.github/workflows/reusable-check.yml
+@@ -1,4 +1,4 @@
+-# キットの全検査（lint、型検査、テスト）を3つのジョブで並べて回す。ci.yml と release.yml から呼ぶ
++# キットの全検査（lint、型検査、テスト）を3つのジョブで並べて回す。ci.yml、release.yml、deploy-pages.yml から呼ぶ
+ name: reusable-check
+ on:
+   workflow_call:
+--- a/docs/design/architecture.md
++++ b/docs/design/architecture.md
+@@ -28,7 +28,7 @@
+ ├── .github/                         参照実装。このキット自身の CI であり、配布先が真似る見本（STR-01）
+ │   ├── workflows/
+ │   │   ├── ci.yml                   PR の検証。reusable-check を呼び、最後に report（STR-02、OPS-01）
+-│   │   ├── reusable-check.yml       lint・typecheck・test の3ジョブ。ci と release から呼ぶ（STR-03）
++│   │   ├── reusable-check.yml       lint・typecheck・test の3ジョブ。ci、release、deploy-pages から呼ぶ（STR-03）
+ │   │   ├── release.yml              タグから、検査→アーカイブ→来歴の証明→Release（STR-05、DEP-04）
+ │   │   ├── deploy-pages.yml         docs/ を Jekyll で HTML にして GitHub Pages に出す（STR-05、OPS-06）
+ │   │   └── security-audit.yml       週に1回、オンラインの監査と SHA の検証（OPS-04）
+@@ -124,7 +124,7 @@
+ | 検査の CLI | `uv run --locked --script .gha/gha.py` の `check`・`pin`・`intent` と、その出力の形（KIT-04） | `gha_kit` のモジュールは配布先の作者が import しない前提で、`.gha/` を保護ファイルにする（TOOL-04） |
+ | run-report | `action.yml` の入力 `needs` と `github-token` | `run_report.py` の関数は action.yml からだけ呼ぶ。入力を変えるときは PROC-02 の互換性の決まりに従う |
+ | setup-kit | `action.yml` の入力 `enable-cache` と `python-version` | このキットの中だけで使う（配布しない） |
+-| reusable-check | `workflow_call` の入力 `enable-cache` | `reusable-` の名前の再利用ワークフローは `ci.yml` と `release.yml` だけが呼ぶ |
++| reusable-check | `workflow_call` の入力 `enable-cache` | `reusable-` の名前の再利用ワークフローは `ci.yml`、`release.yml`、`deploy-pages.yml` だけが呼ぶ |
+ | スキル | `gha-workflow` と `gha-review` の SKILL.md、`references/` | `references/rules.md` と `references/examples/` は生成物で、手で変えない（KIT-06） |
+ | install.py | `python3 install.py <配布先のパス>` | なし（1ファイルの CLI） |
+ 

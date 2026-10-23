@@ -1,0 +1,559 @@
+{
+  "round": 3,
+  "thresholds": {
+    "files": 1.0,
+    "names": 0.8,
+    "content": 0.0
+  },
+  "tasks": [
+    {
+      "id": "T1-add",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 0.915,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          ".github/workflows/ci.yml"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          ".github/workflows/ci.yml"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          ".github/workflows/ci.yml"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          "similarity": 0.915,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.915
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "similarity": 0.915,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.915
+        }
+      ],
+      "excerpts": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.915,
+          "diff": [
+            "--- agent-1/.claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+            "+++ agent-2/.claude/skills/gha-workflow/references/examples/workflows/ci.yml",
+            "@@ -29,12 +29,12 @@",
+            "           persist-credentials: false",
+            "       - name: Set up uv",
+            "         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2",
+            "-      - name: Create empty repository",
+            "-        run: git init --quiet \"$RUNNER_TEMP/empty-repo\"",
+            "       - name: Install kit into empty repository",
+            "-        run: python3 install.py \"$RUNNER_TEMP/empty-repo\"",
+            "-      - name: Check workflows in empty repository",
+            "-        working-directory: ${{ runner.temp }}/empty-repo",
+            "+        run: |",
+            "+          git init \"$RUNNER_TEMP/target\"",
+            "+          python3 install.py \"$RUNNER_TEMP/target\"",
+            "+      - name: Check workflows in installed repository",
+            "+        working-directory: ${{ runner.temp }}/target",
+            "         run: uv run --locked --script .gha/gha.py check",
+            "   report:",
+            "     needs:"
+          ]
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.915,
+          "diff": [
+            "--- agent-1/.github/workflows/ci.yml",
+            "+++ agent-2/.github/workflows/ci.yml",
+            "@@ -29,12 +29,12 @@",
+            "           persist-credentials: false",
+            "       - name: Set up uv",
+            "         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2",
+            "-      - name: Create empty repository",
+            "-        run: git init --quiet \"$RUNNER_TEMP/empty-repo\"",
+            "       - name: Install kit into empty repository",
+            "-        run: python3 install.py \"$RUNNER_TEMP/empty-repo\"",
+            "-      - name: Check workflows in empty repository",
+            "-        working-directory: ${{ runner.temp }}/empty-repo",
+            "+        run: |",
+            "+          git init \"$RUNNER_TEMP/target\"",
+            "+          python3 install.py \"$RUNNER_TEMP/target\"",
+            "+      - name: Check workflows in installed repository",
+            "+        working-directory: ${{ runner.temp }}/target",
+            "         run: uv run --locked --script .gha/gha.py check",
+            "   report:",
+            "     needs:"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T2-change",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 0.372,
+      "content": 0.951,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          ".github/actions/run-report/run_report.py",
+          "tests/test_run_report.py"
+        ],
+        "agent-2": [
+          ".github/actions/run-report/run_report.py",
+          "tests/test_run_report.py"
+        ],
+        "agent-3": [
+          ".github/actions/run-report/run_report.py",
+          "tests/test_run_report.py"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 1,
+      "partial_new_names": {
+        "agent-1": [
+          "test_lists_failed_steps_only_in_failed_job_rows",
+          "times"
+        ],
+        "agent-2": [
+          "test_lists_failed_steps_only_in_the_rows_of_failed_jobs"
+        ],
+        "agent-3": [
+          "Cache",
+          "test_lists_failed_steps_only_in_the_rows_of_failed_jobs"
+        ]
+      },
+      "file_similarity": [
+        {
+          "path": ".github/actions/run-report/run_report.py",
+          "similarity": 0.997,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.997
+        },
+        {
+          "path": "tests/test_run_report.py",
+          "similarity": 0.905,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.881
+        }
+      ],
+      "excerpts": [
+        {
+          "path": "tests/test_run_report.py",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.881,
+          "diff": [
+            "--- agent-1/tests/test_run_report.py",
+            "+++ agent-2/tests/test_run_report.py",
+            "@@ -51,23 +51,23 @@",
+            "         self.assertIn(\"<summary>test のステップ（2分0秒）</summary>\", body)",
+            "         self.assertIn(\"    test : done, j2, 3, 123\", body)",
+            " ",
+            "-    def test_lists_failed_steps_only_in_failed_job_rows(self) -> None:",
+            "-        times = (\"2026-10-23T00:00:00Z\", \"2026-10-23T00:00:02Z\", \"2026-10-23T00:01:02Z\")",
+            "-        failed = {",
+            "-            **job_payload(\"test\", *times),",
+            "-            \"conclusion\": \"failure\",",
+            "-            \"steps\": [",
+            "-                {\"number\": 1, \"name\": \"Run lint\", \"conclusion\": \"failure\"},",
+            "-                {\"number\": 2, \"name\": \"Run unit\", \"conclusion\": \"success\"},",
+            "-                {\"number\": 3, \"name\": \"Run e2e\", \"conclusion\": \"failure\"},",
+            "-            ],",
+            "-        }",
+            "-        jobs = run_report.to_jobs([job_payload(\"lint\", *times), failed])",
+            "+    def test_lists_failed_steps_only_in_the_rows_of_failed_jobs(self) -> None:",
+            "+        failed = job_payload(\"test\", \"2026-10-23T00:00:00Z\", \"2026-10-23T00:00:03Z\", \"2026-10-23T00:02:03Z\")",
+            "+        failed[\"conclusion\"] = \"failure\"",
+            "+        failed[\"steps\"] = [",
+            "+            {\"number\": 1, \"name\": \"Run unit tests\", \"conclusion\": \"failure\"},",
+            "+            {\"number\": 2, \"name\": \"Upload coverage\", \"conclusion\": \"success\"},",
+            "+            {\"number\": 3, \"name\": \"Run e2e tests\", \"conclusion\": \"failure\"},",
+            "+        ]",
+            "+        jobs = run_report.to_jobs(",
+            "+            [job_payload(\"lint\", \"2026-10-23T00:00:00Z\", \"2026-10-23T00:00:02Z\", \"2026-10-23T00:01:02Z\"), failed]",
+            "+        )",
+            " ",
+            "         body = run_report.render(run_report.Run(\"ci\", \"https://example.test/run\", \"7\", \"1\"), jobs, [\"test\"])",
+            " ",
+            "-        self.assertIn(\"| ✅ 成功 | 2秒 | 1分0秒 | `██████████` |  |\", body)",
+            "-        self.assertIn(\"| ❌ 失敗 | 2秒 | 1分0秒 | `██████████` | Run lint、Run e2e |\", body)",
+            "+        self.assertIn(\"| ジョブ | 結果 | 待ち | 実行 | 割合 | 失敗したステップ |\", body)",
+            "+        self.assertIn(\"| [lint](https://example.test/lint) | ✅ 成功 | 2秒 | 1分0秒 | `█████·····` |  |\", body)",
+            "+        self.assertIn(\"| ❌ 失敗 | 3秒 | 2分0秒 | `██████████` | Run unit tests、Run e2e tests |\", body)",
+            " ",
+            "     def test_fit_drops_step_details_over_the_limit(self) -> None:",
+            "         jobs = run_report.to_jobs("
+          ]
+        },
+        {
+          "path": ".github/actions/run-report/run_report.py",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.997,
+          "diff": [
+            "--- agent-1/.github/actions/run-report/run_report.py",
+            "+++ agent-2/.github/actions/run-report/run_report.py",
+            "@@ -215,7 +215,7 @@",
+            " ",
+            " ",
+            " def failed_steps(job: Job) -> str:",
+            "-    \"\"\"失敗したジョブなら、失敗したステップの名前を「、」でつなぐ。それ以外のジョブは空にする。\"\"\"",
+            "+    \"\"\"失敗したジョブなら失敗したステップの名前を「、」でつなぎ、それ以外のジョブは空にする。\"\"\"",
+            "     if job.conclusion != \"failure\":",
+            "         return \"\"",
+            "     return \"、\".join(_cell(step.name) for step in job.steps if step.conclusion == \"failure\")"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T3-cross",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".github/workflows/deploy-pages.yml"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".github/workflows/deploy-pages.yml"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          ".github/workflows/deploy-pages.yml"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/deploy-pages.yml",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": ".github/workflows/deploy-pages.yml",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "H1-holdout",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 0.333,
+      "names": 0.833,
+      "content": 0.973,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          ".claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+          ".github/workflows/python-3-14-test.yml",
+          "AGENTS.md",
+          "docs/design/architecture.md"
+        ],
+        "agent-2": [
+          ".claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+          ".github/workflows/python-3-14-test.yml",
+          "AGENTS.md",
+          "docs/design/architecture.md"
+        ],
+        "agent-3": [
+          ".claude/skills/gha-workflow/references/examples/workflows/test-python-3-14.yml",
+          ".github/workflows/test-python-3-14.yml"
+        ]
+      },
+      "partial_files": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+          "agents": [
+            "agent-1",
+            "agent-2"
+          ]
+        },
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/test-python-3-14.yml",
+          "agents": [
+            "agent-3"
+          ]
+        },
+        {
+          "path": ".github/workflows/python-3-14-test.yml",
+          "agents": [
+            "agent-1",
+            "agent-2"
+          ]
+        },
+        {
+          "path": ".github/workflows/test-python-3-14.yml",
+          "agents": [
+            "agent-3"
+          ]
+        },
+        {
+          "path": "AGENTS.md",
+          "agents": [
+            "agent-1",
+            "agent-2"
+          ]
+        },
+        {
+          "path": "docs/design/architecture.md",
+          "agents": [
+            "agent-1",
+            "agent-2"
+          ]
+        }
+      ],
+      "common_new_names": 3,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": [
+          "notification"
+        ]
+      },
+      "file_similarity": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+          "similarity": 0.959,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.959
+        },
+        {
+          "path": ".github/workflows/python-3-14-test.yml",
+          "similarity": 0.959,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.959
+        },
+        {
+          "path": "AGENTS.md",
+          "similarity": 0.988,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.988
+        },
+        {
+          "path": "docs/design/architecture.md",
+          "similarity": 0.986,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.986
+        }
+      ],
+      "excerpts": [
+        {
+          "path": ".claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.959,
+          "diff": [
+            "--- agent-1/.claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+            "+++ agent-2/.claude/skills/gha-workflow/references/examples/workflows/python-3-14-test.yml",
+            "@@ -1,4 +1,4 @@",
+            "-# 毎週月曜と手動の実行で、Python 3.14 でのキットの単体テストの合否を出し、落ちたら Issue で知らせる",
+            "+# 毎週月曜と手動の実行で、Python 3.14 でのキットのテストの合否を出し、落ちたら Issue を立てる",
+            " name: python-3-14-test",
+            " on:",
+            "   schedule:",
+            "@@ -29,7 +29,7 @@",
+            "           python-version: \"3.14\"",
+            "       - name: Run unit tests",
+            "         run: make test",
+            "-  failure-issue:",
+            "+  issue:",
+            "     needs:",
+            "       - test",
+            "     if: ${{ failure() }}"
+          ]
+        },
+        {
+          "path": ".github/workflows/python-3-14-test.yml",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.959,
+          "diff": [
+            "--- agent-1/.github/workflows/python-3-14-test.yml",
+            "+++ agent-2/.github/workflows/python-3-14-test.yml",
+            "@@ -1,4 +1,4 @@",
+            "-# 毎週月曜と手動の実行で、Python 3.14 でのキットの単体テストの合否を出し、落ちたら Issue で知らせる",
+            "+# 毎週月曜と手動の実行で、Python 3.14 でのキットのテストの合否を出し、落ちたら Issue を立てる",
+            " name: python-3-14-test",
+            " on:",
+            "   schedule:",
+            "@@ -29,7 +29,7 @@",
+            "           python-version: \"3.14\"",
+            "       - name: Run unit tests",
+            "         run: make test",
+            "-  failure-issue:",
+            "+  issue:",
+            "     needs:",
+            "       - test",
+            "     if: ${{ failure() }}"
+          ]
+        },
+        {
+          "path": "docs/design/architecture.md",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.986,
+          "diff": [
+            "--- agent-1/docs/design/architecture.md",
+            "+++ agent-2/docs/design/architecture.md",
+            "@@ -31,8 +31,8 @@",
+            " │   │   ├── reusable-check.yml       キットの全検査。2か所以上から呼ぶ検査のジョブ（STR-03）",
+            " │   │   ├── release.yml              タグからのリリース（STR-05、DEP-04）",
+            " │   │   ├── deploy-pages.yml         GitHub Pages へのデプロイ（STR-05、OPS-06）",
+            "-│   │   ├── security-audit.yml       定期の監査（OPS-04）",
+            "-│   │   └── python-3-14-test.yml     定期の Python 3.14 でのテスト（OPS-04）",
+            "+│   │   ├── python-3-14-test.yml     Python 3.14 での定期のテストと、失敗の Issue（OPS-04、OPS-06）",
+            "+│   │   └── security-audit.yml       定期の監査（OPS-04）",
+            " │   ├── actions/",
+            " │   │   ├── setup-kit/action.yml     uv と開発の依存を入れる composite（STR-03）",
+            " │   │   └── run-report/              処理時間の報告と合否の composite（配布する。OPS-01）"
+          ]
+        },
+        {
+          "path": "AGENTS.md",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.988,
+          "diff": [
+            "--- agent-1/AGENTS.md",
+            "+++ agent-2/AGENTS.md",
+            "@@ -32,7 +32,7 @@",
+            " ## ディレクトリ構造",
+            " ",
+            " ```text",
+            "-.github/workflows/      参照実装のワークフロー（ci、reusable-check、release、deploy-pages、security-audit、python-3-14-test）",
+            "+.github/workflows/      参照実装のワークフロー（ci、reusable-check、release、deploy-pages、python-3-14-test、security-audit）",
+            " .github/actions/        setup-kit（キット用）、run-report（配布する。処理時間の報告と合否）",
+            " .github/dependabot.yml  外部アクションの週1回の更新",
+            " .gha/                   検査の CLI（gha.py と gha_kit/）と、yamllint・actionlint・zizmor の設定"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    }
+  ]
+}
