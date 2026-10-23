@@ -67,6 +67,7 @@ test('変更した実装だけを選び、文書やサイトだけの変更で�
   assert.equal((await patternMatrix(root, {files: ['scripts/build-downloads.mjs']})).include.length, 2);
   assert.equal((await patternMatrix(root, {files: ['.github/workflows/ci.yml']})).include.length, 2);
   assert.equal((await patternMatrix(root, {files: ['package-lock.json']})).include.length, 2);
+  assert.equal((await patternMatrix(root, {files: ['.nvmrc']})).include.length, 2);
 });
 
 test('対象外でも不正なCI設定を黙って通さない', async t => {

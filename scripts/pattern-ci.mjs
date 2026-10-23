@@ -7,7 +7,7 @@ import {catalog, requireValid, filesIn, cliOptions, main} from './lib/project.mj
 
 const exec = promisify(execFile);
 const sharedVerificationFiles = new Set([
-  '.github/workflows/ci.yml', 'package.json', 'package-lock.json',
+  '.github/workflows/ci.yml', '.nvmrc', 'package.json', 'package-lock.json',
   'scripts/build-downloads.mjs', 'scripts/check-dir.mjs',
   'scripts/verify-patterns.mjs', 'scripts/pattern-ci.mjs',
   'scripts/lib/project.mjs', 'scripts/lib/patterns.mjs',
