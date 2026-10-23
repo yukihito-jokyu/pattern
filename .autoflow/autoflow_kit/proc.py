@@ -11,8 +11,9 @@ import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from autoflow_kit.errors import CommandError
+from autoflow_kit.errors import CommandError, StageError
 
 TAIL_LINES = 40
 TIMEOUT_EXIT = 124
@@ -55,7 +56,10 @@ def shell(command: str, directory: Path, timeout_sec: int) -> Result:
     return Result(child.returncode, output.decode("utf-8", "replace"), False)
 
 
-def _git(directory: Path, args: Sequence[str], *, stdin: str = "") -> str:
+def _git(directory: Path, args: Sequence[str], *, stdin: str = "", index: Path | None = None) -> str:
+    environment = dict(os.environ)
+    if index is not None:
+        environment["GIT_INDEX_FILE"] = str(index)
     try:
         completed = subprocess.run(
             ["git", *args],
@@ -63,6 +67,7 @@ def _git(directory: Path, args: Sequence[str], *, stdin: str = "") -> str:
             input=stdin.encode("utf-8"),
             capture_output=True,
             check=False,
+            env=environment,
         )
     except FileNotFoundError as exc:
         raise CommandError("git が見つかりません。git を入れてください") from exc
@@ -74,6 +79,12 @@ def _git(directory: Path, args: Sequence[str], *, stdin: str = "") -> str:
 
 def git_toplevel(directory: Path) -> Path:
     return Path(_git(directory, ["rev-parse", "--show-toplevel"]).strip()).resolve()
+
+
+def git_common_dir(directory: Path) -> Path:
+    """同じリポジトリの全 worktree が共有する Git の管理領域。"""
+    common = Path(_git(directory, ["rev-parse", "--git-common-dir"]).strip())
+    return (directory / common).resolve()
 
 
 def git_branch(directory: Path) -> str:
@@ -112,6 +123,52 @@ def git_stage_all(directory: Path) -> None:
 
 def git_write_tree(directory: Path) -> str:
     return _git(directory, ["write-tree"]).strip()
+
+
+def git_snapshot(directory: Path) -> str:
+    """一時 index で作業ツリーを控え、利用者のステージングを保持する。"""
+    with TemporaryDirectory(prefix="autoflow-index-") as temporary:
+        index = Path(temporary) / "index"
+        _git(directory, ["read-tree", "HEAD"], index=index)
+        _git(directory, ["add", "-A"], index=index)
+        return _git(directory, ["write-tree"], index=index).strip()
+
+
+def git_commit_delta(directory: Path, base: str, tree: str, head: str, message: str) -> str:
+    """開始後の差分だけをコミットし、開始前の編集とステージングを残す。"""
+    if git_head(directory) != head:
+        raise StageError("開始後に HEAD が変わりました。変更の関係を確認してからコミットする")
+    # 開始時だけ存在した未追跡の入力を片付けても、HEAD には削除する対象がない。
+    # レビュー用の差分には残し、コミット用のパッチからだけ除く。
+    tracked = set(_git(directory, ["ls-tree", "-r", "--name-only", "-z", head]).split("\0"))
+    removed = _git(directory, ["diff", "--name-only", "--diff-filter=D", "--no-renames", "-z", base, tree])
+    exclusions = [f":(exclude,literal){name}" for name in removed.split("\0") if name and name not in tracked]
+    patch = _git(
+        directory,
+        ["diff", "--binary", "--full-index", "--no-ext-diff", "--no-renames", base, tree, "--", ".", *exclusions],
+    )
+    if not patch:
+        raise StageError("開始後の変更がありません。コミットする差分はありません")
+    with TemporaryDirectory(prefix="autoflow-commit-") as temporary:
+        index = Path(temporary) / "commit-index"
+        staged = Path(temporary) / "staged-index"
+        _git(directory, ["read-tree", head], index=index)
+        try:
+            _git(directory, ["apply", "--cached", "--3way"], stdin=patch, index=index)
+            committed_tree = _git(directory, ["write-tree"], index=index).strip()
+            # HEAD に今回の差分だけを適用し、利用者の index にも同じ差分を反映する。
+            # 両方を一時 index で準備し、競合した場合は HEAD・実 index・実ファイルを変えない。
+            committed_patch = _git(
+                directory, ["diff", "--binary", "--full-index", "--no-ext-diff", "--no-renames", head, committed_tree]
+            )
+            _git(directory, ["read-tree", git_write_tree(directory)], index=staged)
+            _git(directory, ["apply", "--cached", "--3way"], stdin=committed_patch, index=staged)
+            staged_tree = _git(directory, ["write-tree"], index=staged).strip()
+        except CommandError as exc:
+            raise StageError(f"今回の差分を既存変更から分離できません。競合箇所を確認する:\n{exc}") from exc
+        _git(directory, ["commit", "-q", "-F", "-"], stdin=message, index=index)
+        _git(directory, ["read-tree", staged_tree])
+        return git_head(directory)
 
 
 def git_diff_names(directory: Path, base: str, tree: str) -> tuple[str, ...]:

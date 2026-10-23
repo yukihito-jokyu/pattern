@@ -142,7 +142,7 @@ class _Memory:
     risked: bool = False
 
 
-def started(origin: Origin, branch: str, tree: str, now: str) -> Event:
+def started(origin: Origin, branch: str, tree: str, now: str, *, head: str = "") -> Event:
     return Event(
         STARTED,
         now,
@@ -152,6 +152,7 @@ def started(origin: Origin, branch: str, tree: str, now: str) -> Event:
         ref=origin.ref,
         url=origin.url,
         branch=branch,
+        commit=head,
     )
 
 

@@ -74,7 +74,7 @@ class Profile:
 
 @dataclass(frozen=True)
 class Approval:
-    """profile-approval.json。承認したプロファイルの sha256 と、人の回答の原文。"""
+    """Git の共通管理領域に保存する、設定の sha256 と人の回答原文。"""
 
     sha256: str
     who: str

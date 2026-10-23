@@ -1,4 +1,4 @@
-"""受付の段（start）。承認済みのプロファイルと、きれいな作業ツリーを確かめ、作業ブランチと実行の記録を作る。"""
+"""受付の段（start）。承認済みのプロファイルを確かめ、既存変更を含む開始状態と作業ブランチを記録する。"""
 
 from __future__ import annotations
 
@@ -9,8 +9,6 @@ from autoflow_kit.errors import StageError
 from autoflow_kit.layout import Layout
 from autoflow_kit.profile import Profile
 
-SHOWN_LINES = 10
-
 
 def _check_repo(where: Layout) -> None:
     if proc.git_toplevel(where.root) != where.root.resolve():
@@ -18,12 +16,8 @@ def _check_repo(where: Layout) -> None:
     intake = where.relative(where.intake_path)
     if not proc.git_is_ignored(where.root, intake):
         raise StageError(
-            f"{layout.KIT_DIR}/{layout.RUNS_DIR}/ が .gitignore に入っていません。.gitignore に足してコミットする"
+            f"{layout.KIT_DIR}/{layout.RUNS_DIR}/ が .gitignore に入っていません。.gitignore に足す"
         )
-    dirty = proc.git_status(where.root)
-    if dirty:
-        shown = "\n".join(f"  {line}" for line in dirty[:SHOWN_LINES])
-        raise StageError(f"作業ツリーに未コミットの変更があります。コミットか退避をしてから start する:\n{shown}")
 
 
 def _check_origin(origin: trail.Origin) -> None:
@@ -78,7 +72,9 @@ def start(where: Layout, origin: trail.Origin, body_path: Path, now: str) -> str
     fsops.write_text(where.task_path(run_id), _task(origin, body))
     fsops.write_text(where.guide_path(run_id), _guide(where, settings))
     fsops.copy_file(where.profile_path, where.snapshot_profile_path(run_id))
-    fsops.append_line(where.trail_path(run_id), trail.encode(trail.started(origin, branch, tree, now)))
+    fsops.append_line(
+        where.trail_path(run_id), trail.encode(trail.started(origin, branch, tree, now, head=proc.git_head(where.root)))
+    )
     return "\n".join(
         [
             f"実行: {run_id}",

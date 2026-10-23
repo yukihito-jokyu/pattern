@@ -1,0 +1,71 @@
+{
+  "name": "skill-tune-kit",
+  "status": "ready",
+  "mode": "new",
+  "domain": ["cli-library"],
+  "language": "ja",
+  "stack": [
+    {"name": "Claude Code skills", "version": "2.1.296（npm の最新は 2.1.306）", "role": "agent-skill", "pinned": true},
+    {"name": "Claude Code subagents", "version": "2.1.296（npm の最新は 2.1.306）", "role": "agent-subagent", "pinned": false}
+  ],
+  "tools": [
+    {"role": "runtime", "language": "python", "name": "python3", "version": "3.9.6", "pinned": false},
+    {"role": "package-manager", "language": "python", "name": "uv", "version": "0.11.14", "pinned": false},
+    {"role": "formatter", "language": "python", "name": "ruff", "version": "0.17.1", "pinned": false},
+    {"role": "linter", "language": "python", "name": "ruff", "version": "0.17.1", "pinned": false},
+    {"role": "typecheck", "language": "python", "name": "mypy", "version": "1.20.2", "pinned": false},
+    {"role": "test", "language": "python", "name": "unittest", "version": "3.9.6（標準ライブラリ）", "pinned": false},
+    {"role": "structure", "language": "python", "name": "scripts/structure_check.py", "version": "3.9.6（標準ライブラリ）", "pinned": false}
+  ],
+  "skills": {"impl": "impl", "review": "review"},
+  "commands": {"check": "make check", "fix": "make fix"},
+  "protected": [
+    "Makefile",
+    "pyproject.toml",
+    "scripts/structure_check.py",
+    ".claude/settings.json",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": [".mypy_cache", ".ruff_cache", "/docs/design/convergence-report.md"]
+  },
+  "guard": {
+    "rule": "TOOL-03",
+    "include": ["kit/**/*.py", "scripts/**/*.py", "tests/**/*.py", "install.py"],
+    "exclude": [],
+    "suppressions": [
+      {"pattern": "#\\s*noqa", "rule": "TOOL-03"},
+      {"pattern": "#\\s*ruff:\\s*(noqa|disable)", "rule": "TOOL-03"},
+      {"pattern": "#\\s*type:\\s*ignore", "rule": "TOOL-03"},
+      {"pattern": "#\\s*mypy:", "rule": "TOOL-03"},
+      {"pattern": "#\\s*pragma:\\s*no\\s*cover", "rule": "TOOL-03"},
+      {"pattern": "#\\s*fmt:\\s*(off|skip)", "rule": "TOOL-03"},
+      {"pattern": "unittest\\.skip|@skip(If|Unless)?\\(|skipTest\\(", "rule": "TOOL-03"}
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {"glob": "**/*.py", "command": "make fix-file FILE={file}"}
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 1800,
+    "runner": [
+      "claude", "-p", "{prompt}",
+      "--output-format", "json",
+      "--permission-mode", "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools", "Skill", "Bash(make check)", "Bash(make fix)", "Bash(make *)", "Bash(python3 *)",
+      "Bash(git diff *)", "Bash(git status *)", "Bash(tail *)", "Bash(head *)", "Bash(grep *)", "Bash(ls *)"
+    ],
+    "ignore": [],
+    "thresholds": {"files": 1.0, "names": 0.8, "content": 0.0}
+  }
+}

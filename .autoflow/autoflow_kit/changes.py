@@ -16,9 +16,8 @@ class Stat:
 
 
 def snapshot(root: Path) -> str:
-    """今の作業ツリーの版。未追跡のファイルも含めて index に入れ、その tree id を返す。"""
-    proc.git_stage_all(root)
-    return proc.git_write_tree(root)
+    """未追跡ファイルを含む今の版を、利用者の index を変えずに記録する。"""
+    return proc.git_snapshot(root)
 
 
 def branch(root: Path) -> str:

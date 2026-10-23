@@ -84,9 +84,14 @@ def setup_check(where: Layout) -> str:
     missing = [name for name in settings.review.guide_files if not where.repo_path(name).is_file()]
     lines = [views.render_profile(settings)]
     lines += [f"WARN review.guide_files の {name} がありません" for name in missing]
-    lines.append(
-        f"次: この内容を人に見せ、承認を得る（H0）。承認なら {layout.CLI} setup-approve --answer '<人の回答の原文>'"
-    )
+    try:
+        workspace.approved_profile(where)
+    except StageError:
+        lines.append(
+            f"次: この内容を人に見せ、承認を得る（H0）。承認なら {layout.CLI} setup-approve --answer '<人の回答の原文>'"
+        )
+    else:
+        lines.append("承認済み: 同じ設定の承認を引き継ぐ。次の依頼をそのまま開始できる")
     return "\n".join(lines)
 
 
@@ -120,13 +125,11 @@ def setup_approve(where: Layout, answer: str, now: str, *, allow: bool) -> str:
         answer=answer,
         at=now,
     )
-    fsops.write_json(where.approval_path, shape.to_data(approval))
-    lines = [f"承認を記録した: {where.relative(where.approval_path)}（承認した人: {approval.who or render.MISSING}）"]
+    path = where.approval_path(proc.git_common_dir(where.root), approval.sha256)
+    fsops.write_json(path, shape.to_data(approval))
+    lines = [f"承認を記録した: {path}（承認した人: {approval.who or render.MISSING}）"]
     if allow:
         added = _allow_rules(where, settings)
         lines += [f"足した許可（{where.relative(where.settings_local_path)}）:", render.bullets(added)]
-    lines.append(
-        f"次: {layout.KIT_DIR}/ と .gitignore の変更を人がコミットする（start は作業ツリーがきれいなときだけ動く）。"
-        "その後 /autoflow で依頼を渡す"
-    )
+    lines.append("次: /autoflow で依頼を渡す。未コミットの変更は保持し、開始後の差分と分けて扱う")
     return "\n".join(lines)
