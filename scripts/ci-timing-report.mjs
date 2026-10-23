@@ -90,7 +90,7 @@ async function completedJobs(base, runId, api, pause) {
   // then allow at most one minute for GitHub to reflect their completion.
   for (let retry = 0; retry <= 6; retry++) {
     const jobs = rows(await api(`${base}/actions/runs/${runId}/jobs?filter=latest&per_page=100`, {paginate: true}), 'jobs')
-      .filter(job => job.name !== 'CI Timing Report' && job.name !== 'deploy');
+      .filter(job => !['report', 'CI Timing Report', 'deploy'].includes(job.name));
     for (let index = 0; index < jobs.length; index++) {
       if (jobs[index].status !== 'completed') jobs[index] = await api(`${base}/actions/jobs/${jobs[index].id}`);
     }

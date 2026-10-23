@@ -82,14 +82,14 @@ test('Step名による表・折りたたみの破壊とメンションを防ぐ'
 });
 
 test('全ページのmatrixを集計し、初回は投稿、Summaryにも同じ内容を保存する', async () => {
-  const h = harness({jobs: [[job, timed('CI Timing Report', 10, {status: 'in_progress'})],
+  const h = harness({jobs: [[job, timed('report', 10, {status: 'in_progress'})],
     [timed('ZIP (sample/a/b)', 60), timed('deploy', 0, {conclusion: 'skipped'})]]});
   assert.equal((await reportTiming(h.input)).posted, true);
   assert.equal(h.write().method, 'POST');
   assert.equal(h.write().endpoint, 'repos/sample/repo/issues/23/comments');
   assert.match(h.write().body.body, /ZIP \(sample\/a\/b\)/);
   assert.ok(!h.write().body.body.includes('| deploy |'));
-  assert.ok(!h.write().body.body.includes('| CI Timing Report |'));
+  assert.ok(!h.write().body.body.includes('| report |'));
   assert.equal(h.summaries[0].content, h.write().body.body);
   for (const call of h.calls.filter(call => /\?/.test(call.endpoint))) assert.equal(call.paginate, true);
 });
@@ -183,18 +183,15 @@ test('大きなmatrixはコメント上限を守り、全StepをSummaryへ残す
   assert.match(h.summaries[0].content, /step-499-/);
 });
 
-test('Workflowは失敗・matrix省略後にも集計し、権限と直列化をJobに限定する', async () => {
+test('Workflowは全PRの失敗・matrix省略後にも判定し、コメント権限と直列化をreportに限定する', async () => {
   const {parse} = await import('yaml');
   const workflow = parse(await readFile(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8'));
-  const timing = workflow.jobs['timing-report'];
-  assert.deepEqual(timing.needs, ['verify', 'discover-patterns', 'patterns']);
-  assert.match(timing.if, /^!cancelled\(\)/);
-  assert.match(timing.if, /pull_request/);
-  assert.match(timing.if, /head.repo.full_name == github.repository/);
-  assert.match(timing.if, /dependabot/);
-  assert.deepEqual(workflow.permissions, {contents: 'read'});
-  assert.deepEqual(timing.permissions, {contents: 'read', actions: 'read', 'pull-requests': 'write'});
+  const timing = workflow.jobs.report;
+  assert.deepEqual(timing.needs, Object.keys(workflow.jobs).filter(id => id !== 'report').sort());
+  assert.equal(timing.if, '${{ !cancelled() }}');
+  assert.deepEqual(workflow.permissions, {});
+  assert.deepEqual(timing.permissions, {actions: 'read', contents: 'read', 'pull-requests': 'write'});
   assert.equal(timing.concurrency['cancel-in-progress'], false);
   assert.match(timing.concurrency.group, /pull_request.number/);
-  assert.equal(workflow.jobs.deploy.needs.includes('timing-report'), false);
+  assert.equal(workflow.jobs.deploy.needs.includes('report'), false);
 });
