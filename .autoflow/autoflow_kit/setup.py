@@ -125,8 +125,5 @@ def setup_approve(where: Layout, answer: str, now: str, *, allow: bool) -> str:
     if allow:
         added = _allow_rules(where, settings)
         lines += [f"足した許可（{where.relative(where.settings_local_path)}）:", render.bullets(added)]
-    lines.append(
-        f"次: {layout.KIT_DIR}/ と .gitignore の変更を人がコミットする（start は作業ツリーがきれいなときだけ動く）。"
-        "その後 /autoflow で依頼を渡す"
-    )
+    lines.append("次: /autoflow で依頼を渡す。未コミットの変更は保持し、開始後の差分と分けて扱う")
     return "\n".join(lines)

@@ -165,7 +165,7 @@ def handoff(where: Layout, run_id: str, now: str) -> str:
         "",
         "## コミットの案",
         "",
-        f"承認すると、作業ブランチ `{ctx.start.branch}` に次の文でコミットする。リモートには送らない。",
+        f"承認すると、開始後の差分だけを作業ブランチ `{ctx.start.branch}` に次の文でコミットする。開始前の変更は保持し、リモートには送らない。",
         "",
         render.fence(message),
         "",
@@ -181,6 +181,8 @@ def commit(where: Layout, run_id: str, now: str) -> str:
     report = trail.last(ctx.events, trail.HANDED_OFF)
     if report is None:
         raise StageError("報告書がありません。status で次を確かめる")
-    sha = proc.git_commit(where.root, report.text)
+    sha = proc.git_commit_delta(
+        where.root, ctx.start.tree, ctx.tree, ctx.start.commit or proc.git_head(where.root), report.text
+    )
     fsops.append_line(where.trail_path(run_id), trail.encode(trail.committed(sha, ctx.tree, now)))
     return f"コミットした: {sha[:12]}（ブランチ {ctx.start.branch}）。リモートには送っていない"
