@@ -1,0 +1,403 @@
+{
+  "probes_sha256": "66a8bc20b41051aa179a2c3055bef65e17308bc050231e77b3f2492c7e9d5abf",
+  "command": "make check",
+  "results": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-05-b",
+      "rule": "STR-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-03-a",
+      "rule": "TEST-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-04-b",
+      "rule": "DEP-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-02-b",
+      "rule": "CODE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-03-a",
+      "rule": "STATE-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-b",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-04-b",
+      "rule": "OPS-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-06-a",
+      "rule": "PROC-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    }
+  ],
+  "wiring": [
+    {
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "probe": "STR-01-a",
+      "passed": true
+    },
+    {
+      "command": "PYTHONPATH=kit/.tune python3 scripts/gen_docs.py --check",
+      "probe": "STR-04-a",
+      "passed": true
+    },
+    {
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "probe": "TOOL-03-a",
+      "passed": true
+    },
+    {
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "probe": "DEP-04-b",
+      "passed": true
+    },
+    {
+      "command": "uvx ruff@0.17.1 format --check kit/.tune scripts tests install.py",
+      "probe": "TOOL-01-a",
+      "passed": true
+    },
+    {
+      "command": "uvx mypy@1.20.2",
+      "probe": "CODE-03-a",
+      "passed": true
+    },
+    {
+      "command": "PYTHONPATH=kit/.tune python3 -B -m unittest discover -s tests -t .",
+      "probe": "STATE-02-a",
+      "passed": true
+    }
+  ]
+}

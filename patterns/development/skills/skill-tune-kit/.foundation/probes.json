@@ -1,0 +1,604 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "kit/.tune の直下に表に無いファイルを置く",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/helpers.py",
+          "mode": "create",
+          "content": "\"\"\"補助。\"\"\"\n\nfrom __future__ import annotations\n"
+        }
+      ],
+      "expect": "STR-01 kit/\\.tune/helpers\\.py"
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "表に登録しないモジュールを足す",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/extra.py",
+          "mode": "create",
+          "content": "\"\"\"余分なモジュール。\"\"\"\n\nfrom __future__ import annotations\n\n\ndef build_extra() -> str:\n    return \"x\"\n"
+        }
+      ],
+      "expect": "STR-02 kit/\\.tune/tune_kit/extra\\.py"
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "level": "structure",
+      "description": "tune_kit のモジュールに __main__ の判定を書く",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\nif __name__ == \"__main__\":\n    render_bullets([])\n"
+        }
+      ],
+      "expect": "STR-03 kit/\\.tune/tune_kit/render\\.py"
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "生成物 check-kinds.md を手で編集する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/gen_docs.py --check",
+      "files": [
+        {
+          "path": "kit/claude/skills/skill-tune/references/check-kinds.md",
+          "mode": "append",
+          "content": "\n手で足した行\n"
+        }
+      ],
+      "expect": "STR-04 kit/claude/skills/skill-tune/references/check-kinds\\.md"
+    },
+    {
+      "id": "STR-05-a",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "採点役の tools に Agent を入れる",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/claude/agents/tune-grader.md",
+          "mode": "replace",
+          "content": "---\nname: tune-grader\ndescription: 採点役\ntools: Read, Write, Agent\nomitClaudeMd: true\n---\n\n採点する。\n"
+        }
+      ],
+      "expect": "STR-05 kit/claude/agents/tune-grader\\.md:1 tools に Agent"
+    },
+    {
+      "id": "STR-05-b",
+      "rule": "STR-05",
+      "level": "structure",
+      "description": "配布するスキルから disable-model-invocation を外す",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/claude/skills/skill-tune/SKILL.md",
+          "mode": "replace",
+          "content": "---\nname: skill-tune\ndescription: スキルを改善する\nallowed-tools: Bash(python3 .tune/tune.py *)\nargument-hint: <target-id>\n---\n\n# skill-tune\n"
+        }
+      ],
+      "expect": "STR-05 kit/claude/skills/skill-tune/SKILL\\.md:1 frontmatter の disable-model-invocation"
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "段のモジュールから別の段を import する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\nfrom tune_kit import learn\n"
+        }
+      ],
+      "expect": "DEP-01 kit/\\.tune/tune_kit/decide\\.py:\\d+ learn は import の許可表にありません"
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "level": "structure",
+      "description": "他のモジュールの _ で始まる名前を使う",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\ndef _build_private() -> str:\n    return fsops._build_skip.__name__\n"
+        }
+      ],
+      "expect": "DEP-02 kit/\\.tune/tune_kit/decide\\.py:\\d+ fsops\\._build_skip"
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "level": "structure",
+      "description": "標準ライブラリに無いパッケージを import する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\nimport yaml\n"
+        }
+      ],
+      "expect": "DEP-03 kit/\\.tune/tune_kit/render\\.py:\\d+ yaml は STDLIB"
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "level": "structure",
+      "description": "段のモジュールで Path.write_text を直接呼ぶ",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\ndef _write_direct(where: layout.Layout) -> None:\n    where.report_path.write_text(\"x\")\n"
+        }
+      ],
+      "expect": "DEP-04 kit/\\.tune/tune_kit/decide\\.py:\\d+ \\.write_text"
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "level": "structure",
+      "description": "動詞表に無い語で始まる関数を書く",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef get_text() -> str:\n    return \"x\"\n"
+        }
+      ],
+      "expect": "NAM-02 kit/\\.tune/tune_kit/render\\.py:\\d+ 関数 get_text"
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "contracts.py で camelCase のキーを読む",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/contracts.py",
+          "mode": "append",
+          "content": "\n\ndef parse_extra(data: object) -> str:\n    record, _problems = _read_record(data, \"x\")\n    return str(record.get(\"caseId\"))\n"
+        }
+      ],
+      "expect": "NAM-03 kit/\\.tune/tune_kit/contracts\\.py:\\d+ キー caseId"
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "structure",
+      "description": "dataclass ではないクラスを書く",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\nclass Holder:\n    value = 1\n"
+        }
+      ],
+      "expect": "CODE-01 kit/\\.tune/tune_kit/render\\.py:\\d+ クラス Holder"
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "structure",
+      "description": "tune_kit のモジュールから名前を直接 import する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\nfrom tune_kit.plan import Case\n"
+        }
+      ],
+      "expect": "CODE-02 kit/\\.tune/tune_kit/decide\\.py:\\d+ tune_kit は from tune_kit import"
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "level": "structure",
+      "description": "段のモジュールにファイル名の文字列を書く",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\nNAME = \"decision.json\"\n"
+        }
+      ],
+      "expect": "CODE-06 kit/\\.tune/tune_kit/decide\\.py:\\d+ ファイル名 decision\\.json"
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "errors.py に無い例外を投げる",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\ndef _check_value(value: int) -> None:\n    if value < 0:\n        raise ValueError(\"負の値\")\n"
+        }
+      ],
+      "expect": "ERR-01 kit/\\.tune/tune_kit/decide\\.py:\\d+ ValueError"
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "level": "structure",
+      "description": "段のモジュールで fsops.read_json を直接呼ぶ",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\ndef _read_decision(where: layout.Layout) -> object:\n    return fsops.read_json(where.report_path)\n"
+        }
+      ],
+      "expect": "ERR-02 kit/\\.tune/tune_kit/decide\\.py"
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "level": "structure",
+      "description": "status がファイルを書く",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/status.py",
+          "mode": "append",
+          "content": "\n\ndef _write_marker(where: layout.Layout) -> None:\n    fsops.write_text(where.report_path, \"x\")\n"
+        }
+      ],
+      "expect": "STATE-01 kit/\\.tune/tune_kit/status\\.py"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "structure",
+      "description": "threading を import する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\nimport threading\n"
+        }
+      ],
+      "expect": "ASYNC-01 kit/\\.tune/tune_kit/render\\.py"
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "structure",
+      "description": "logging を import する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\nimport logging\n"
+        }
+      ],
+      "expect": "OPS-01 kit/\\.tune/tune_kit/render\\.py"
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "段のモジュールで環境変数を読む",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\nimport os\n\nLIMIT = os.environ.get(\"TUNE_LIMIT\", \"3\")\n"
+        }
+      ],
+      "expect": "OPS-02 kit/\\.tune/tune_kit/decide\\.py"
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "level": "structure",
+      "description": "評価を進める段の公開関数が承認済みの計画を読まない",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\ndef decide(where: layout.Layout, number: int) -> str:\n    return f\"{where.target} {number}\"\n"
+        }
+      ],
+      "expect": "OPS-04 kit/\\.tune/tune_kit/decide\\.py:\\d+ decide の最初の文"
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "level": "structure",
+      "description": "モジュールのテストクラスを消す",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "tests/test_errors.py",
+          "mode": "replace",
+          "content": "\"\"\"errors のテスト。\"\"\"\n\nfrom __future__ import annotations\n\nimport unittest\n\n\nclass OtherTest(unittest.TestCase):\n    def test_nothing(self) -> None:\n        self.assertTrue(True)\n"
+        }
+      ],
+      "expect": "TEST-01 tests/test_errors\\.py:1 unittest\\.TestCase を継承した ErrorsTest"
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "level": "structure",
+      "description": "テストでモックを import する",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "tests/test_render.py",
+          "mode": "append",
+          "content": "\n\nfrom unittest import mock\n"
+        }
+      ],
+      "expect": "TEST-02 tests/test_render\\.py"
+    },
+    {
+      "id": "TEST-03-a",
+      "rule": "TEST-03",
+      "level": "structure",
+      "description": "検査の種類のテスト test_kind_judge を消す",
+      "command": "PYTHONPATH=kit/.tune python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "tests/test_checks.py",
+          "mode": "replace",
+          "content": "\"\"\"checks のテスト。検査の種類ごとに test_kind_<種類> を置く（TEST-03）。\"\"\"\n\nfrom __future__ import annotations\n\nimport unittest\n\nfrom tune_kit import checks\n\n\nclass ChecksTest(unittest.TestCase):\n    def test_kind_contains(self) -> None:\n        self.assertTrue(checks.evaluate_text_check(\"contains\", \"日付は ２０２６-01-05 です\", \"2026-01-05\", None).passed)\n        self.assertFalse(checks.evaluate_text_check(\"contains\", \"日付なし\", \"2026-01-05\", None).passed)\n\n    def test_kind_not_contains(self) -> None:\n        self.assertTrue(checks.evaluate_text_check(\"not_contains\", \"完了\", \"TODO\", None).passed)\n        self.assertFalse(checks.evaluate_text_check(\"not_contains\", \"TODO: 残り\", \"TODO\", None).passed)\n\n    def test_kind_regex(self) -> None:\n        self.assertTrue(checks.evaluate_text_check(\"regex\", \"前置き\\n## 概要\\n\", \"^## 概要$\", None).passed)\n        self.assertFalse(checks.is_valid_pattern(\"(\"))\n\n    def test_kind_equals(self) -> None:\n        self.assertTrue(checks.evaluate_text_check(\"equals\", \"a  \\r\\nb\\n\\n\", \"\", \"a\\nb\").passed)\n        self.assertFalse(checks.evaluate_text_check(\"equals\", \"a\", \"\", \"b\").passed)\n        self.assertFalse(checks.evaluate_text_check(\"equals\", None, \"\", \"a\").passed)\n\n    def test_kind_json_equals(self) -> None:\n        self.assertTrue(checks.evaluate_text_check(\"json_equals\", '{\"b\": 1, \"a\": [2]}', \"\", '{\"a\":[2],\"b\":1}').passed)\n        self.assertFalse(checks.evaluate_text_check(\"json_equals\", \"{broken\", \"\", \"{}\").passed)\n\n    def test_kind_exists(self) -> None:\n        self.assertTrue(checks.evaluate_exists(True).passed)\n        self.assertFalse(checks.evaluate_exists(False).passed)\n\n    def test_kind_command(self) -> None:\n        self.assertTrue(checks.evaluate_command(0, \"\").passed)\n        self.assertIn(\"終了コード 2\", checks.evaluate_command(2, \"失敗\").detail)\n"
+        }
+      ],
+      "expect": "TEST-03 tests/test_checks\\.py:1 test_kind_judge がありません"
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "抑止コメントを書く",
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_plain(text: str) -> str:\n    return text  # pragma: no cover\n"
+        }
+      ],
+      "expect": "TOOL-03 kit/\\.tune/tune_kit/render\\.py"
+    },
+    {
+      "id": "DEP-04-b",
+      "rule": "DEP-04",
+      "level": "lint",
+      "description": "print で画面に出す",
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_debug(text: str) -> str:\n    print(text)\n    return text\n"
+        }
+      ],
+      "expect": "T201"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "lint",
+      "description": "関数名を camelCase にする",
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef renderCamel() -> str:\n    return \"x\"\n"
+        }
+      ],
+      "expect": "N802"
+    },
+    {
+      "id": "CODE-02-b",
+      "rule": "CODE-02",
+      "level": "lint",
+      "description": "相対 import を書く",
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/decide.py",
+          "mode": "append",
+          "content": "\n\nfrom . import render as relative_render\n"
+        }
+      ],
+      "expect": "TID252"
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "level": "lint",
+      "description": "引数が7つの関数を書く",
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_many(a: str, b: str, c: str, d: str, e: str, f: str, g: str) -> str:\n    return a + b + c + d + e + f + g\n"
+        }
+      ],
+      "expect": "PLR0913"
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "コメントアウトしたコードを残す",
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n# value = render_rate(None)\n"
+        }
+      ],
+      "expect": "ERA001"
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "level": "lint",
+      "description": "広い except で握りつぶす",
+      "command": "uvx ruff@0.17.1 check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_safe(text: str) -> str:\n    try:\n        return text.upper()\n    except Exception:\n        return text\n"
+        }
+      ],
+      "expect": "BLE001"
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "format",
+      "description": "整形していないコードを書く",
+      "command": "uvx ruff@0.17.1 format --check kit/.tune scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\nVALUE = {  'a':1 }\n"
+        }
+      ],
+      "expect": "File would be reformatted"
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "level": "type",
+      "description": "型注釈の無い関数を書く",
+      "command": "uvx mypy@1.20.2",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_untyped(text):\n    return text\n"
+        }
+      ],
+      "expect": "Function is missing a type annotation"
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "level": "type",
+      "description": "Python 3.10 の zip(strict=) を使う",
+      "command": "uvx mypy@1.20.2",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_pairs(left: list[str], right: list[str]) -> list[str]:\n    return [a + b for a, b in zip(left, right, strict=True)]\n"
+        }
+      ],
+      "expect": "No overload variant of \"zip\""
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "level": "test",
+      "description": "ひな形に表に無い置き換えを足す",
+      "command": "PYTHONPATH=kit/.tune python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.tune/templates/prompts/grader.md",
+          "mode": "append",
+          "content": "\n${extra_value}\n"
+        }
+      ],
+      "expect": "FAIL: test_templates_match_table"
+    },
+    {
+      "id": "STATE-03-a",
+      "rule": "STATE-03",
+      "level": "test",
+      "description": "学習役の証拠に検証用のケースを入れる",
+      "command": "PYTHONPATH=kit/.tune python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/learn.py",
+          "mode": "append",
+          "content": "\n\ndef _render_evidence(where: layout.Layout, approved: workspace.Approved, current: str) -> str:\n    results = workspace.load_results(where, approved, current, (plan.TRAIN, plan.VAL))\n    cases = [c for c in approved.cases if approved.splits[c.id] != plan.TEST]\n    parts = [evidence.render_case(where, approved.model, c, plan.TRAIN, [r for r in results if r.case_id == c.id]) for c in cases]\n    return \"\\n\".join(parts)\n"
+        }
+      ],
+      "expect": "FAIL: test_evidence_and_prompt_show_train_only"
+    },
+    {
+      "id": "OPS-01-b",
+      "rule": "OPS-01",
+      "level": "test",
+      "description": "status が決めていない書き出しの行を出す",
+      "command": "PYTHONPATH=kit/.tune python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/status.py",
+          "mode": "append",
+          "content": "\n\ndef _build_after(where: layout.Layout) -> str:\n    return f\"あとで: {_build_command(where, 'status')}\"\n"
+        }
+      ],
+      "expect": "FAIL: test_every_stage_uses_line_kinds"
+    },
+    {
+      "id": "OPS-04-b",
+      "rule": "OPS-04",
+      "level": "test",
+      "description": "検査の command をリポジトリのルートで動かす",
+      "command": "PYTHONPATH=kit/.tune python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/evaluate.py",
+          "mode": "append",
+          "content": "\n\ndef _evaluate_check(where: layout.Layout, case: plan.Case, check: plan.Check, sandbox: Path, response: str) -> checks.Outcome:\n    if check.kind == \"command\":\n        result = proc.run_command(check.run, where.root, COMMAND_TIMEOUT_SEC)\n        return checks.evaluate_command(result.code, result.tail)\n    return checks.evaluate_text_check(check.kind, response, check.value, case.expected)\n"
+        }
+      ],
+      "expect": "FAIL: test_command_runs_in_the_sandbox"
+    },
+    {
+      "id": "PROC-06-a",
+      "rule": "PROC-06",
+      "level": "test",
+      "description": "schema_version の違う計画を受け入れる",
+      "command": "PYTHONPATH=kit/.tune python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.tune/tune_kit/plan.py",
+          "mode": "append",
+          "content": "\n\n_STRICT_PARSE = parse_plan\n\n\ndef parse_plan(data: object) -> tuple[Plan | None, list[str]]:\n    problems = _STRICT_PARSE(data)[1]\n    return None, [p for p in problems if \"schema_version\" not in p]\n"
+        }
+      ],
+      "expect": "FAIL: test_other_schema_version_is_a_problem"
+    }
+  ]
+}
