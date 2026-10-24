@@ -1,0 +1,4 @@
+{
+  "command": ["bash", "verify-ci.sh"],
+  "pythonVersion": "3.12"
+}

@@ -1,0 +1,724 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "description": "kit/.h2 の直下に表に無いファイルを置く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/helpers.py",
+          "mode": "create",
+          "content": "\"\"\"補助。\"\"\"\n\nfrom __future__ import annotations\n"
+        }
+      ],
+      "expect": "STR-01 kit/\\.h2/helpers\\.py"
+    },
+    {
+      "id": "STR-02-a",
+      "rule": "STR-02",
+      "level": "structure",
+      "description": "表に登録しないモジュールを足す",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/extra.py",
+          "mode": "create",
+          "content": "\"\"\"余分なモジュール。\"\"\"\n\nfrom __future__ import annotations\n\n\ndef build_extra() -> str:\n    return \"x\"\n"
+        }
+      ],
+      "expect": "STR-02 kit/\\.h2/h2_kit/extra\\.py"
+    },
+    {
+      "id": "STR-03-a",
+      "rule": "STR-03",
+      "level": "structure",
+      "description": "h2_kit のモジュールに __main__ の判定を書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\nif __name__ == \"__main__\":\n    render_bullets([])\n"
+        }
+      ],
+      "expect": "STR-03 kit/\\.h2/h2_kit/render\\.py"
+    },
+    {
+      "id": "STR-04-a",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "配布するスキルから disable-model-invocation を外す",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/claude/skills/skill-harness2/SKILL.md",
+          "mode": "replace",
+          "content": "---\nname: skill-harness2\ndescription: このリポジトリの Claude Code スキル1つを、google-research/harness2 の方法（基準の実行、INV と DOM の2つの次元の提案、候補の試行、根拠のある編集だけの合成、匿名の選択、振り返りとライブラリ）で改善する。正解や採点を使わず、実行の軌跡だけを証拠にする。予算の承認と採用は人が決める。\nallowed-tools: Bash(python3 .h2/h2.py *)\nargument-hint: \"<対象の名前> [対象スキルのディレクトリ]\"\n---\n\n# skill-harness2\n\nこのリポジトリにあるスキル1つ（以下、対象スキル）を、harness2 の方法で改善する。手を動かすのは補助 CLI `python3 .h2/h2.py` で、このスキルは CLI の出力を読んで次の手を選び、人に決めてもらう場面で止まる。\n\n## 前提：この方法が何をするか\n\n補助 CLI は、承認したタスクごとに次の5段を回す。各タスクは承認したときのスキル（H0）から始め、前のタスクで分かったことはライブラリを通してだけ後のタスクに伝わる。\n\n1. **基準の実行**：今のスキルを入れた使い捨ての作業場所で、`claude -p` にタスクを k 回解かせる。正否は見ず、スキルがどう振る舞うかの証拠にする\n2. **提案**：INV（手順、道具、完了の確かめ方）と DOM（実務家の知識）の2人の編集者が、証拠を読んでスキルの木を直す。壊れた候補は実行の前に検証で落とし、1回だけ差し戻す\n3. **試行**：各候補で同じタスクを1回解かせる\n4. **合成**：全候補の差分と実行を読み、根拠のある編集だけを1つにまとめる。元のまま（KEEP_BASE）も正しい答えである\n5. **選択と振り返り**：完成品の成果物だけを匿名で比べて1つを選び、編集ごとの効果と、次のタスクへ移す教訓を残す\n\n選ばれた候補は、人が `show` の差分を見て `adopt` を実行するまで対象スキルに書き込まれない。\n\n## 人が決める場面\n\n次の場面では AskUserQuestion で聞き、答えを得る前に次のコマンドを実行しない。\n\n| 場面 | 見せるもの | 聞くこと |\n|---|---|---|\n| 対象を決める | `.claude/skills/` の一覧 | 改善するスキル（`init` の `--skill`）と対象の名前 |\n| プロファイルを決める | `references/profile-guide.md` の「人と決める項目」 | 仕事の説明（`work`）、k、モード、モデル、1回あたりの上限 |\n| タスクを決める | `references/task-guide.md` の「良いタスク」 | 依頼文と材料。対象スキルが実際に受ける依頼に近いものを2〜5件 |\n| 予算を承認する | `check` が書いた `plan.md` の全文 | このラウンドの実行を承認するか（承認なら `approve`） |\n| 採用する | `show` の出力の全文と、`references/reading-results.md` の「確かめること」 | 採用する候補（タスクとモード）か「採用しない」か |\n\n承認と採用を、人の代わりに決めない。予算を使う判断と対象スキルを書き換える判断は人が持つ。\n\n## 手順\n\n`<対象>` は対象の名前（小文字・数字・`-`・`_`）である。引数に対象の名前があればそれを使い、無ければ人に聞く。\n\n### A. 準備（初めての対象）\n\n1. 人に対象スキルを聞き、`python3 .h2/h2.py init <対象> --skill <対象スキルのディレクトリ>` を実行する\n2. `references/profile-guide.md` を読み、人と決めた値で `.h2/targets/<対象>/profile.json` を書く\n3. `references/task-guide.md` を読み、人と決めたタスクを `.h2/targets/<対象>/tasks/<id>/task.md` と `tasks/<id>/workspace/` に書く。事後の検査を使うなら `tasks/<id>/checks.json` も書く\n4. `python3 .h2/h2.py check <対象>` を実行する。問題が出たら直して、もう一度 check する\n5. `plan.md` を人に見せて承認を聞き、承認されたら `python3 .h2/h2.py approve <対象>` を実行する\n\n### B. 実行\n\n1. `python3 .h2/h2.py run <対象>` を、Bash ツールの `run_in_background: true` で動かす。1タスク・1モードで実行 4k 回と編集のセッション 3k 回を使うので、数十分から数時間かかる\n2. 終わりの通知を待つ。途中の様子を聞かれたら `python3 .h2/h2.py status <対象>` を実行して進みを伝える\n3. 途中で止まっても、もう一度 `run` を実行すれば終わった実行とセッションを使い回して続きから再開する\n\n### C. 結果を見て採用する\n\n1. `checks.json` を書いたタスクがあれば、`python3 .h2/h2.py judge <対象>` を実行する。結果は人が読む材料で、方法には使われていない\n2. `python3 .h2/h2.py show <対象>` を実行し、出力の全文を人に見せる。`references/reading-results.md` の「確かめること」に当たる点があれば添える\n3. 採用する候補か「採用しない」かを聞く\n4. 採用するなら、`show` が出した採用のコマンド（`python3 .h2/h2.py adopt <対象> --task <id> --mode <モード> --confirm <符号>`）をそのまま実行する。採用できるのは1ラウンドに1つである\n5. `git diff` で対象スキルの差分を人に見せる。コミットは人が頼んだときだけ行う\n\n## 繰り返すこと\n\nどの場面でも、迷ったら `python3 .h2/h2.py status <対象>` を実行し、出力の `段階:` と `次:` の行で次の手を選ぶ。`問題:` の行があれば、まずそれを直す。\n\n| `段階:` の値 | すること |\n|---|---|\n| 準備 | `次:` の行に従う。プロファイルとタスクが無ければ手順 A の2〜4、`問題:` があれば直して check |\n| 承認待ち | `plan.md` を人に見せて承認を聞く（手順 A の5）。`問題:` に「変わりました」とあれば check からやり直す |\n| 実行待ち | 手順 B の1 |\n| 実行中か中断 | 自分が動かした run がまだ動いていれば待つ。止まっていれば手順 B の3 |\n| 結果の確認 | 手順 C |\n| 採用済み | 採用したことを報告する。続けて改善するなら、新しいタスクを人と決めて check から始める（新しいラウンドになる） |\n\nエラーが出たら `references/troubleshooting.md` で、エラーの文の言葉を探す。\n\n## してはいけないこと\n\n- ラウンドの途中（approve の後、adopt の前）に、対象スキル・`profile.json`・`tasks/` を手で変える。変えると承認と指紋が合わなくなり、run と adopt が止まる\n- `profile.json` の `work` などの文と `task.md` に、採点の基準や正解を書く。方法は答えを見ずに改善するもので、答えを入れると改善がタスクへの暗記になる\n- `.h2/targets/<対象>/runs/` の下のファイルを手で変える。完了の記録と指紋で再開を判定しているため、記録が実体と食い違う\n- `run` の出力や `show` の選択をそのまま採用の判断にする。最後の判断は、人が差分を見て行う\n"
+        }
+      ],
+      "expect": "STR-04 kit/claude/skills/skill-harness2/SKILL\\.md:1 frontmatter の disable-model-invocation"
+    },
+    {
+      "id": "STR-04-b",
+      "rule": "STR-04",
+      "level": "structure",
+      "description": "SKILL.md で名指ししない参照ファイルを足す",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/claude/skills/skill-harness2/references/extra.md",
+          "mode": "create",
+          "content": "# 追加\n"
+        }
+      ],
+      "expect": "STR-04 kit/claude/skills/skill-harness2/references/extra\\.md:1 SKILL\\.md の本文で"
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "description": "方法のモジュールから事後の検査の段を import する",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/selection.py",
+          "mode": "append",
+          "content": "\n\nfrom h2_kit import judging\n"
+        }
+      ],
+      "expect": "DEP-01 kit/\\.h2/h2_kit/selection\\.py:\\d+ judging は import の許可表にありません"
+    },
+    {
+      "id": "DEP-02-a",
+      "rule": "DEP-02",
+      "level": "structure",
+      "description": "他のモジュールの _ で始まる名前を使う",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/results.py",
+          "mode": "append",
+          "content": "\n\ndef _render_private() -> str:\n    return fsops._is_skipped.__name__\n"
+        }
+      ],
+      "expect": "DEP-02 kit/\\.h2/h2_kit/results\\.py:\\d+ fsops\\._is_skipped"
+    },
+    {
+      "id": "DEP-03-a",
+      "rule": "DEP-03",
+      "level": "structure",
+      "description": "標準ライブラリに無いパッケージを import する",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\nimport yaml\n"
+        }
+      ],
+      "expect": "DEP-03 kit/\\.h2/h2_kit/render\\.py:\\d+ yaml は STDLIB"
+    },
+    {
+      "id": "DEP-04-a",
+      "rule": "DEP-04",
+      "level": "structure",
+      "description": "段のモジュールで Path.write_text を直接呼ぶ",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/execution.py",
+          "mode": "append",
+          "content": "\n\ndef _write_direct(where: layout.Layout) -> None:\n    where.plan_path.write_text(\"x\")\n"
+        }
+      ],
+      "expect": "DEP-04 kit/\\.h2/h2_kit/execution\\.py:\\d+ \\.write_text"
+    },
+    {
+      "id": "DEP-04-b",
+      "rule": "DEP-04",
+      "level": "lint",
+      "description": "print で画面に出す",
+      "command": "uvx ruff@0.17.2 check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_debug(text: str) -> str:\n    print(text)\n    return text\n"
+        }
+      ],
+      "expect": "T201"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "lint",
+      "description": "関数名を camelCase にする",
+      "command": "uvx ruff@0.17.2 check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef renderCamel() -> str:\n    return \"x\"\n"
+        }
+      ],
+      "expect": "N802"
+    },
+    {
+      "id": "NAM-02-a",
+      "rule": "NAM-02",
+      "level": "structure",
+      "description": "動詞表に無い語で始まる関数を書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef get_text() -> str:\n    return \"x\"\n"
+        }
+      ],
+      "expect": "NAM-02 kit/\\.h2/h2_kit/render\\.py:\\d+ 関数 get_text"
+    },
+    {
+      "id": "NAM-03-a",
+      "rule": "NAM-03",
+      "level": "structure",
+      "description": "JSON のキーを camelCase で読む",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/workspace.py",
+          "mode": "append",
+          "content": "\n\ndef _read_camel(mapping: dict[str, object]) -> object:\n    return mapping.get(\"taskId\")\n"
+        }
+      ],
+      "expect": "NAM-03 kit/\\.h2/h2_kit/workspace\\.py:\\d+ キー taskId"
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "structure",
+      "description": "dataclass でないクラスを書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\nclass Plain:\n    def __init__(self, label: str) -> None:\n        self.label = label\n"
+        }
+      ],
+      "expect": "CODE-01 kit/\\.h2/h2_kit/render\\.py:\\d+ クラス Plain"
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "structure",
+      "description": "h2_kit の名前を直接 import する",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/results.py",
+          "mode": "append",
+          "content": "\n\nfrom h2_kit.skilltree import SkillTree\n"
+        }
+      ],
+      "expect": "CODE-02 kit/\\.h2/h2_kit/results\\.py:\\d+ h2_kit は from h2_kit import"
+    },
+    {
+      "id": "CODE-02-b",
+      "rule": "CODE-02",
+      "level": "lint",
+      "description": "相対 import を書く",
+      "command": "uvx ruff@0.17.2 check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/results.py",
+          "mode": "append",
+          "content": "\n\nfrom . import render as relative_render\n"
+        }
+      ],
+      "expect": "TID252"
+    },
+    {
+      "id": "CODE-03-a",
+      "rule": "CODE-03",
+      "level": "type",
+      "description": "型注釈の無い関数を書く",
+      "command": "uvx mypy@1.20.2",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_untyped(text):\n    return text\n"
+        }
+      ],
+      "expect": "Function is missing a type annotation"
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "level": "lint",
+      "description": "引数が7つの関数を書く",
+      "command": "uvx ruff@0.17.2 check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_many(a: str, b: str, c: str, d: str, e: str, f: str, g: str) -> str:\n    return a + b + c + d + e + f + g\n"
+        }
+      ],
+      "expect": "PLR0913"
+    },
+    {
+      "id": "CODE-05-a",
+      "rule": "CODE-05",
+      "level": "lint",
+      "description": "コメントアウトしたコードを残す",
+      "command": "uvx ruff@0.17.2 check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n# value = render_usd(1.0)\n"
+        }
+      ],
+      "expect": "ERA001"
+    },
+    {
+      "id": "CODE-06-a",
+      "rule": "CODE-06",
+      "level": "structure",
+      "description": "ファイル名を文字列で書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/results.py",
+          "mode": "append",
+          "content": "\n\ndef _build_summary_name() -> str:\n    return \"summary.json\"\n"
+        }
+      ],
+      "expect": "CODE-06 kit/\\.h2/h2_kit/results\\.py:\\d+ ファイル名 summary\\.json"
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "description": "errors.py に無い例外を投げる",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_strict(text: str) -> str:\n    if not text:\n        raise ValueError(\"空\")\n    return text\n"
+        }
+      ],
+      "expect": "ERR-01 kit/\\.h2/h2_kit/render\\.py:\\d+ ValueError ではなく"
+    },
+    {
+      "id": "ERR-01-b",
+      "rule": "ERR-01",
+      "level": "lint",
+      "description": "広い except で握りつぶす",
+      "command": "uvx ruff@0.17.2 check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_safe(text: str) -> str:\n    try:\n        return text.upper()\n    except Exception:\n        return text\n"
+        }
+      ],
+      "expect": "BLE001"
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "level": "structure",
+      "description": "段のモジュールで JSON を直接読む",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/results.py",
+          "mode": "append",
+          "content": "\n\ndef _read_raw(where: layout.Layout) -> object:\n    return fsops.read_json(where.approval_path)\n"
+        }
+      ],
+      "expect": "ERR-02 kit/\\.h2/h2_kit/results\\.py:\\d+ fsops\\.read_json"
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "level": "structure",
+      "description": "workspace が状態ファイルを書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/workspace.py",
+          "mode": "append",
+          "content": "\n\ndef _write_state(where: layout.Layout) -> None:\n    fsops.write_json(where.approval_path, {})\n"
+        }
+      ],
+      "expect": "STATE-01 kit/\\.h2/h2_kit/workspace\\.py:\\d+ workspace は fsops\\.write_json"
+    },
+    {
+      "id": "STATE-02-a",
+      "rule": "STATE-02",
+      "level": "structure",
+      "description": "返答のタグを contracts の外に書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/recursion.py",
+          "mode": "append",
+          "content": "\n\ndef _find_notes(text: str) -> str:\n    return text.split(\"<notes>\")[-1]\n"
+        }
+      ],
+      "expect": "STATE-02 kit/\\.h2/h2_kit/recursion\\.py:\\d+ 返答のタグ"
+    },
+    {
+      "id": "STATE-02-b",
+      "rule": "STATE-02",
+      "level": "test",
+      "description": "ひな形に表に無い置き換えを足す",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/templates/prompts/reflect.md",
+          "mode": "append",
+          "content": "\n${extra_value}\n"
+        }
+      ],
+      "expect": "FAIL: test_placeholders_match_the_table"
+    },
+    {
+      "id": "STATE-03-a",
+      "rule": "STATE-03",
+      "level": "test",
+      "description": "obs_trunc の下限を 10000 より下げる",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/profile.py",
+          "mode": "append",
+          "content": "\nMIN_OBS_TRUNC = 1000\n"
+        }
+      ],
+      "expect": "FAIL: test_obs_trunc_below_ten_thousand_is_rejected"
+    },
+    {
+      "id": "STATE-04-a",
+      "rule": "STATE-04",
+      "level": "structure",
+      "description": "方法のモジュールが checks.json の名前に触れる",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/context.py",
+          "mode": "append",
+          "content": "\n\ndef _build_checks_name() -> str:\n    return layout.CHECKS_FILE\n"
+        }
+      ],
+      "expect": "STATE-04 kit/\\.h2/h2_kit/context\\.py:\\d+ layout\\.CHECKS_FILE"
+    },
+    {
+      "id": "STATE-04-b",
+      "rule": "STATE-04",
+      "level": "test",
+      "description": "測定の語を英語の1語だけにする",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/guards.py",
+          "mode": "append",
+          "content": "\nMEASUREMENT_WORDS = (\"benchmark\",)\n"
+        }
+      ],
+      "expect": "FAIL: test_measurement_words_are_rejected_in_both_languages"
+    },
+    {
+      "id": "STATE-04-c",
+      "rule": "STATE-04",
+      "level": "structure",
+      "description": "方法のモジュールが事後の検査の記録に触れる",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/recursion.py",
+          "mode": "append",
+          "content": "\n\ndef _find_judged(place: layout.TaskPlace) -> Path:\n    return place.judged_path\n"
+        }
+      ],
+      "expect": "STATE-04 kit/\\.h2/h2_kit/recursion\\.py:\\d+ 方法のモジュールは事後の検査の記録"
+    },
+    {
+      "id": "STATE-05-a",
+      "rule": "STATE-05",
+      "level": "structure",
+      "description": "選択が候補の木に触れる",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/selection.py",
+          "mode": "append",
+          "content": "\n\ndef _find_tree(place: layout.TaskPlace, mode: str, label: str) -> Path:\n    return place.harness_dir(mode, label)\n"
+        }
+      ],
+      "expect": "STATE-05 kit/\\.h2/h2_kit/selection\\.py:\\d+ 選択は候補の木"
+    },
+    {
+      "id": "STATE-05-b",
+      "rule": "STATE-05",
+      "level": "test",
+      "description": "候補のファイル名にラベルを入れる",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/selection.py",
+          "mode": "append",
+          "content": "\nCANDIDATE_NAME = \"{label}\"\n"
+        }
+      ],
+      "expect": "FAIL: test_candidates_carry_no_labels_or_trees"
+    },
+    {
+      "id": "STATE-06-a",
+      "rule": "STATE-06",
+      "level": "test",
+      "description": "検証に落ちた候補を差し戻さない",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/recursion.py",
+          "mode": "append",
+          "content": "\nSTAGE_ATTEMPTS = 1\n"
+        }
+      ],
+      "expect": "FAIL: test_rejected_candidate_is_retried_once_with_the_reason"
+    },
+    {
+      "id": "STATE-07-a",
+      "rule": "STATE-07",
+      "level": "test",
+      "description": "1つの k あたりの実行を 3 に数える",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/ledger.py",
+          "mode": "append",
+          "content": "\nROLLOUTS_PER_K = 3\n"
+        }
+      ],
+      "expect": "FAIL: test_parallel_k2_lands_on_identity"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "structure",
+      "description": "parallel の外で threading を import する",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/recursion.py",
+          "mode": "append",
+          "content": "\n\nimport threading\n"
+        }
+      ],
+      "expect": "ASYNC-01 kit/\\.h2/h2_kit/recursion\\.py:\\d+ threading"
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "structure",
+      "description": "logging を使う",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\nimport logging\n"
+        }
+      ],
+      "expect": "OPS-01 kit/\\.h2/h2_kit/render\\.py:\\d+ logging"
+    },
+    {
+      "id": "OPS-01-b",
+      "rule": "OPS-01",
+      "level": "test",
+      "description": "status の行の書き出しを英語にする",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/status.py",
+          "mode": "append",
+          "content": "\nLINE_KINDS = (\"Target:\", \"Stage:\", \"Progress:\", \"Problem:\", \"Next:\")\n"
+        }
+      ],
+      "expect": "FAIL: test_line_kinds_are_fixed"
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "level": "structure",
+      "description": "環境変数から設定を読む",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/planning.py",
+          "mode": "append",
+          "content": "\n\nimport os\n\n\ndef _build_width() -> str:\n    return os.getenv(\"H2_WIDTH\", \"2\")\n"
+        }
+      ],
+      "expect": "OPS-02 kit/\\.h2/h2_kit/planning\\.py:\\d+ os\\.getenv"
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "level": "structure",
+      "description": "judge が承認を確かめずにプロファイルを読む",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/judging.py",
+          "mode": "append",
+          "content": "\n\ndef judge(where: layout.Layout, task_id: str | None) -> str:\n    model = workspace.load_profile(where)\n    return f\"{task_id}{model.k}\"\n"
+        }
+      ],
+      "expect": "OPS-04 kit/\\.h2/h2_kit/judging\\.py:\\d+ judge の最初の文"
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "level": "structure",
+      "description": "runner の外で claude のフラグを書く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/rollout.py",
+          "mode": "append",
+          "content": "\n\ndef _build_unsafe() -> list[str]:\n    return [\"--dangerously-skip-permissions\"]\n"
+        }
+      ],
+      "expect": "OPS-05 kit/\\.h2/h2_kit/rollout\\.py:\\d+ フラグ"
+    },
+    {
+      "id": "OPS-05-b",
+      "rule": "OPS-05",
+      "level": "test",
+      "description": "編集のセッションから --restricted を外す",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/runner.py",
+          "mode": "append",
+          "content": "\nSESSION_GUARD_FLAGS = (\"--strict-mcp-config\",)\n"
+        }
+      ],
+      "expect": "FAIL: test_session_command_is_restricted"
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "level": "structure",
+      "description": "モジュールに対応しないテストファイルを置く",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "tests/test_misc.py",
+          "mode": "create",
+          "content": "\"\"\"余分。\"\"\"\n\nfrom __future__ import annotations\n\nimport unittest\n\n\nclass MiscTest(unittest.TestCase):\n    def test_x(self) -> None:\n        self.assertTrue(True)\n"
+        }
+      ],
+      "expect": "TEST-01 tests/test_misc\\.py:1 対応するモジュールの無いテストファイル"
+    },
+    {
+      "id": "TEST-02-a",
+      "rule": "TEST-02",
+      "level": "structure",
+      "description": "テストでモックを使う",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "tests/test_render.py",
+          "mode": "append",
+          "content": "\n\nfrom unittest import mock\n"
+        }
+      ],
+      "expect": "TEST-02 tests/test_render\\.py:\\d+ モック"
+    },
+    {
+      "id": "TEST-03-a",
+      "rule": "TEST-03",
+      "level": "structure",
+      "description": "サブコマンドを足してテストを足さない",
+      "command": "PYTHONPATH=kit/.h2 python3 scripts/structure_check.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/cli.py",
+          "mode": "append",
+          "content": "\nCOMMANDS = (*COMMANDS, \"export\")\n"
+        }
+      ],
+      "expect": "TEST-03 tests/test_cli\\.py:1 test_command_export がありません"
+    },
+    {
+      "id": "PROC-06-a",
+      "rule": "PROC-06",
+      "level": "test",
+      "description": "profile.json の版を上げて古い版も読む",
+      "command": "PYTHONPATH=kit/.h2 python3 -B -m unittest discover -s tests -t .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/profile.py",
+          "mode": "append",
+          "content": "\nSCHEMA_VERSION = 2\n"
+        }
+      ],
+      "expect": "FAIL: test_other_schema_version_is_rejected"
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "format",
+      "description": "整形していないコードを書く",
+      "command": "uvx ruff@0.17.2 format --check kit/.h2 scripts tests install.py",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\nVALUE = {  'a':1 }\n"
+        }
+      ],
+      "expect": "File would be reformatted|would reformat"
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "level": "structure",
+      "description": "抑止コメントを書く",
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_plain(text: str) -> str:\n    return text  # pragma: no cover\n"
+        }
+      ],
+      "expect": "TOOL-03 kit/\\.h2/h2_kit/render\\.py"
+    },
+    {
+      "id": "TOOL-05-a",
+      "rule": "TOOL-05",
+      "level": "type",
+      "description": "Python 3.10 の zip(strict=) を使う",
+      "command": "uvx mypy@1.20.2",
+      "files": [
+        {
+          "path": "kit/.h2/h2_kit/render.py",
+          "mode": "append",
+          "content": "\n\ndef render_pairs(left: list[str], right: list[str]) -> list[str]:\n    return [a + b for a, b in zip(left, right, strict=True)]\n"
+        }
+      ],
+      "expect": "No overload variant of \"zip\""
+    }
+  ]
+}
