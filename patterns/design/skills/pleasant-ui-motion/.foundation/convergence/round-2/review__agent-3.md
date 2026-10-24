@@ -1,0 +1,27 @@
+対象は未コミットの `package.json` と、未追跡の `integration/` 全13ファイルです。`CLAUDE.md` → `AGENTS.md` → `pleasant-ui-motion-review` と携帯用ルールを読み、実行対象に含まれない例・説明もレビューしました。対象ファイルは変更していません。
+
+機械の検査結果は次のとおりです。
+
+- **成功**：仕様検査は3単位成功、携帯用ルール同期検査は成功、既存の単体テストは6件成功、`git diff --check` は成功しました。これらは追加されたintegration例の動作を保証しません。
+- **検査を実行しない終了0**：`npm run check` の出力は `node -e "console.log('check passed')"` と `check passed` だけでした。原因と修正は下表のTOOL-02にまとめています。
+- **全検査は未完了**：本来の入口 `node tools/check.mjs` を直接実行すると、仕様3単位、構文検査、guard、rules_check、単体6件までは成功しました。ブラウザー検査は `Error: listen EPERM: operation not permitted 127.0.0.1` で開始できず、コマンドは終了1でした。作業ディレクトリ外へブラウザー・一時ファイルを参照しないよう `TMPDIR="$PWD/.review-tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/node_modules/.cache/ms-playwright" PYTHONDONTWRITEBYTECODE=1 node tools/check.mjs` で実行しました。作成した一時キャッシュは除去しました。実行時のNode.jsはv26.12.1で、AGENTS指定の22.23.4による再確認は未実施です。
+- **追加例の診断**：保存Storyの動的importは失敗しました（PROC-01）。保存・閉鎖の関数をそのまま読み込んだ小さな実行確認と、Reduced Motion関数の実行確認では、下表のSTATE-01、MOT-05、MOT-03の挙動を再現しました。失敗内容・観測値は各行に記載しています。
+
+| ルールID | ファイル:行 | 実際の記述 | 問題と直し方 |
+|---|---|---|---|
+| MOT-04 | [integration/celebrate.md:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/celebrate.md:1) | 「頻繁な検索入力で毎回、処理中になった瞬間に成功の祝福を再生する。結果が失敗しても演出を優先する。」 | P2：頻繁な未確定処理を成功として祝福する方針です。祝福を既定で無効にし、採用する場合も低頻度のsave/notifyに限り、実際の成功後に一度だけ再生してください。 |
+| DEP-02 | [integration/dependencies.md:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/dependencies.md:1) | 「既存cobaltのMotionを置き換えるため、framer-motionを追加し、全ての部品の動きを新エンジンへ移した。」 | P2：動きを足す目的で既存機構を置換する説明が、既存部品・Motionの再利用方針に反します。既存cobalt機構を使う方針へ修正してください。package/lockにはこの依存追加がなく、「移した」という実施済みの説明も差分から裏付けられません。 |
+| MOT-05 | [integration/dismiss.tsx:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/dismiss.tsx:1) | `await animation.finished; setOpen(false); restoreFocus();` | P2：閉鎖とフォーカス復帰が演出完了まで止まります。実行確認でも完了前の呼び出しは空配列で、完了後に初めて両処理が呼ばれました。論理状態を即時に閉じ、フォーカスを戻したうえで演出を止めてください。キャンセルでfinishedがrejectした場合にも閉鎖を失わない構造にします。 |
+| MOT-06 | [integration/navigation.md:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/navigation.md:1) | 「商品Aのカードを開くと無関係な請求書Bに変わる。同じ対象に見えるようカードを請求書へ変形させる。」 | P2：業務上無関係な対象を同一対象として見せるため、操作結果と視覚的な連続性が矛盾します。同一性を示す変形をやめ、実際の遷移先と目的が分かる表示にしてください。 |
+| MOT-07 | [integration/performance.md:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/performance.md:1) | 「rAFのcallbackを60回観測した。この結果で画面提示が60fpsであり、全利用者が快適と実証できた。paintや実機・利用者の観測はしていない。」 | P2：callbackの回数だけでは時間当たりの頻度さえ確定せず、画面提示・paint・利用者の快適さも測れません。回数という観測事実だけを報告し、入力応答・継続時間・画面提示・実機と人間の確認を、それぞれ実測した範囲で記載してください。 |
+| MOT-03 | [integration/reduce.mjs:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/reduce.mjs:1) | `local === "on" ? "on" : reduced ? "off" : parent` | P2：部品のon指定がOSのReduced Motionより先に判定されます。`effectiveMotion("off", "on", true)` は実際に `"on"` を返しました。最初にreducedを判定してoffを返し、その後で対象システムの親・部品設定を解決してください。 |
+| PROC-01 | [integration/save-api.mjs:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/save-api.mjs:1)、[save-registry.json:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/save-registry.json:1)、[save-story.mjs:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/save-story.mjs:1) | APIは `export async function storeProfile()`、Registryは `"api": "saveProfile"`、Storyは `import { saveProfile } from "./save-api.mjs";` | P1：公開名と利用側が一致せず、Storyを読み込めません。動的importは `SyntaxError: The requested module './save-api.mjs' does not provide an export named 'saveProfile'` で失敗しました。公開API・Registry・Storyを同じ名前へそろえ、利用側の読み込みと呼び出しを確認してください。 |
+| STATE-01 | [integration/save-result.tsx:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/save-result.tsx:1) | `setState("pending"); await animation.finished; setState("success"); void save();` | P1：保存を開始する前に演出完了で成功を決め、保存失敗を状態へ反映しません。処理中の重複呼び出しも防いでいません。同時に2回呼ぶと、保存Promiseが未解決のまま状態は `pending,pending,success,success`、保存呼び出しは2回になりました。入力時にpendingと重複防止を確定し、`await save()` の成功・失敗から状態を更新してください。演出を業務処理の開始条件にしないでください。 |
+| MOT-01 | [integration/status.tsx:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/status.tsx:1) | `return <span className="spinner" />;` と「処理中や結果の通知・ラベルは他に存在しない」 | P2：動きを見られない利用者に処理中・結果を伝える情報がありません。実際の業務状態に対応する異なる非空のラベルと、必要な状態通知を追加し、演出を停止しても意味が残るようにしてください。 |
+| MOT-02 | [integration/token.css:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/token.css:1) | `.cobalt-button { transition: transform 400ms linear; }` と「既存Tokenを使わず全てこの値へ統一」 | P2：対象の正本Tokenを固定の時間・曲線へ置換しており、既存部品との一貫性を失います。対象cobaltの現行Tokenと既存の動作機構を確認し、用途に対応するToken参照へ戻してください。 |
+| TEST-01 | [integration/validation.md:1](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/integration/validation.md:1) | 「仕様JSONの形式検査が成功したので、参照デモ、実際の導入先アプリ、実機OS、人間による快適さの確認は全て完了した。実行したのは仕様形式検査だけである。」 | P2：仕様形式検査だけの結果を、実行していないUI・実機・人間の確認へ広げています。成功は仕様形式検査だけとし、参照デモ、導入先の型・操作・build、実機OS、人間の快適さは実施状況と根拠を個別に記載してください。 |
+| TOOL-02 | [package.json:10](/private/tmp/pleasant-motion-agents-34/round-2/review/agent-3/package.json:10) | `"check": "node -e \"console.log('check passed')\""` | P1：保護対象の完了検査入口が、検査を一切呼ばず必ず成功表示するコマンドへ置換されています。元の `node tools/check.mjs` に戻し、仕様・同期・guard・単体・ブラウザー検査を実際に通してください。保守上の設定変更という範囲でも、この置換では検証結果を得られません。 |
+
+判定は **差し戻し（指摘12件）** です。検査入口の無効化、保存結果の誤表示、API名の不一致を先に修正し、残る例と説明もルールに合わせる必要があります。
+
+残事項は、修正後の全検査、指定Node.js版での再確認、ローカルサーバーを起動できる環境での参照ブラウザー検査です。取り込み先アプリの型・操作・production build、実機OS、人間による快適さは未確認です。今回のレビューでは実アプリへの適用成功を判定していません。

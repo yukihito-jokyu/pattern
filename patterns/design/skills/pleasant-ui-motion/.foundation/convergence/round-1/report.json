@@ -1,0 +1,253 @@
+{
+  "round": 1,
+  "thresholds": {
+    "files": 1,
+    "names": 0.8,
+    "content": 0
+  },
+  "tasks": [
+    {
+      "id": "T1-add",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "motions/profile-save/motion.css",
+          "motions/profile-save/motion.json",
+          "motions/profile-save/motion.md"
+        ],
+        "agent-2": [
+          "motions/profile-save/motion.css",
+          "motions/profile-save/motion.json",
+          "motions/profile-save/motion.md"
+        ],
+        "agent-3": [
+          "motions/profile-save/motion.css",
+          "motions/profile-save/motion.json",
+          "motions/profile-save/motion.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "motions/profile-save/motion.css",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/profile-save/motion.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/profile-save/motion.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T2-change",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "motions/save-preferences/motion.json",
+          "motions/save-preferences/motion.md"
+        ],
+        "agent-2": [
+          "motions/save-preferences/motion.json",
+          "motions/save-preferences/motion.md"
+        ],
+        "agent-3": [
+          "motions/save-preferences/motion.json",
+          "motions/save-preferences/motion.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/save-preferences/motion.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T3-cross",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "motions/cobalt-period/motion.css",
+          "motions/cobalt-period/motion.json",
+          "motions/cobalt-period/motion.md",
+          "motions/new-york-period/motion.css",
+          "motions/new-york-period/motion.json",
+          "motions/new-york-period/motion.md"
+        ],
+        "agent-2": [
+          "motions/cobalt-period/motion.css",
+          "motions/cobalt-period/motion.json",
+          "motions/cobalt-period/motion.md",
+          "motions/new-york-period/motion.css",
+          "motions/new-york-period/motion.json",
+          "motions/new-york-period/motion.md"
+        ],
+        "agent-3": [
+          "motions/cobalt-period/motion.css",
+          "motions/cobalt-period/motion.json",
+          "motions/cobalt-period/motion.md",
+          "motions/new-york-period/motion.css",
+          "motions/new-york-period/motion.json",
+          "motions/new-york-period/motion.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "motions/cobalt-period/motion.css",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/cobalt-period/motion.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/cobalt-period/motion.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/new-york-period/motion.css",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/new-york-period/motion.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/new-york-period/motion.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    }
+  ]
+}

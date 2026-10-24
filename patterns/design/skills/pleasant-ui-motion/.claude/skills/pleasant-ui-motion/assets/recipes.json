@@ -1,0 +1,75 @@
+{
+  "press": {
+    "labels": [
+      "idle"
+    ],
+    "interruption": "latest",
+    "meaning": "入力を認識した手応え",
+    "relation": "same-control"
+  },
+  "save": {
+    "labels": [
+      "idle",
+      "pending",
+      "success",
+      "error",
+      "retry"
+    ],
+    "interruption": "state-first",
+    "meaning": "処理結果を確認してから成功を示す",
+    "relation": "same-control"
+  },
+  "selection": {
+    "labels": [
+      "idle",
+      "selected"
+    ],
+    "interruption": "retarget",
+    "meaning": "選択した対象と現在位置",
+    "relation": "same-object"
+  },
+  "disclosure": {
+    "labels": [
+      "open",
+      "close"
+    ],
+    "interruption": "reverse",
+    "meaning": "開閉とフォーカスの移動",
+    "relation": "same-object"
+  },
+  "reorder": {
+    "labels": [
+      "idle",
+      "changed"
+    ],
+    "interruption": "latest",
+    "meaning": "並べ替え前後の位置関係",
+    "relation": "list-order"
+  },
+  "step": {
+    "labels": [
+      "previous",
+      "next"
+    ],
+    "interruption": "latest",
+    "meaning": "段階の進行方向",
+    "relation": "step-order"
+  },
+  "notify": {
+    "labels": [
+      "success"
+    ],
+    "interruption": "latest",
+    "meaning": "確定済みの結果",
+    "relation": "same-object"
+  },
+  "navigation": {
+    "labels": [
+      "from",
+      "to"
+    ],
+    "interruption": "latest",
+    "meaning": "遷移先を示す短いフェード",
+    "relation": "unrelated"
+  }
+}

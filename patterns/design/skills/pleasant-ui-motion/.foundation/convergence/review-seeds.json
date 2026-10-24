@@ -1,0 +1,147 @@
+{
+  "prompt": "未コミットの変更をレビューして",
+  "probes": [
+    {
+      "id": "DEP-02-review",
+      "rule": "DEP-02",
+      "files": [
+        {
+          "path": "integration/dependencies.md",
+          "content": "既存cobaltのMotionを置き換えるため、framer-motionを追加し、全ての部品の動きを新エンジンへ移した。既存値の互換性は検討しない。\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "STATE-01-review",
+      "rule": "STATE-01",
+      "files": [
+        {
+          "path": "integration/save-result.tsx",
+          "content": "export async function submit(animation, save, setState) { setState(\"pending\"); await animation.finished; setState(\"success\"); void save(); }\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "MOT-01-review",
+      "rule": "MOT-01",
+      "files": [
+        {
+          "path": "integration/status.tsx",
+          "content": "export function Pending() { return <span className=\"spinner\" />; } // 処理中や結果の通知・ラベルは他に存在しない\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "MOT-02-review",
+      "rule": "MOT-02",
+      "files": [
+        {
+          "path": "integration/token.css",
+          "content": ".cobalt-button { transition: transform 400ms linear; } /* 既存Tokenを使わず全てこの値へ統一 */\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "MOT-03-review",
+      "rule": "MOT-03",
+      "files": [
+        {
+          "path": "integration/reduce.mjs",
+          "content": "export const effectiveMotion = (parent, local, reduced) => local === \"on\" ? \"on\" : reduced ? \"off\" : parent;\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "MOT-04-review",
+      "rule": "MOT-04",
+      "files": [
+        {
+          "path": "integration/celebrate.md",
+          "content": "頻繁な検索入力で毎回、処理中になった瞬間に成功の祝福を再生する。結果が失敗しても演出を優先する。\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "MOT-05-review",
+      "rule": "MOT-05",
+      "files": [
+        {
+          "path": "integration/dismiss.tsx",
+          "mode": "create",
+          "content": "export function close(panel, setOpen, restoreFocus) { setOpen(false); panel.hidden = true; restoreFocus(); }\n// OS reduceでも明示OFFでもない通常設定。待ち時間をなくす目的で閉じる演出を削除した。\n"
+        }
+      ]
+    },
+    {
+      "id": "MOT-06-review",
+      "rule": "MOT-06",
+      "files": [
+        {
+          "path": "integration/navigation.md",
+          "content": "商品Aのカードを開くと無関係な請求書Bに変わる。同じ対象に見えるようカードを請求書へ変形させる。両者に業務上の関連はない。\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "MOT-07-review",
+      "rule": "MOT-07",
+      "files": [
+        {
+          "path": "integration/performance.md",
+          "content": "rAFのcallbackを60回観測した。この結果で画面提示が60fpsであり、全利用者が快適と実証できた。paintや実機・利用者の観測はしていない。\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "TEST-01-review",
+      "rule": "TEST-01",
+      "files": [
+        {
+          "path": "integration/validation.md",
+          "content": "仕様JSONの形式検査が成功したので、参照デモ、実際の導入先アプリ、実機OS、人間による快適さの確認は全て完了した。実行したのは仕様形式検査だけである。\n",
+          "mode": "create"
+        }
+      ]
+    },
+    {
+      "id": "PROC-01-review",
+      "rule": "PROC-01",
+      "files": [
+        {
+          "path": "integration/save-api.mjs",
+          "mode": "create",
+          "content": "export async function storeProfile() { return { saved: true }; }\n"
+        },
+        {
+          "path": "integration/save-story.mjs",
+          "mode": "create",
+          "content": "import { saveProfile } from \"./save-api.mjs\";\nexport const saveAction = () => saveProfile();\n"
+        },
+        {
+          "path": "integration/save-registry.json",
+          "mode": "create",
+          "content": "{ \"api\": \"saveProfile\", \"source\": \"save-api.mjs\" }\n"
+        }
+      ]
+    },
+    {
+      "id": "TOOL-02-review",
+      "rule": "TOOL-02",
+      "files": [
+        {
+          "path": "package.json",
+          "content": "{\n  \"name\": \"pleasant-ui-motion\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"engines\": {\n    \"node\": \">=22\"\n  },\n  \"scripts\": {\n    \"check\": \"node -e \\\"console.log('check passed')\\\"\",\n    \"fix\": \"node .claude/skills/pleasant-ui-motion/scripts/motion.mjs fmt && node .claude/skills/pleasant-ui-motion/scripts/motion.mjs build && node tools/sync-rules.mjs\",\n    \"test\": \"node --test tests/*.test.mjs\",\n    \"test:browser\": \"playwright test\",\n    \"serve\": \"node tools/serve.mjs\"\n  },\n  \"devDependencies\": {\n    \"@playwright/test\": \"1.64.1\"\n  }\n}\n",
+          "mode": "replace"
+        }
+      ]
+    }
+  ]
+}

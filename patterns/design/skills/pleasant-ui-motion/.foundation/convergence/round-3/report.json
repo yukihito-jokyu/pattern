@@ -1,0 +1,83 @@
+{
+  "round": 3,
+  "thresholds": {
+    "files": 1,
+    "names": 0.8,
+    "content": 0
+  },
+  "tasks": [
+    {
+      "id": "T4-disclosure",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": 1.0,
+      "check": {
+        "agent-1": 0,
+        "agent-2": 0,
+        "agent-3": 0
+      },
+      "converged": true,
+      "changed_files": {
+        "agent-1": [
+          "motions/checkout-details/motion.css",
+          "motions/checkout-details/motion.json",
+          "motions/checkout-details/motion.md"
+        ],
+        "agent-2": [
+          "motions/checkout-details/motion.css",
+          "motions/checkout-details/motion.json",
+          "motions/checkout-details/motion.md"
+        ],
+        "agent-3": [
+          "motions/checkout-details/motion.css",
+          "motions/checkout-details/motion.json",
+          "motions/checkout-details/motion.md"
+        ]
+      },
+      "partial_files": [],
+      "common_new_names": 1,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "motions/checkout-details/motion.css",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/checkout-details/motion.json",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "motions/checkout-details/motion.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        }
+      ],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    }
+  ]
+}

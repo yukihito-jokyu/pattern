@@ -1,0 +1,7 @@
+{
+  "command": [
+    "node",
+    "tools/verify-ci.mjs"
+  ],
+  "pythonVersion": "3.14"
+}

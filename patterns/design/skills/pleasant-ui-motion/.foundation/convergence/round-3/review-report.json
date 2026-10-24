@@ -1,0 +1,86 @@
+{
+  "round": 3,
+  "expected": [
+    "DEP-02",
+    "MOT-01",
+    "MOT-02",
+    "MOT-03",
+    "MOT-04",
+    "MOT-05",
+    "MOT-06",
+    "MOT-07",
+    "PROC-01",
+    "STATE-01",
+    "TEST-01",
+    "TOOL-02"
+  ],
+  "agents": [
+    {
+      "agent": "review/agent-1",
+      "missing": false,
+      "recall": 1.0,
+      "detected": [
+        "DEP-02",
+        "MOT-01",
+        "MOT-02",
+        "MOT-03",
+        "MOT-04",
+        "MOT-05",
+        "MOT-06",
+        "MOT-07",
+        "PROC-01",
+        "STATE-01",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "missed": [],
+      "extra": [],
+      "verdict": "差し戻し"
+    },
+    {
+      "agent": "review/agent-2",
+      "missing": false,
+      "recall": 1.0,
+      "detected": [
+        "DEP-02",
+        "MOT-01",
+        "MOT-02",
+        "MOT-03",
+        "MOT-04",
+        "MOT-05",
+        "MOT-06",
+        "MOT-07",
+        "PROC-01",
+        "STATE-01",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "missed": [],
+      "extra": [],
+      "verdict": "差し戻し"
+    },
+    {
+      "agent": "review/agent-3",
+      "missing": false,
+      "recall": 1.0,
+      "detected": [
+        "DEP-02",
+        "MOT-01",
+        "MOT-02",
+        "MOT-03",
+        "MOT-04",
+        "MOT-05",
+        "MOT-06",
+        "MOT-07",
+        "PROC-01",
+        "STATE-01",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "missed": [],
+      "extra": [],
+      "verdict": "差し戻し"
+    }
+  ],
+  "agreement": true
+}

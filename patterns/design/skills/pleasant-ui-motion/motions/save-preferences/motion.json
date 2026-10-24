@@ -1,0 +1,15 @@
+{
+  "id": "save-preferences",
+  "system": "cobalt",
+  "recipe": "save",
+  "intent": "設定の保存結果を伝える",
+  "frequency": "frequent",
+  "delight": false,
+  "labels": {
+    "idle": "保存する",
+    "pending": "保存中",
+    "success": "保存しました",
+    "error": "保存できませんでした",
+    "retry": "再試行"
+  }
+}

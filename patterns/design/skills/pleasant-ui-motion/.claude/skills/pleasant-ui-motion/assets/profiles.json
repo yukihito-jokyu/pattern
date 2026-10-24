@@ -1,0 +1,88 @@
+{
+  "revision": "8acdfd958cd0de9ce4ea0de3805720f6ba81b4d9",
+  "repository": "https://github.com/yukihito-jokyu/design-system",
+  "systems": {
+    "cobalt": {
+      "stylePath": "registry/cobalt/styles/registry.json",
+      "item": "cobalt-design-system-styles",
+      "preference": "inherit-on-off",
+      "tokens": {
+        "press": {
+          "name": "--cobalt-duration-press",
+          "value": "90ms"
+        },
+        "selection": {
+          "name": "--cobalt-duration-selection",
+          "value": "180ms"
+        },
+        "feedback": {
+          "name": "--cobalt-duration-feedback",
+          "value": "280ms"
+        },
+        "entry": {
+          "name": "--cobalt-duration-entry",
+          "value": "300ms"
+        },
+        "menu": {
+          "name": "--cobalt-duration-menu",
+          "value": "220ms"
+        },
+        "expand": {
+          "name": "--cobalt-duration-expand",
+          "value": "260ms"
+        },
+        "celebrate": {
+          "name": "--cobalt-duration-celebrate",
+          "value": "360ms"
+        }
+      },
+      "easing": {
+        "name": "--cobalt-ease-out",
+        "value": "cubic-bezier(0, 0, 0.2, 1)"
+      },
+      "recipeTokens": {
+        "press": "press",
+        "save": "feedback",
+        "selection": "expand",
+        "disclosure": "expand",
+        "reorder": "expand",
+        "step": "expand",
+        "notify": "celebrate",
+        "navigation": "entry"
+      }
+    },
+    "new-york": {
+      "stylePath": "registry/new-york/styles/registry.json",
+      "item": "design-system-styles",
+      "preference": "os-only",
+      "tokens": {
+        "fast": {
+          "name": "--ds-duration-fast",
+          "value": "120ms"
+        },
+        "normal": {
+          "name": "--ds-duration-normal",
+          "value": "180ms"
+        },
+        "feedback": {
+          "name": "--ds-duration-feedback",
+          "value": "240ms"
+        }
+      },
+      "easing": {
+        "name": "--ds-ease-standard",
+        "value": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      "recipeTokens": {
+        "press": "fast",
+        "save": "feedback",
+        "selection": "normal",
+        "disclosure": "normal",
+        "reorder": "normal",
+        "step": "normal",
+        "notify": "feedback",
+        "navigation": "normal"
+      }
+    }
+  }
+}

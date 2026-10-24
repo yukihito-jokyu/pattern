@@ -1,0 +1,12 @@
+{
+  "id": "choose-period",
+  "system": "cobalt",
+  "recipe": "selection",
+  "intent": "期間の選択位置を伝える",
+  "frequency": "frequent",
+  "delight": false,
+  "labels": {
+    "idle": "期間を選ぶ",
+    "selected": "選択済み"
+  }
+}
