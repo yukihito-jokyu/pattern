@@ -1,0 +1,50 @@
+--- /dev/null
++++ b/motions/checkout-details/motion.css
+@@ -0,0 +1,5 @@
++/* 生成物。motion.jsonから再生成する。ホストの既存Tokenを参照する。 */
++[data-motion-contract="checkout-details"] {
++  --pleasant-duration: var(--ds-duration-normal);
++  --pleasant-easing: var(--ds-ease-standard);
++}
+--- /dev/null
++++ b/motions/checkout-details/motion.json
+@@ -0,0 +1,12 @@
++{
++  "id": "checkout-details",
++  "system": "new-york",
++  "recipe": "disclosure",
++  "intent": "購入前の補足を開閉して確認する",
++  "frequency": "frequent",
++  "delight": false,
++  "labels": {
++    "open": "補足を開く",
++    "close": "補足を閉じる"
++  }
++}
+--- /dev/null
++++ b/motions/checkout-details/motion.md
+@@ -0,0 +1,24 @@
++<!-- 生成物。motion.jsonから再生成する。 -->
++# checkout-details
++
++購入前の補足を開閉して確認する。開閉とフォーカスの移動を伝える。
++
++| 項目 | 決定 |
++|---|---|
++| システム | new-york |
++| 関係 | same-object |
++| 時間 | `var(--ds-duration-normal)` |
++| 曲線 | `var(--ds-ease-standard)` |
++| 途中操作 | reverse |
++| 低減時 | instant-with-meaning |
++| 閉鎖 | animated-nonblocking |
++| 遊び心 | なし |
++
++状態は操作・処理結果で更新する。アニメーション完了を業務状態の条件にしない。
++
++| 状態 | 動きを止めても残すラベル |
++|---|---|
++| open | 補足を開く |
++| close | 補足を閉じる |
++
++正本は取り込み先の`registry/new-york/styles/registry.json`。このファイルは適用計画であり、UIへの導入・動作検証・人間の確認は未実施。

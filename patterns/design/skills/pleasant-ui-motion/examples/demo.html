@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pleasant UI Motion — 操作と応答</title>
+<link rel="stylesheet" href="/examples/demo.css">
+<main>
+  <header><p class="eyebrow">PLEASANT UI MOTION / REFERENCE</p><h1>操作と応答をつなぐ</h1><p>押した手応え、結果、次の操作を確かめるための動作見本です。</p></header>
+  <aside><label>システム <select id="system"><option value="cobalt">cobalt</option><option value="new-york">new-york</option></select></label><label>親の動き <select id="parent"><option value="on">ON</option><option value="off">OFF</option></select></label><label>部品の指定 <select id="local"><option value="inherit">継承</option><option value="on">ON</option><option value="off">OFF</option></select></label><output id="effective" aria-live="polite"></output></aside>
+  <section><span class="number">01 / FEEDBACK</span><h2>保存の手応え</h2><label>メモ <input id="note" value="週末の予定"></label><div class="actions"><button id="save">保存する</button><label>デモの応答 <select id="result"><option value="success">成功</option><option value="error">失敗</option></select></label></div><p><span id="success-mark" aria-hidden="true" hidden>✓ </span><span id="save-status" role="status">まだ保存していません</span></p><label class="delight"><input type="checkbox" id="delight"> 低頻度の完了を一度祝う例を有効にする</label><small>デモ用に処理結果を選びます。実際の保存先へは送信しません。</small></section>
+  <section><span class="number">02 / CONTINUITY</span><h2>選択位置をつなぐ</h2><div class="choices" role="group" aria-label="表示期間"><i id="indicator" aria-hidden="true"></i><button data-choice="0" aria-pressed="true">今日</button><button data-choice="1" aria-pressed="false">今週</button><button data-choice="2" aria-pressed="false">今月</button></div><p>連続して選ぶと、表示中の位置から新しい選択へ向かいます。</p></section>
+  <section><span class="number">03 / CONTROL</span><h2>動きはつながり、操作は続けられる</h2><p>開く途中で閉じても、閉じる途中で開いても、そのときの見た目からつながります。</p><div class="actions"><button id="open" aria-expanded="false" aria-controls="panel">補足を開く</button><button id="next-action" class="secondary">次の操作を試す</button></div><p id="next-status" role="status">開閉の途中でも、次の操作を受け付けます。</p><div id="panel" data-open="false" inert aria-hidden="true"><div class="panel-clip"><div class="panel-surface"><h3>補足</h3><p>高さと透明度が連続して変わります。動きが終わる前でも、開閉を切り替えたり、隣のボタンを押したりできます。</p><label>補足のメモ <input id="details-note" value="入力は開閉しても残ります"></label><button id="close">閉じる</button></div></div></div></section>
+  <footer>時間と曲線は調査時点のTokenを参照しています。取り込み先のReact部品そのものや、快適さを実証した評価尺度ではありません。</footer>
+</main><script type="module" src="/examples/demo.mjs"></script>
+</html>

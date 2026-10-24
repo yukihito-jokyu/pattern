@@ -1,0 +1,5 @@
+/* 生成物。motion.jsonから再生成する。ホストの既存Tokenを参照する。 */
+[data-motion-contract="show-details"] {
+  --pleasant-duration: var(--ds-duration-normal);
+  --pleasant-easing: var(--ds-ease-standard);
+}

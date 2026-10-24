@@ -1,0 +1,12 @@
+{
+  "id": "show-details",
+  "system": "new-york",
+  "recipe": "disclosure",
+  "intent": "補足の開閉と次の操作を伝える",
+  "frequency": "frequent",
+  "delight": false,
+  "labels": {
+    "open": "開く",
+    "close": "閉じる"
+  }
+}

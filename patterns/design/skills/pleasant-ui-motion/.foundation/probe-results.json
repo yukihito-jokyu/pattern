@@ -1,0 +1,186 @@
+{
+  "probes_sha256": "b0a40de7a829d730a74d370a99fc4aef8420bab0b7fe918391473fbbdf31df2c",
+  "command": "npm run check",
+  "results": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "PROC-01-a",
+      "rule": "PROC-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-02-a",
+      "rule": "TOOL-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "MOT-01-a",
+      "rule": "MOT-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "MOT-03-a",
+      "rule": "MOT-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "MOT-04-a",
+      "rule": "MOT-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "MOT-05-a",
+      "rule": "MOT-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "MOT-05-b",
+      "rule": "MOT-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    }
+  ],
+  "wiring": [
+    {
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "probe": "STR-01-a",
+      "passed": true
+    },
+    {
+      "command": "node --test --test-reporter=tap tests/contracts.test.mjs",
+      "probe": "STATE-01-a",
+      "passed": true
+    },
+    {
+      "command": "npm run test:browser",
+      "probe": "ASYNC-01-a",
+      "passed": true
+    },
+    {
+      "command": "node tools/sync-rules.mjs --check",
+      "probe": "PROC-01-a",
+      "passed": true
+    },
+    {
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "probe": "TOOL-02-a",
+      "passed": true
+    }
+  ]
+}

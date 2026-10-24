@@ -1,0 +1,22 @@
+--- a/motions/save-preferences/motion.json
++++ b/motions/save-preferences/motion.json
+@@ -9,7 +9,7 @@
+     "idle": "保存する",
+     "pending": "保存中",
+     "success": "保存しました",
+-    "error": "保存できませんでした",
++    "error": "保存できませんでした。接続を確認してください",
+     "retry": "再試行"
+   }
+ }
+--- a/motions/save-preferences/motion.md
++++ b/motions/save-preferences/motion.md
+@@ -21,7 +21,7 @@
+ | idle | 保存する |
+ | pending | 保存中 |
+ | success | 保存しました |
+-| error | 保存できませんでした |
++| error | 保存できませんでした。接続を確認してください |
+ | retry | 再試行 |
+ 
+ 正本は取り込み先の`registry/cobalt/styles/registry.json`。このファイルは適用計画であり、UIへの導入・動作検証・人間の確認は未実施。

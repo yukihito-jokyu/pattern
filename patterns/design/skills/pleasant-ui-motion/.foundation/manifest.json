@@ -1,0 +1,186 @@
+{
+  "name": "pleasant-ui-motion",
+  "status": "ready",
+  "mode": "new",
+  "domain": [
+    "frontend"
+  ],
+  "language": "ja",
+  "stack": [
+    {
+      "name": "Motion contract JSON",
+      "version": "1",
+      "role": "specification",
+      "pinned": false
+    },
+    {
+      "name": "React",
+      "version": "19.3.0 (target snapshot)",
+      "role": "integration",
+      "pinned": false
+    },
+    {
+      "name": "Tailwind CSS",
+      "version": "4.3.3 (target snapshot)",
+      "role": "integration",
+      "pinned": false
+    },
+    {
+      "name": "CSS transitions / Web Animations",
+      "version": "Level 1",
+      "role": "reference",
+      "pinned": false
+    }
+  ],
+  "tools": [
+    {
+      "role": "runtime",
+      "language": "javascript",
+      "name": "Node.js",
+      "version": "22.23.4",
+      "pinned": false
+    },
+    {
+      "role": "runtime",
+      "language": "python",
+      "name": "Python",
+      "version": "3.14",
+      "pinned": false
+    },
+    {
+      "role": "package-manager",
+      "language": "javascript",
+      "name": "npm",
+      "version": "11.20.0 (verification environment)",
+      "pinned": false
+    },
+    {
+      "role": "formatter",
+      "language": "json",
+      "name": "motion.mjs fmt",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "json",
+      "name": "motion.mjs check",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "typecheck",
+      "language": "json",
+      "name": "motion.mjs validate (closed schema)",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "structure",
+      "language": "json",
+      "name": "motion.mjs check (generated drift)",
+      "version": "1",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "javascript",
+      "name": "node:test",
+      "version": "22.23.4",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "javascript",
+      "name": "@playwright/test",
+      "version": "1.64.1",
+      "pinned": false
+    }
+  ],
+  "skills": {
+    "impl": "pleasant-ui-motion",
+    "review": "pleasant-ui-motion-review"
+  },
+  "commands": {
+    "check": "npm run check",
+    "fix": "npm run fix"
+  },
+  "protected": [
+    "package.json",
+    "package-lock.json",
+    ".nvmrc",
+    "tools/**",
+    "tests/**",
+    "playwright.config.mjs",
+    ".claude/settings.json",
+    ".claude/skills/**",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md",
+    "ci.json"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": []
+  },
+  "guard": {
+    "rule": "TOOL-02",
+    "include": [
+      "**/*.mjs",
+      "**/*.json"
+    ],
+    "exclude": [
+      ".foundation/**",
+      "package-lock.json"
+    ],
+    "suppressions": [
+      {
+        "pattern": "eslint-disable|@ts-ignore|@ts-nocheck",
+        "rule": "TOOL-02"
+      },
+      {
+        "pattern": "\\b(?:test|describe)\\.(?:skip|only|fixme)\\s*\\(",
+        "rule": "TOOL-02"
+      }
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {
+        "glob": "motions/*/motion.json",
+        "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs fmt-file {file}"
+      }
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 1800,
+    "runner": [
+      "claude",
+      "-p",
+      "{prompt}",
+      "--output-format",
+      "json",
+      "--permission-mode",
+      "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools",
+      "Skill",
+      "Bash(npm run *)",
+      "Bash(node .claude/skills/pleasant-ui-motion/scripts/motion.mjs *)",
+      "Bash(git diff *)",
+      "Bash(git status *)"
+    ],
+    "ignore": [
+      "**/__pycache__/**"
+    ],
+    "thresholds": {
+      "files": 1,
+      "names": 0.8,
+      "content": 0
+    }
+  }
+}

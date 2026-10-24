@@ -1,0 +1,242 @@
+{
+  "probes": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/unexpected.txt",
+          "content": "extra\n",
+          "mode": "create"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "STR-01"
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\n  \"id\": \"save-preferences\",\n  \"system\": \"both\",\n  \"recipe\": \"save\",\n  \"intent\": \"save-preferencesの操作結果を伝える\",\n  \"frequency\": \"frequent\",\n  \"delight\": false,\n  \"labels\": {\n    \"idle\": \"実行する\",\n    \"pending\": \"処理中\",\n    \"success\": \"完了しました\",\n    \"error\": \"完了できませんでした\",\n    \"retry\": \"再試行\"\n  }\n}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "DEP-01"
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\n  \"id\": \"SavePreferences\",\n  \"system\": \"cobalt\",\n  \"recipe\": \"save\",\n  \"intent\": \"save-preferencesの操作結果を伝える\",\n  \"frequency\": \"frequent\",\n  \"delight\": false,\n  \"labels\": {\n    \"idle\": \"実行する\",\n    \"pending\": \"処理中\",\n    \"success\": \"完了しました\",\n    \"error\": \"完了できませんでした\",\n    \"retry\": \"再試行\"\n  }\n}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "NAM-01"
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\n  \"id\": \"save-preferences\",\n  \"system\": \"cobalt\",\n  \"recipe\": \"spin-everything\",\n  \"intent\": \"save-preferencesの操作結果を伝える\",\n  \"frequency\": \"frequent\",\n  \"delight\": false,\n  \"labels\": {\n    \"idle\": \"実行する\",\n    \"pending\": \"処理中\",\n    \"success\": \"完了しました\",\n    \"error\": \"完了できませんでした\",\n    \"retry\": \"再試行\"\n  }\n}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "CODE-01"
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.css",
+          "content": "/* hand edited */\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "CODE-02"
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\n  \"id\": \"save-preferences\",\n  \"system\": \"cobalt\",\n  \"recipe\": \"save\",\n  \"intent\": \"save-preferencesの操作結果を伝える\",\n  \"frequency\": \"frequent\",\n  \"delight\": false,\n  \"labels\": {\n    \"idle\": \"実行する\",\n    \"pending\": \"処理中\",\n    \"success\": \"完了しました\",\n    \"error\": \"完了できませんでした\",\n    \"retry\": \"再試行\"\n  },\n  \"duration\": 300\n}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "ERR-01"
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "level": "test",
+      "files": [
+        {
+          "path": "examples/runtime.mjs",
+          "mode": "replace",
+          "content": "// 動きと論理状態を分ける最小見本。デザインシステム本体の代替エンジンではない。\nexport function resolveMotion(parent, local, reduced) {\n  return reduced ? \"off\" : local === \"inherit\" ? parent : local;\n}\n\nexport function createSave(save, notify) {\n  let pending = false;\n  return async function submit() {\n    if (pending) return;\n    pending = true;\n    notify(\"pending\");\n    try { notify(\"success\"); await save(); }\n    catch { notify(\"error\"); }\n    finally { pending = false; }\n  };\n}\n\nexport function createIndicator(element, readTiming, isEnabled) {\n  let animation;\n  function stop() { animation?.cancel(); animation = undefined; }\n  function move(left) {\n    // cancel後にliveなcomputed styleから読むと最終位置へ飛ぶため、値を先に保存する。\n    const from = getComputedStyle(element).transform;\n    stop();\n    element.style.transform = `translateX(${left}px)`;\n    const timing = readTiming();\n    if (!isEnabled() || !element.animate || timing.duration <= 0) return;\n    const next = element.animate([{ transform:from }, { transform:`translateX(${left}px)` }],timing);\n    animation = next;\n    void next.finished.then(\n      () => { if (animation === next) animation = undefined; },\n      () => { if (animation === next) animation = undefined; },\n    );\n  }\n  return { move, stop };\n}\n\n// 論理状態は入力で変え、表示の補間はCSSへ任せる。終了イベントを操作の条件にしない。\nexport function createDisclosure(panel, trigger, labels) {\n  let open = false;\n  function setOpen(next) {\n    open = next;\n    if (!open && panel.contains(document.activeElement)) trigger.focus({ preventScroll:true });\n    panel.inert = !open;\n    panel.setAttribute(\"aria-hidden\",String(!open));\n    panel.dataset.open = String(open);\n    trigger.setAttribute(\"aria-expanded\",String(open));\n    trigger.textContent = open ? labels.close : labels.open;\n  }\n  setOpen(false);\n  return { toggle:() => setOpen(!open), close:() => setOpen(false) };\n}\n"
+        }
+      ],
+      "command": "node --test --test-reporter=tap tests/contracts.test.mjs",
+      "expect": "not ok[^\\n]*STATE-01"
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "level": "test",
+      "files": [
+        {
+          "path": "examples/runtime.mjs",
+          "mode": "replace",
+          "content": "// 動きと論理状態を分ける最小見本。デザインシステム本体の代替エンジンではない。\nexport function resolveMotion(parent, local, reduced) {\n  return reduced ? \"off\" : local === \"inherit\" ? parent : local;\n}\n\nexport function createSave(save, notify) {\n  let pending = false;\n  return async function submit() {\n    if (pending) return;\n    pending = true;\n    notify(\"pending\");\n    try { await save(); notify(\"success\"); }\n    catch { notify(\"error\"); }\n    finally { pending = false; }\n  };\n}\n\nexport function createIndicator(element, readTiming, isEnabled) {\n  let animation;\n  function stop() { animation?.cancel(); animation = undefined; }\n  function move(left) {\n    // cancel後にliveなcomputed styleから読むと最終位置へ飛ぶため、値を先に保存する。\n    const from = \"none\";\n    stop();\n    element.style.transform = `translateX(${left}px)`;\n    const timing = readTiming();\n    if (!isEnabled() || !element.animate || timing.duration <= 0) return;\n    const next = element.animate([{ transform:from }, { transform:`translateX(${left}px)` }],timing);\n    animation = next;\n    void next.finished.then(\n      () => { if (animation === next) animation = undefined; },\n      () => { if (animation === next) animation = undefined; },\n    );\n  }\n  return { move, stop };\n}\n\n// 論理状態は入力で変え、表示の補間はCSSへ任せる。終了イベントを操作の条件にしない。\nexport function createDisclosure(panel, trigger, labels) {\n  let open = false;\n  function setOpen(next) {\n    open = next;\n    if (!open && panel.contains(document.activeElement)) trigger.focus({ preventScroll:true });\n    panel.inert = !open;\n    panel.setAttribute(\"aria-hidden\",String(!open));\n    panel.dataset.open = String(open);\n    trigger.setAttribute(\"aria-expanded\",String(open));\n    trigger.textContent = open ? labels.close : labels.open;\n  }\n  setOpen(false);\n  return { toggle:() => setOpen(!open), close:() => setOpen(false) };\n}\n"
+        }
+      ],
+      "command": "npm run test:browser",
+      "expect": "1\\) [^\\n]*ASYNC-01"
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "level": "test",
+      "files": [
+        {
+          "path": ".claude/skills/pleasant-ui-motion/scripts/motion.mjs",
+          "mode": "replace",
+          "content": "import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, lstatSync, realpathSync } from \"node:fs\";\nimport { resolve, dirname, basename, join } from \"node:path\";\nimport { fileURLToPath } from \"node:url\";\n\nconst skillRoot = resolve(dirname(fileURLToPath(import.meta.url)), \"..\");\nexport const profiles = JSON.parse(readFileSync(join(skillRoot, \"assets/profiles.json\"), \"utf8\"));\nexport const recipes = JSON.parse(readFileSync(join(skillRoot, \"assets/recipes.json\"), \"utf8\"));\nexport const canonical = (value) => JSON.stringify(value, null, 2) + \"\\n\";\nconst slug = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;\nconst fail = (id, message) => { throw new Error(`${id} ${message}`); };\n\nfunction object(value, id, label) {\n  if (!value || typeof value !== \"object\" || Array.isArray(value)) fail(id, `${label}: オブジェクトが必要です`);\n}\n\nexport function validate(spec) {\n  object(spec, \"ERR-01\", \"motion\");\n  const keys = [\"id\", \"system\", \"recipe\", \"intent\", \"frequency\", \"delight\", \"labels\"];\n  if (Object.keys(spec).some((key) => !keys.includes(key)) || keys.some((key) => !(key in spec)))\n    fail(\"ERR-01\", \"motion: 未定義キーまたは必須キーの欠落\");\n  if (typeof spec.id !== \"string\" || !slug.test(spec.id)) fail(\"NAM-01\", \"idは英字始まりのkebab-case\");\n  if (!Object.hasOwn(profiles.systems, spec.system)) fail(\"DEP-01\", \"systemはcobalt/new-yorkの一方\");\n  if (!Object.hasOwn(recipes, spec.recipe)) fail(\"CODE-01\", \"未定義のrecipe\");\n  if (typeof spec.intent !== \"string\" || !spec.intent.trim() || /[\\r\\n]/.test(spec.intent))\n    fail(\"ERR-01\", \"intentは空でない1行の文字列\");\n  if (![\"frequent\", \"infrequent\"].includes(spec.frequency) || typeof spec.delight !== \"boolean\")\n    fail(\"ERR-01\", \"frequency/delightの型または値が不正\");\n  if (spec.delight && (spec.frequency !== \"infrequent\" || ![\"save\", \"notify\"].includes(spec.recipe)))\n    fail(\"MOT-04\", \"delightは低頻度の確定済み成功だけに使う\");\n  object(spec.labels, \"ERR-01\", \"labels\");\n  const labels = recipes[spec.recipe].labels;\n  if (Object.keys(spec.labels).length !== labels.length || labels.some((key) =>\n    typeof spec.labels[key] !== \"string\" || !spec.labels[key].trim() || /[\\r\\n]/.test(spec.labels[key])))\n    fail(\"MOT-01\", `labelsは${labels.join(\", \")}の空でない1行文字列だけ`);\n  if (new Set(Object.values(spec.labels)).size !== labels.length) fail(\"MOT-01\", \"異なる状態のラベルを区別する\");\n  return spec;\n}\n\nexport function compile(spec) {\n  validate(spec);\n  const profile = profiles.systems[spec.system];\n  const recipe = recipes[spec.recipe];\n  const token = profile.tokens[profile.recipeTokens[spec.recipe]];\n  return {\n    id: spec.id, system: spec.system, recipe: spec.recipe,\n    duration: token.name, easing: profile.easing.name,\n    interruption: recipe.interruption, reduced: \"instant-with-meaning\",\n    exit: spec.recipe === \"disclosure\" ? \"animated-nonblocking\" : \"state-first\",\n    relation: recipe.relation, preference: profile.preference,\n    delight: spec.delight, meaning: recipe.meaning,\n  };\n}\n\nconst md = (value) => String(value);\n\nexport function render(spec) {\n  const plan = compile(spec);\n  const profile = profiles.systems[spec.system];\n  const markdown = `<!-- 生成物。motion.jsonから再生成する。 -->\\n# ${spec.id}\\n\\n${md(spec.intent)}。${plan.meaning}を伝える。\\n\\n| 項目 | 決定 |\\n|---|---|\\n| システム | ${plan.system} |\\n| 関係 | ${plan.relation} |\\n| 時間 | \\`var(${plan.duration})\\` |\\n| 曲線 | \\`var(${plan.easing})\\` |\\n| 途中操作 | ${plan.interruption} |\\n| 低減時 | ${plan.reduced} |\\n| 閉鎖 | ${plan.exit} |\\n| 遊び心 | ${plan.delight ? \"確定済み成功時だけ\" : \"なし\"} |\\n\\n状態は操作・処理結果で更新する。アニメーション完了を業務状態の条件にしない。\\n\\n| 状態 | 動きを止めても残すラベル |\\n|---|---|\\n${Object.entries(spec.labels).map(([k,v]) => `| ${k} | ${md(v)} |`).join(\"\\n\")}\\n\\n正本は取り込み先の\\`${profile.stylePath}\\`。このファイルは適用計画であり、UIへの導入・動作検証・人間の確認は未実施。\\n`;\n  const css = `/* 生成物。motion.jsonから再生成する。ホストの既存Tokenを参照する。 */\\n[data-motion-contract=\"${spec.id}\"] {\\n  --pleasant-duration: var(${plan.duration});\\n  --pleasant-easing: var(${plan.easing});\\n}\\n`;\n  return { \"motion.md\": markdown, \"motion.css\": css };\n}\n\nexport function units(root) {\n  const folder = join(root, \"motions\");\n  if (!existsSync(folder)) return [];\n  return readdirSync(folder).sort().map((name) => {\n    const dir = join(folder, name);\n    if (!slug.test(name) || !lstatSync(dir).isDirectory() || lstatSync(dir).isSymbolicLink())\n      fail(\"STR-01\", `motions/${name}: 単位は通常ディレクトリ`);\n    const names = readdirSync(dir).sort();\n    if (names.some((file) => ![\"motion.json\", \"motion.css\", \"motion.md\"].includes(file)) || !names.includes(\"motion.json\"))\n      fail(\"STR-01\", `${dir}: motion.json/css/mdだけを置く`);\n    if (names.some((file) => lstatSync(join(dir,file)).isSymbolicLink())) fail(\"STR-01\", `${dir}: リンク禁止`);\n    const spec = validate(JSON.parse(readFileSync(join(dir,\"motion.json\"), \"utf8\")));\n    if (spec.id !== name) fail(\"NAM-01\", `${dir}: idとディレクトリ名を一致させる`);\n    return { dir, spec };\n  });\n}\n\nexport function check(root, { format = true, generated = true } = {}) {\n  const items = units(root);\n  if (!items.length) fail(\"STR-01\", \"motionsに1単位以上が必要\");\n  for (const { dir, spec } of items) {\n    if (format && readFileSync(join(dir, \"motion.json\"), \"utf8\") !== canonical(spec)) fail(\"TOOL-01\", `${dir}: fmtを実行する`);\n    if (generated) for (const [name, content] of Object.entries(render(spec))) {\n      if (!existsSync(join(dir,name)) || readFileSync(join(dir,name),\"utf8\") !== content)\n        fail(\"CODE-02\", `${dir}/${name}: buildで再生成する`);\n    }\n  }\n  return items.length;\n}\n\nexport function build(root) {\n  for (const { dir, spec } of units(root)) for (const [name, content] of Object.entries(render(spec)))\n    writeFileSync(join(dir,name), content);\n}\n\nexport function scaffold(root, id, system, recipe) {\n  if (!slug.test(id ?? \"\")) fail(\"NAM-01\", \"new ID SYSTEM RECIPE\");\n  if (!Object.hasOwn(recipes, recipe) || !Object.hasOwn(profiles.systems, system)) fail(\"ERR-01\", \"system/recipeを指定する\");\n  const dir = join(root, \"motions\", id);\n  if (existsSync(dir)) fail(\"STR-01\", `${id}は既に存在する`);\n  const defaults = {idle:\"実行する\",pending:\"処理中\",success:\"完了しました\",error:\"完了できませんでした\",retry:\"再試行\",selected:\"選択済み\",open:\"開く\",close:\"閉じる\",changed:\"順序を変更しました\",previous:\"前へ\",next:\"次へ\",from:\"一覧\",to:\"詳細\"};\n  const spec = { id, system, recipe, intent:`${id}の操作結果を伝える`, frequency:\"frequent\", delight:false, labels:Object.fromEntries(recipes[recipe].labels.map((key) => [key,defaults[key]])) };\n  validate(spec);\n  mkdirSync(dir, { recursive:true });\n  writeFileSync(join(dir,\"motion.json\"), canonical(spec));\n  for (const [name,content] of Object.entries(render(spec))) writeFileSync(join(dir,name),content);\n}\n\nexport function auditTarget(root, system) {\n  const profile = profiles.systems[system];\n  if (!profile) fail(\"DEP-01\", \"audit SYSTEM TARGET_ROOT\");\n  const styles = JSON.parse(readFileSync(join(root,profile.stylePath),\"utf8\"));\n  const item = styles.items?.find((item) => item.name === profile.item);\n  if (!item) fail(\"DEP-01\", \"stylesの正本項目がない\");\n  const declarations = Object.values(item.css).filter((value) => value && typeof value === \"object\");\n  for (const token of [...Object.values(profile.tokens), profile.easing]) {\n    if (!declarations.some((value) => value[token.name] === token.value))\n      fail(\"MOT-02\", `${token.name}: 調査時点から変更されている。現行値と適用手順を再調査する`);\n  }\n  return { system, tokens:\"match\", runtime:\"unverified\", revision:profiles.revision };\n}\n\nfunction main(args) {\n  const [command, ...rest] = args;\n  const root = process.cwd();\n  if (command === \"new\") scaffold(root,...rest);\n  else if (command === \"build\") build(root);\n  else if (command === \"fmt\") { for(const {dir,spec} of units(root)) writeFileSync(join(dir,\"motion.json\"),canonical(spec)); }\n  else if (command === \"fmt-file\") {\n    const path = resolve(rest[0] ?? \"\");\n    const spec = validate(JSON.parse(readFileSync(path,\"utf8\")));\n    if (basename(path) !== \"motion.json\") fail(\"STR-01\", \"motion.jsonだけを整形する\");\n    writeFileSync(path,canonical(spec));\n  }\n  else if (command === \"check\") console.log(`motion check: ${check(root)} units passed (host runtime unverified)`);\n  else if (command === \"audit\") console.log(canonical(auditTarget(resolve(rest[1] ?? \"\"),rest[0])));\n  else if (command === \"list\") console.log(canonical({ systems:Object.keys(profiles.systems), recipes:Object.keys(recipes) }));\n  else fail(\"ERR-01\", \"使用: motion.mjs new ID SYSTEM RECIPE | fmt | build | check | audit SYSTEM TARGET_ROOT | list\");\n}\n\nif (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {\n  try { main(process.argv.slice(2)); } catch (error) { console.error(error.message); process.exitCode = 1; }\n}\n"
+        }
+      ],
+      "command": "node --test --test-reporter=tap tests/contracts.test.mjs",
+      "expect": "not ok[^\\n]*OPS-01"
+    },
+    {
+      "id": "PROC-01-a",
+      "rule": "PROC-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": ".claude/skills/pleasant-ui-motion/references/rules.md",
+          "content": "\nhand edited\n",
+          "mode": "append"
+        }
+      ],
+      "command": "node tools/sync-rules.mjs --check",
+      "expect": "PROC-01"
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "level": "format",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\"id\":\"save-preferences\",\"system\":\"cobalt\",\"recipe\":\"save\",\"intent\":\"save-preferencesの操作結果を伝える\",\"frequency\":\"frequent\",\"delight\":false,\"labels\":{\"idle\":\"実行する\",\"pending\":\"処理中\",\"success\":\"完了しました\",\"error\":\"完了できませんでした\",\"retry\":\"再試行\"}}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "TOOL-01"
+    },
+    {
+      "id": "TOOL-02-a",
+      "rule": "TOOL-02",
+      "level": "structure",
+      "files": [
+        {
+          "path": "examples/bypass.mjs",
+          "content": "// @ts-ignore\nexport const bypass=1;\n",
+          "mode": "create"
+        }
+      ],
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "expect": "TOOL-02"
+    },
+    {
+      "id": "MOT-01-a",
+      "rule": "MOT-01",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\n  \"id\": \"save-preferences\",\n  \"system\": \"cobalt\",\n  \"recipe\": \"save\",\n  \"intent\": \"save-preferencesの操作結果を伝える\",\n  \"frequency\": \"frequent\",\n  \"delight\": false,\n  \"labels\": {\n    \"idle\": \"実行する\",\n    \"success\": \"完了しました\",\n    \"error\": \"完了できませんでした\",\n    \"retry\": \"再試行\"\n  }\n}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "MOT-01"
+    },
+    {
+      "id": "MOT-03-a",
+      "rule": "MOT-03",
+      "level": "test",
+      "files": [
+        {
+          "path": "examples/runtime.mjs",
+          "mode": "replace",
+          "content": "// 動きと論理状態を分ける最小見本。デザインシステム本体の代替エンジンではない。\nexport function resolveMotion(parent, local, reduced) {\n  return local === \"on\" ? \"on\" : reduced ? \"off\" : parent;\n}\n\nexport function createSave(save, notify) {\n  let pending = false;\n  return async function submit() {\n    if (pending) return;\n    pending = true;\n    notify(\"pending\");\n    try { await save(); notify(\"success\"); }\n    catch { notify(\"error\"); }\n    finally { pending = false; }\n  };\n}\n\nexport function createIndicator(element, readTiming, isEnabled) {\n  let animation;\n  function stop() { animation?.cancel(); animation = undefined; }\n  function move(left) {\n    // cancel後にliveなcomputed styleから読むと最終位置へ飛ぶため、値を先に保存する。\n    const from = getComputedStyle(element).transform;\n    stop();\n    element.style.transform = `translateX(${left}px)`;\n    const timing = readTiming();\n    if (!isEnabled() || !element.animate || timing.duration <= 0) return;\n    const next = element.animate([{ transform:from }, { transform:`translateX(${left}px)` }],timing);\n    animation = next;\n    void next.finished.then(\n      () => { if (animation === next) animation = undefined; },\n      () => { if (animation === next) animation = undefined; },\n    );\n  }\n  return { move, stop };\n}\n\n// 論理状態は入力で変え、表示の補間はCSSへ任せる。終了イベントを操作の条件にしない。\nexport function createDisclosure(panel, trigger, labels) {\n  let open = false;\n  function setOpen(next) {\n    open = next;\n    if (!open && panel.contains(document.activeElement)) trigger.focus({ preventScroll:true });\n    panel.inert = !open;\n    panel.setAttribute(\"aria-hidden\",String(!open));\n    panel.dataset.open = String(open);\n    trigger.setAttribute(\"aria-expanded\",String(open));\n    trigger.textContent = open ? labels.close : labels.open;\n  }\n  setOpen(false);\n  return { toggle:() => setOpen(!open), close:() => setOpen(false) };\n}\n"
+        }
+      ],
+      "command": "node --test --test-reporter=tap tests/contracts.test.mjs",
+      "expect": "not ok[^\\n]*MOT-03"
+    },
+    {
+      "id": "MOT-04-a",
+      "rule": "MOT-04",
+      "level": "structure",
+      "files": [
+        {
+          "path": "motions/save-preferences/motion.json",
+          "content": "{\n  \"id\": \"save-preferences\",\n  \"system\": \"cobalt\",\n  \"recipe\": \"save\",\n  \"intent\": \"save-preferencesの操作結果を伝える\",\n  \"frequency\": \"frequent\",\n  \"delight\": true,\n  \"labels\": {\n    \"idle\": \"実行する\",\n    \"pending\": \"処理中\",\n    \"success\": \"完了しました\",\n    \"error\": \"完了できませんでした\",\n    \"retry\": \"再試行\"\n  }\n}\n",
+          "mode": "replace"
+        }
+      ],
+      "command": "node .claude/skills/pleasant-ui-motion/scripts/motion.mjs check",
+      "expect": "MOT-04"
+    },
+    {
+      "id": "MOT-05-a",
+      "rule": "MOT-05",
+      "level": "test",
+      "files": [
+        {
+          "path": "examples/runtime.mjs",
+          "mode": "replace",
+          "content": "// 動きと論理状態を分ける最小見本。デザインシステム本体の代替エンジンではない。\nexport function resolveMotion(parent, local, reduced) {\n  return reduced ? \"off\" : local === \"inherit\" ? parent : local;\n}\n\nexport function createSave(save, notify) {\n  let pending = false;\n  return async function submit() {\n    if (pending) return;\n    pending = true;\n    notify(\"pending\");\n    try { await save(); notify(\"success\"); }\n    catch { notify(\"error\"); }\n    finally { pending = false; }\n  };\n}\n\nexport function createIndicator(element, readTiming, isEnabled) {\n  let animation;\n  function stop() { animation?.cancel(); animation = undefined; }\n  function move(left) {\n    // cancel後にliveなcomputed styleから読むと最終位置へ飛ぶため、値を先に保存する。\n    const from = getComputedStyle(element).transform;\n    stop();\n    element.style.transform = `translateX(${left}px)`;\n    const timing = readTiming();\n    if (!isEnabled() || !element.animate || timing.duration <= 0) return;\n    const next = element.animate([{ transform:from }, { transform:`translateX(${left}px)` }],timing);\n    animation = next;\n    void next.finished.then(\n      () => { if (animation === next) animation = undefined; },\n      () => { if (animation === next) animation = undefined; },\n    );\n  }\n  return { move, stop };\n}\n\n// 論理状態は入力で変え、表示の補間はCSSへ任せる。終了イベントを操作の条件にしない。\nexport function createDisclosure(panel, trigger, labels) {\n  let open = false;\n  function setOpen(next) {\n    if (panel.getAnimations().length) return;\n    open = next;\n    if (!open && panel.contains(document.activeElement)) trigger.focus({ preventScroll:true });\n    panel.inert = !open;\n    panel.setAttribute(\"aria-hidden\",String(!open));\n    panel.dataset.open = String(open);\n    trigger.setAttribute(\"aria-expanded\",String(open));\n    trigger.textContent = open ? labels.close : labels.open;\n  }\n  setOpen(false);\n  return { toggle:() => setOpen(!open), close:() => setOpen(false) };\n}\n"
+        }
+      ],
+      "command": "npm run test:browser",
+      "expect": "1\\) [^\\n]*MOT-05"
+    },
+    {
+      "id": "MOT-05-b",
+      "rule": "MOT-05",
+      "command": "npm run test:browser",
+      "expect": "1\\) [^\\n]*MOT-05",
+      "files": [
+        {
+          "path": "examples/demo.css",
+          "mode": "append",
+          "content": "\n#panel[data-open=\"false\"] { transition:none; }\n"
+        }
+      ],
+      "level": "test"
+    }
+  ]
+}
