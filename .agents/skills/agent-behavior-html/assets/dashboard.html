@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Agent Behavior / 行動の観測レポート</title>
+<style>
+:root{color-scheme:light;--ink:#17263c;--muted:#58677d;--line:#dce3ed;--paper:#f4f6fa;--blue:#2459cf;--red:#b72d46;--green:#147861}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.7 system-ui,-apple-system,sans-serif}header{background:#15243b;color:#fff;padding:34px max(24px,calc((100vw - 1280px)/2));border-bottom:4px solid #6ea5ff}.eyebrow{font-size:11px;letter-spacing:.16em;color:#9fc1ff;font-weight:700}h1{font-size:30px;letter-spacing:-.04em;margin:8px 0}header p{color:#c3cfe0;margin:4px 0;max-width:850px}main{max-width:1328px;margin:auto;padding:28px 24px 50px}h2{font-size:18px;margin:0 0 12px}h3{font-size:14px;margin:0 0 8px}.toolbar,.panel,.stat{background:white;border:1px solid var(--line);border-radius:12px}.toolbar{padding:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:end;position:relative}.toolbar label{font-size:11px;color:var(--muted);display:grid;gap:5px}.toolbar input,.toolbar select,button{font:inherit;border:1px solid #c3cfdf;border-radius:7px;background:#fff;color:var(--ink);padding:8px 10px;min-height:40px}.toolbar select{max-width:240px}button{cursor:pointer;font-size:12px;font-weight:600}button:hover{background:#edf3ff}button:disabled{opacity:.4;cursor:default}:focus-visible{outline:3px solid #78aaff;outline-offset:2px}.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.toolbar .search{flex:1;min-width:180px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}.stat{padding:18px 20px}.stat .label{font-size:12px;color:var(--muted)}.stat .value{font-variant-numeric:tabular-nums;font-weight:750;font-size:30px;line-height:1.5}.stat .note{font-size:11px;color:var(--muted)}.columns{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}.panel{padding:22px;margin-bottom:18px;min-width:0}.caption,.muted{color:var(--muted);font-size:12px}.caption{margin:5px 0 16px}.warning{border-left:3px solid #d59920;background:#fff8e9;padding:12px 15px;border-radius:4px;color:#755017;font-size:12px}.findings{padding-left:18px;font-size:13px}.findings li{margin:8px 0}.bar-row{display:grid;grid-template-columns:115px 1fr 45px;align-items:center;gap:10px;font-size:12px;margin:12px 0}.bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bar-track{height:12px;border-radius:4px;background:#edf1f7;overflow:hidden}.bar-fill{height:100%;background:#3572df;border-radius:4px}.scroll{overflow:auto;max-height:520px}table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}th{color:var(--muted);font-weight:600;background:#f6f8fb;position:sticky;top:0;white-space:nowrap}th,td{padding:10px 12px;border-bottom:1px solid #e8edf4;vertical-align:top}td{max-width:300px;overflow-wrap:anywhere}code{font:11px/1.5 ui-monospace,SFMono-Regular,monospace}.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;background:#edf1f7;white-space:nowrap}.badge.error{background:#fce9ec;color:var(--red)}.badge.success{background:#e4f4ed;color:var(--green)}.badge.started{background:#fff3d9;color:#815b13}.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}.evidence{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 ui-monospace,monospace;background:#f5f7fb;padding:14px;border-radius:7px;max-height:280px;overflow:auto}.grid-note{font-size:12px;display:grid;grid-template-columns:140px 1fr;gap:10px}summary{cursor:pointer;font-weight:650}.empty{color:var(--muted);padding:16px;text-align:center}.footer{font-size:11px;color:var(--muted);margin-top:24px}.source-tag{color:var(--blue);font-size:10px}.view-meta{font-size:11px;color:var(--muted);margin:12px 0}noscript{display:block;padding:20px;background:#fff0d2}@media(max-width:850px){.columns{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}header{padding:24px}main{padding:18px 12px}.toolbar label,.toolbar .search{flex:1;min-width:130px}.toolbar select{max-width:100%}.panel{padding:16px}h1{font-size:25px}}@media print{.toolbar,button{display:none}.scroll{max-height:none}.panel,.stat{break-inside:avoid}header{background:#fff;color:#17263c}.columns{display:block}}
+</style>
+<style>
+.journey-head{display:flex;justify-content:space-between;gap:16px;align-items:start}.purpose-meta{font-size:12px;color:var(--blue);white-space:nowrap}.action-list{display:grid;gap:14px}.action-card{border:1px solid var(--line);border-radius:10px;overflow:hidden}.action-heading{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:#f6f8fc;font-size:12px}.step-number{background:#243f68;color:white;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-weight:700}.action-time{margin-left:auto;color:var(--muted)}.action-body{display:grid;grid-template-columns:1fr 1fr 1fr}.action-part{padding:16px;min-width:0;overflow-wrap:anywhere}.action-part+.action-part{border-left:1px solid var(--line)}.part-label{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}.action-title{font-size:14px;font-weight:650}.action-code{display:block;white-space:pre-wrap;background:#f4f6fa;padding:9px;border-radius:6px;margin-top:8px;max-height:150px;overflow:auto}.purpose-text{font-size:14px;color:#233d66}.purpose-source{font-size:10px;color:var(--muted);margin-top:8px}.expected-text{font-size:11px;color:var(--muted);margin-top:8px}.result-text{font-size:12px;white-space:pre-wrap;max-height:180px;overflow:auto}.missing-purpose{color:#91661d}.cell-detail{font-size:11px;white-space:pre-wrap;color:var(--muted);margin-top:5px;max-height:100px;overflow:auto}@media(max-width:850px){.action-body{grid-template-columns:1fr}.action-part+.action-part{border-left:0;border-top:1px solid var(--line)}.journey-head{display:block}.purpose-meta{white-space:normal;margin-bottom:12px}.action-time{margin-left:0}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">AGENT OBSERVATORY · LOCAL REPORT</div>
+<h1>AIエージェントの行動を、記録からたどる。</h1>
+<p>Claude Code / Codexの操作・目的・結果を時系列で確認します。目的はエージェントが明示した説明です。記録がない理由を推測して補いません。</p>
+<p id="report-note"></p>
+</header>
+<noscript>このレポートの操作にはJavaScriptが必要です。同時に生成されたJSONにすべての集計と根拠が保存されています。</noscript>
+<main>
+<div class="toolbar" aria-label="表示条件">
+<label>製品<select id="source"><option value="">すべて</option></select></label>
+<label>セッション<select id="session"><option value="">すべて</option></select></label>
+<label>ツール<select id="tool"><option value="">すべて</option></select></label>
+<label>成否<select id="status"><option value="">すべて</option><option>success</option><option>error</option><option>completed</option><option>started</option><option>unknown</option></select></label>
+<label class="search">操作・目的・結果を検索<input id="search" type="search" placeholder="例: 認証 / npm test / auth.ts" autocomplete="off"></label>
+<label>表示時刻<select id="timezone"><option value="Asia/Tokyo">日本時間</option><option value="UTC">UTC</option></select></label>
+<button id="export" class="primary">表示中の呼び出しをJSONで保存</button>
+</div>
+<div id="view-meta" class="view-meta" aria-live="polite"></div>
+<section class="stats" aria-label="選択範囲の指標">
+<div class="stat"><div class="label">識別できた呼び出し</div><div class="value" id="calls">—</div><div class="note" id="pairs">前後の記録を対応付け</div></div>
+<div class="stat"><div class="label">明示された失敗</div><div class="value" id="errors">—</div><div class="note" id="coverage">成否が分かる記録だけで算出</div></div>
+<div class="stat"><div class="label">所要時間の中央値</div><div class="value" id="p50">—</div><div class="note">前後hookの受信時刻差</div></div>
+<div class="stat"><div class="label">同じ入力の追加呼び出し</div><div class="value" id="repeats">—</div><div class="note">同じ製品・セッション・ツールで比較</div></div>
+</section>
+<section class="panel" aria-label="操作と目的の記録">
+<div class="journey-head"><div><h2>何をして、なぜ行い、どうなったか。</h2><p class="caption">選択範囲の先頭20操作。目的の出所と、実際に観測した結果を並べます。全操作は下の表とJSONで確認できます。</p></div><div id="purpose-meta" class="purpose-meta" aria-live="polite"></div></div>
+<div id="action-list" class="action-list"></div>
+</section>
+<div class="columns">
+<section class="panel"><h2>ツールの使用回数</h2><p class="caption">選択中の呼び出しを集計。上位12件を表示します。</p><div id="bars"></div></section>
+<section class="panel"><h2>記録から分かること</h2><ul class="findings" id="findings"></ul><div class="warning">目的はエージェントの申告であり、必要性や正しさを証明するものではありません。同じ入力の繰り返しも、必要な再確認である可能性があります。</div></section>
+</div>
+<section class="panel"><h2>すべての操作と根拠</h2><p class="caption">成否: success＝明示成功、error＝明示失敗、completed＝完了を観測・成否不明、started＝終了記録なし。所要時間にはhookの起動・待機が含まれます。</p><div class="scroll"><table><thead><tr><th>開始 / 最初の記録</th><th>製品 / セッション</th><th>操作 / 呼び出しID</th><th>目的 / 出所</th><th>結果</th><th>成否</th><th>前後対応</th><th>所要時間</th><th>根拠</th></tr></thead><tbody id="call-rows"></tbody></table></div><div class="pager"><button id="previous">前へ</button><span id="page-label" class="caption"></span><button id="next">次へ</button></div><details id="evidence-details"><summary>選択した操作と目的の記録</summary><pre class="evidence" id="evidence">表の「記録を見る」を選択してください。</pre></details></section>
+<div class="columns">
+<section class="panel"><h2>同じ入力の繰り返し</h2><p class="caption">入力の鍵付き指紋で比較。コマンド本文やプロンプトは含みません。上位20件を表示します。</p><div class="scroll"><table><thead><tr><th>ツール</th><th>入力指紋</th><th>回数</th><th>明示失敗</th></tr></thead><tbody id="repeat-rows"></tbody></table></div></section>
+<section class="panel"><h2>ログの品質と観測範囲</h2><div id="quality" class="grid-note"></div><p class="caption">この欄はファイル全体の値です。フィルターで変わりません。未発火のhookは検出できず、欠落数は実際の未観測数の下限です。</p><details><summary>指標の読み方</summary><p class="caption">失敗率の分母はsuccess＋errorです。成否確認率の分母はsuccess＋error＋completedです。IDのないツールイベントは呼び出し数へ加算しません。曖昧な前後対応と時刻逆転は時間集計から除きます。並行実行の所要時間合計は実時間を超えることがあります。推論内容・能力評価・料金・トークン数は集計対象にありません。</p></details></section>
+</div>
+<section class="panel"><details><summary>イベントの時系列（製品・セッション・ツールで絞り込み）</summary><p class="caption">成否・検索のフィルターは上の呼び出し表に適用します。ここでは生のhookメタデータを先頭300件まで表示します。全件は同時生成したJSONにあります。</p><div class="scroll"><table><thead><tr><th>受信時刻</th><th>製品</th><th>イベント</th><th>ツール / agent</th><th>記録箇所</th></tr></thead><tbody id="event-rows"></tbody></table></div></details></section>
+<p class="footer">schema v1 / v2 · 外部通信なし · 操作対象・コマンド・短い目的・上限付きの結果抜粋を記録。ファイル本文と会話履歴は保存しません。対象はmacOS/Linuxのローカルセッションです。</p>
+</main>
+<script type="application/json" id="report-data">__REPORT_DATA__</script>
+<script>
+"use strict";
+const report = JSON.parse(document.getElementById("report-data").textContent);
+document.getElementById("report-note").textContent=report.synthetic?"合成ログのデモ · 認証不具合の調査 → 再現 → 修正 → 再テストを例示しています。実際の作業記録ではありません。":"入力されたログを表示しています。目的の申告と観測された結果を区別してお読みください。";
+const pageSize = 100;
+let page = 0;
+let selectedCalls = [];
+const byId = new Map(report.events.map(event => [event.event_id, event]));
+const controls = Object.fromEntries(["source","session","tool","status","search","timezone"].map(id => [id, document.getElementById(id)]));
+function element(tag, value, className) {
+  const node = document.createElement(tag);
+  if (value !== undefined && value !== null) node.textContent = String(value);
+  if (className) node.className = className;
+  return node;
+}
+function option(control, value, label) {
+  const node = element("option", label);
+  node.value = value;
+  control.append(node);
+}
+for (const source of [...new Set(report.events.map(event => event.source))].sort()) option(controls.source, source, source);
+for (const session of report.sessions) option(controls.session, JSON.stringify([session.source, session.session_id]), session.source + " / " + session.session_id);
+for (const tool of [...new Set(report.calls.map(call => call.tool_name))].sort()) option(controls.tool, tool, tool);
+function formatTime(value) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("ja-JP", {timeZone:controls.timezone.value,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date(value));
+}
+function formatDuration(value) {
+  if (value === null || value === undefined) return "—";
+  return value < 1000 ? value.toLocaleString("ja-JP", {maximumFractionDigits:1}) + " ms" : (value/1000).toLocaleString("ja-JP", {maximumFractionDigits:2}) + " s";
+}
+function scopeMatches(item) {
+  return (!controls.source.value || item.source === controls.source.value) &&
+    (!controls.session.value || JSON.stringify([item.source,item.session_id]) === controls.session.value) &&
+    (!controls.tool.value || item.tool_name === controls.tool.value);
+}
+function repeatGroups(calls) {
+  const groups = new Map();
+  for (const call of calls) {
+    if (!call.started_at || !call.input_fingerprint || call.pair_state === "ambiguous") continue;
+    const key = JSON.stringify([call.source,call.session_id,call.tool_name,call.input_fingerprint]);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(call);
+  }
+  return [...groups.values()].filter(group => group.length > 1).sort((a,b) => b.length-a.length);
+}
+function showEvidence(call) {
+  const ids=[...call.evidence,...(call.purpose_evidence||[])];
+  const records = ids.map(id => ({location:report.locations[id], event:byId.get(id)}));
+  document.getElementById("evidence").textContent = JSON.stringify(records,null,2);
+  document.getElementById("evidence-details").open = true;
+}
+function appendRow(parent, cells) {
+  const row = element("tr");
+  for (const value of cells) {
+    const cell = element("td");
+    cell.append(value instanceof Node ? value : element("span", value));
+    row.append(cell);
+  }
+  parent.append(row);
+}
+function purposeSource(call) {
+  return {agent_intent:"操作前に申告した目的（同一入力・同一セッションに対応）",tool_description:"ツール入力の説明",missing:"目的は未記録",ambiguous:"複数の候補があり、目的を特定できません"}[call.purpose_source||"missing"];
+}
+function resultText(call) {
+  return call.result_summary || ({started:"終了記録なし",success:"明示成功",error:"明示失敗",completed:"完了を観測（成否不明）",unknown:"前後の対応が曖昧です"}[call.status]||"結果は未記録");
+}
+function renderActions(calls) {
+  const list=document.getElementById("action-list");list.replaceChildren();
+  const count=calls.filter(call => call.purpose).length;
+  document.getElementById("purpose-meta").textContent="目的あり "+count+" / "+calls.length+" 操作";
+  for (const [index,call] of calls.slice(0,20).entries()) {
+    const card=element("article",undefined,"action-card");
+    const heading=element("div",undefined,"action-heading");
+    heading.append(element("span",index+1,"step-number"),element("strong",call.source+" / "+call.tool_name),element("span",call.status,"badge "+call.status),element("span",formatTime(call.started_at||call.ended_at),"action-time"));
+    const body=element("div",undefined,"action-body");
+    const action=element("div",undefined,"action-part");
+    action.append(element("div","何をしたか","part-label"),element("div",call.action||call.tool_name,"action-title"),element("code",call.target||"操作対象の記録なし（旧形式など）","action-code"));
+    const purpose=element("div",undefined,"action-part");
+    purpose.append(element("div","なぜしたか","part-label"),element("div",call.purpose||"未記録",call.purpose?"purpose-text":"purpose-text missing-purpose"),element("div",purposeSource(call),"purpose-source"));
+    if (call.expected) purpose.append(element("div","期待した結果: "+call.expected,"expected-text"));
+    const result=element("div",undefined,"action-part");
+    result.append(element("div","どうなったか","part-label"),element("div",resultText(call),"result-text"),element("div","所要時間: "+formatDuration(call.duration_ms),"purpose-source"));
+    body.append(action,purpose,result);card.append(heading,body);list.append(card);
+  }
+  if (!calls.length) list.append(element("p","条件に一致する操作がありません。","empty"));
+}
+function render() {
+  const query = controls.search.value.toLowerCase().trim();
+  selectedCalls = report.calls.filter(call => scopeMatches(call) &&
+    (!controls.status.value || call.status === controls.status.value) &&
+    (!query || [call.tool_name,call.tool_use_id,call.action,call.target,call.purpose,call.expected,call.result_summary].join(" ").toLowerCase().includes(query)));
+  const calls = selectedCalls;
+  renderActions(calls);
+  const errors = calls.filter(call => call.status === "error").length;
+  const known = calls.filter(call => call.status === "success" || call.status === "error").length;
+  const completed = calls.filter(call => ["success","error","completed"].includes(call.status)).length;
+  const timed = calls.filter(call => call.duration_ms !== null).map(call => call.duration_ms).sort((a,b) => a-b);
+  const matched = calls.filter(call => call.pair_state === "matched").length;
+  const repeats = repeatGroups(calls);
+  document.getElementById("calls").textContent = calls.length.toLocaleString();
+  document.getElementById("errors").textContent = errors.toLocaleString();
+  document.getElementById("p50").textContent = formatDuration(timed.length ? timed[Math.floor((timed.length-1)/2)] : null);
+  document.getElementById("repeats").textContent = repeats.reduce((sum,group) => sum+group.length-1,0).toLocaleString();
+  document.getElementById("pairs").textContent = "前後一致 " + matched + " / " + calls.length + " 件";
+  document.getElementById("coverage").textContent = "成否確認 " + known + " / 完了 " + completed + " 件";
+  document.getElementById("view-meta").textContent = "ファイル全体 " + report.metrics.events + " イベント・" + report.metrics.sessions + " セッション / 表示中 " + calls.length + " 呼び出し / " + controls.timezone.value;
+  const findings = document.getElementById("findings");
+  findings.replaceChildren();
+  const statements = [
+    known ? "成否が明示された " + known + " 件のうち、失敗は " + errors + " 件（" + (errors/known*100).toFixed(1) + "%）です。" : "成否の明示がないため、失敗率を算出できません。",
+    "所要時間を測定できた呼び出しは " + timed.length + " 件です。前後欠落・曖昧な対応・時刻逆転を除いています。",
+    repeats.length ? "同じ入力の繰り返しが " + repeats.length + " 組あります。根拠のイベントから確認してください。" : "選択範囲では、比較できる同じ入力の繰り返しはありません。"
+  ];
+  for (const statement of statements) findings.append(element("li",statement));
+  const counts = new Map();
+  for (const call of calls) { const key=call.source+" / "+call.tool_name; counts.set(key,(counts.get(key)||0)+1); }
+  const bars = document.getElementById("bars");
+  bars.replaceChildren();
+  const ranked = [...counts].sort((a,b) => b[1]-a[1]);
+  const maximum = ranked.length ? ranked[0][1] : 1;
+  for (const [name,count] of ranked.slice(0,12)) {
+    const row=element("div",undefined,"bar-row");
+    const label=element("div",name,"bar-label");label.title=name;
+    const track=element("div",undefined,"bar-track");
+    const fill=element("div",undefined,"bar-fill");fill.style.width=(count/maximum*100)+"%";track.append(fill);
+    row.append(label,track,element("div",count));bars.append(row);
+  }
+  if (!ranked.length) bars.append(element("p","条件に一致する呼び出しがありません。","empty"));
+  const rows=document.getElementById("call-rows");rows.replaceChildren();
+  const pages=Math.max(1,Math.ceil(calls.length/pageSize));page=Math.min(page,pages-1);
+  for (const call of calls.slice(page*pageSize,(page+1)*pageSize)) {
+    const tool=element("div",call.tool_name);tool.append(element("br"),element("code",call.tool_use_id));
+    tool.append(element("div",call.action||"", "cell-detail"),element("code",call.target||"", "cell-detail"));
+    const source=element("div",call.source);source.append(element("br"),element("code",call.session_id));
+    const purpose=element("div",call.purpose||"未記録");purpose.append(element("div",purposeSource(call),"cell-detail"));
+    const evidence=element("button","記録を見る");evidence.addEventListener("click",() => showEvidence(call));
+    appendRow(rows,[formatTime(call.started_at||call.ended_at),source,tool,purpose,element("div",resultText(call),"result-text"),element("span",call.status,"badge "+call.status),call.pair_state,formatDuration(call.duration_ms),evidence]);
+  }
+  if (!calls.length) appendRow(rows,["条件に一致する呼び出しがありません。"]);
+  document.getElementById("page-label").textContent=(page+1)+" / "+pages+" ページ · "+calls.length+" 件";
+  document.getElementById("previous").disabled=page===0;
+  document.getElementById("next").disabled=page>=pages-1;
+  const repeatRows=document.getElementById("repeat-rows");repeatRows.replaceChildren();
+  for (const group of repeats.slice(0,20)) appendRow(repeatRows,[group[0].source+" / "+group[0].tool_name,element("code",group[0].input_fingerprint.slice(0,16)),group.length,group.filter(call => call.status==="error").length]);
+  if (!repeats.length) appendRow(repeatRows,["同じ入力の繰り返しはありません。"]);
+  const eventRows=document.getElementById("event-rows");eventRows.replaceChildren();
+  for (const event of report.events.filter(scopeMatches).slice(0,300)) {
+    const location=report.locations[event.event_id];
+    appendRow(eventRows,[formatTime(event.observed_at),event.source,event.event,(event.tool_name||"—")+" / "+(event.agent_id||"—"),location.file+":"+location.line]);
+  }
+}
+const quality=document.getElementById("quality");
+for (const [label,value] of [
+  ["入力ファイル",report.quality.files],["不正行",report.quality.invalid_lines],["重複event_id",report.quality.duplicate_events],
+  ["IDなしツールイベント",report.metrics.uncorrelated_tool_events],["開始記録なし",report.metrics.missing_start],["終了記録なし",report.metrics.missing_end],
+  ["曖昧な前後対応",report.metrics.ambiguous],["時刻逆転",report.metrics.clock_reversed],
+  ["目的あり",report.metrics.purposes_recorded||0],["目的未記録",report.metrics.purposes_missing||0],["目的の対応不明",report.metrics.purposes_ambiguous||0],["未対応の目的ログ",report.metrics.unlinked_intents||0],
+  ["SessionStartなし",report.sessions.filter(session => !session.has_start).length],["SessionEndなし",report.sessions.filter(session => !session.has_end).length]
+]) quality.append(element("div",label,"muted"),element("div",value+" 件"));
+for (const control of Object.values(controls)) control.addEventListener("input",() => {page=0;render();});
+document.getElementById("previous").addEventListener("click",() => {page--;render();});
+document.getElementById("next").addEventListener("click",() => {page++;render();});
+document.getElementById("export").addEventListener("click",() => {
+  const ids=new Set(selectedCalls.flatMap(call => [...call.evidence,...(call.purpose_evidence||[])]));
+  const exported={report_version:2,calls:selectedCalls,events:report.events.filter(event => ids.has(event.event_id)),locations:Object.fromEntries([...ids].map(id => [id,report.locations[id]]))};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(exported,null,2)],{type:"application/json"}));
+  const link=element("a");link.href=url;link.download="agent-behavior-selection.json";link.click();
+  setTimeout(() => URL.revokeObjectURL(url),1000);
+});
+render();
+</script>
+</body>
+</html>

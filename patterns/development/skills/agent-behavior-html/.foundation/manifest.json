@@ -1,0 +1,167 @@
+{
+  "name": "claude-codex-cli",
+  "status": "ready",
+  "mode": "new",
+  "domain": [
+    "cli-library"
+  ],
+  "language": "ja",
+  "stack": [
+    {
+      "name": "Claude Code",
+      "version": "2.1.308",
+      "role": "native hooks",
+      "pinned": true
+    },
+    {
+      "name": "Codex",
+      "version": "0.162.0-alpha.17.2",
+      "role": "native hooks",
+      "pinned": true
+    },
+    {
+      "name": "Python",
+      "version": "3.9.6",
+      "role": "stdlib collector and analyzer",
+      "pinned": false
+    },
+    {
+      "name": "HTML",
+      "version": "Living Standard (2026-10-23)",
+      "role": "offline report",
+      "pinned": true
+    }
+  ],
+  "tools": [
+    {
+      "role": "runtime",
+      "language": "Python",
+      "name": "python3",
+      "version": "3.9.6",
+      "pinned": false
+    },
+    {
+      "role": "formatter",
+      "language": "Python/JSON",
+      "name": "scripts/quality.py",
+      "version": "1.0.0",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "Python",
+      "name": "ast and tabnanny",
+      "version": "3.9.6",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "Python",
+      "name": "unittest",
+      "version": "3.9.6",
+      "pinned": false
+    },
+    {
+      "role": "structure",
+      "language": "Python",
+      "name": "scripts/quality.py",
+      "version": "1.0.0",
+      "pinned": false
+    },
+    {
+      "role": "other",
+      "language": "JavaScript",
+      "name": "node --check",
+      "version": "24.22.1",
+      "pinned": false
+    }
+  ],
+  "skills": {
+    "impl": "impl",
+    "review": "review"
+  },
+  "commands": {
+    "check": "make check",
+    "fix": "make fix"
+  },
+  "protected": [
+    "Makefile",
+    "scripts/quality.py",
+    ".claude/settings.json",
+    ".codex/hooks.json",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": [
+      ".agent-logs",
+      "reports",
+      "__pycache__"
+    ]
+  },
+  "guard": {
+    "rule": "TOOL-01",
+    "include": [
+      "scripts/**/*.py",
+      "tests/**/*.py",
+      ".claude/skills/agent-behavior-html/scripts/**/*.py"
+    ],
+    "exclude": [],
+    "suppressions": [
+      {
+        "pattern": "#\\s*(?:noqa|type:\\s*ignore)",
+        "rule": "TOOL-01"
+      },
+      {
+        "pattern": "@unittest\\.skip",
+        "rule": "TOOL-01"
+      }
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {
+        "glob": "**/*.py",
+        "command": "python3 scripts/quality.py --file {file}"
+      }
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 600,
+    "runner": [
+      "claude",
+      "-p",
+      "{prompt}",
+      "--output-format",
+      "json",
+      "--permission-mode",
+      "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools",
+      "Skill",
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(make *)",
+      "Bash(python3 scripts/quality.py *)",
+      "Bash(python3 .claude/skills/agent-behavior-html/scripts/*)",
+      "Bash(git diff *)",
+      "Bash(git status *)"
+    ],
+    "ignore": [
+      ".agent-logs/**",
+      "reports/**"
+    ],
+    "thresholds": {
+      "files": 1.0,
+      "names": 0.8,
+      "content": 0.0
+    }
+  }
+}

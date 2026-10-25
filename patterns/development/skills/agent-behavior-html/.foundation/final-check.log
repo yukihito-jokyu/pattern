@@ -1,0 +1,37 @@
+$ make check
+python3 scripts/quality.py
+quality: formatting, AST, boundaries and JavaScript OK
+python3 -B -m unittest discover -s tests -v
+test_append_and_sessions (test_observer.TestObserver) ... ok
+test_cli_fail_open (test_observer.TestObserver) ... ok
+test_concurrent_append (test_observer.TestObserver) ... ok
+test_declared_purpose_correlation (test_observer.TestObserver) ... ok
+test_explicit_paths (test_observer.TestObserver) ... ok
+test_html_injection (test_observer.TestObserver) ... ok
+test_input_validation (test_observer.TestObserver) ... ok
+test_install_in_place (test_observer.TestObserver) ... ok
+test_install_preflight_and_rollback (test_observer.TestObserver) ... ok
+test_install_preserves_and_is_idempotent (test_observer.TestObserver) ... ok
+test_intent_cli_and_context (test_observer.TestObserver) ... ok
+test_legacy_log_compatibility (test_observer.TestObserver) ... ok
+test_metadata_only (test_observer.TestObserver) ... ok
+test_operation_details (test_observer.TestObserver) ... ok
+test_pairing (test_observer.TestObserver) ... ok
+test_project_hook_configuration (test_observer.TestObserver) ... ok
+test_repeats_and_evidence (test_observer.TestObserver) ... ok
+test_timezone (test_observer.TestObserver) ... ok
+test_unknown_outcomes (test_observer.TestObserver) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 2.442s
+
+OK
+node scripts/check_dashboard.cjs
+dashboard: actions, purposes, results, search, evidence, export and pagination OK (DOM fake)
+python3 .foundation/bin/guard.py --root .
+guard: 違反 0 件
+python3 .foundation/bin/rules_check.py --root . --no-write
+[phase 5] ルール 24 件（format 1、structure 7、test 12、review 2、doc 2）、probe 21 件（結果: 最新）、エラー 0 件、警告 0 件
+
+$ python3 .foundation/bin/rules_check.py --root . --final
+[phase 5 final] ルール 24 件（format 1、structure 7、test 12、review 2、doc 2）、probe 21 件（結果: 最新）、エラー 0 件、警告 0 件

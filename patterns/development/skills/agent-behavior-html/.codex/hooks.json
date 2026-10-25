@@ -1,0 +1,136 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs --context",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs --context",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 /Users/opm008761/Documents/project/practice/claude-codex-cli/.claude/skills/agent-behavior-html/scripts/record.py --source codex --log-dir /Users/opm008761/Documents/project/practice/claude-codex-cli/.agent-logs",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

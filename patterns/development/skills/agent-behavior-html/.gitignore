@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+/.agent-logs/
+/.agent-observer/
+/reports/
+/reports/agent-behavior.html
+/reports/agent-behavior.json

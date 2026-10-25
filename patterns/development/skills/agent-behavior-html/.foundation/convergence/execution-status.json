@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "status": "not_measured",
+  "round": 1,
+  "planned_agents_per_task": 3,
+  "planned_normal_sessions": 9,
+  "planned_final_sessions": 12,
+  "planned_review_sessions": 3,
+  "successful_independent_sessions": 0,
+  "attempts": [
+    {
+      "runner": "subagent API",
+      "result": "Unknown model gpt-6-Luna; no agent started"
+    },
+    {
+      "runner": "claude CLI",
+      "exit": 1,
+      "result": "Not logged in · Please run /login; no tokens used"
+    },
+    {
+      "runner": "codex CLI (sandbox)",
+      "exit": 1,
+      "result": "failed to initialize in-process app-server client: Operation not permitted"
+    },
+    {
+      "runner": "codex CLI (approved escalation; child workspace-write)",
+      "exit": 1,
+      "result": "workspace routing discovery failed; model inference did not start"
+    }
+  ],
+  "metrics": {
+    "files": null,
+    "names": null,
+    "content": null,
+    "review_detection_rate": null
+  },
+  "residuals": "R1-R6 cannot be assessed without independent outputs; no claim of convergence"
+}
