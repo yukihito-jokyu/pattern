@@ -1,0 +1,212 @@
+{
+  "probes_sha256": "a6616587603f7e4fddcf9a3eae847e0b6bb4698cf5931f981f34b0d84c75eade",
+  "command": "make check",
+  "results": [
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-03-a",
+      "rule": "OPS-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-04-a",
+      "rule": "OPS-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-05-a",
+      "rule": "OPS-05",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-06-a",
+      "rule": "OPS-06",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-07-a",
+      "rule": "OPS-07",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TEST-01-a",
+      "rule": "TEST-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-02-a",
+      "rule": "TOOL-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-b",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-04-a",
+      "rule": "TOOL-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    }
+  ],
+  "wiring": [
+    {
+      "command": "python3 -B -m unittest discover -s tests -v",
+      "probe": "ASYNC-01-a",
+      "passed": true
+    },
+    {
+      "command": "python3 scripts/quality.py",
+      "probe": "CODE-01-a",
+      "passed": true
+    },
+    {
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "probe": "TOOL-01-a",
+      "passed": true
+    }
+  ]
+}

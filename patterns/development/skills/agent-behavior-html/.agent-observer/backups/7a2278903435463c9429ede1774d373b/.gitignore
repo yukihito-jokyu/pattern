@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+/.agent-logs/
+/.agent-observer/
+/reports/

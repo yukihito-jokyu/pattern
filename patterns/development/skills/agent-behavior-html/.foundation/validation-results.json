@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-24",
+  "schema_version": 2,
+  "report_version": 2,
+  "checks": [
+    {
+      "command": [
+        "make",
+        "check"
+      ],
+      "exit_code": 0,
+      "output_tail": [
+        "test_pairing (test_observer.TestObserver) ... ok",
+        "test_project_hook_configuration (test_observer.TestObserver) ... ok",
+        "test_repeats_and_evidence (test_observer.TestObserver) ... ok",
+        "test_timezone (test_observer.TestObserver) ... ok",
+        "test_unknown_outcomes (test_observer.TestObserver) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 19 tests in 2.442s",
+        "",
+        "OK",
+        "node scripts/check_dashboard.cjs",
+        "dashboard: actions, purposes, results, search, evidence, export and pagination OK (DOM fake)",
+        "python3 .foundation/bin/guard.py --root .",
+        "guard: 違反 0 件",
+        "python3 .foundation/bin/rules_check.py --root . --no-write",
+        "[phase 5] ルール 24 件（format 1、structure 7、test 12、review 2、doc 2）、probe 21 件（結果: 最新）、エラー 0 件、警告 0 件"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        ".foundation/bin/rules_check.py",
+        "--root",
+        ".",
+        "--final"
+      ],
+      "exit_code": 0,
+      "output_tail": [
+        "[phase 5 final] ルール 24 件（format 1、structure 7、test 12、review 2、doc 2）、probe 21 件（結果: 最新）、エラー 0 件、警告 0 件"
+      ]
+    }
+  ],
+  "contract_tests": 19,
+  "probe_count": 21,
+  "all_probes_passed": true,
+  "probe_wiring_passed": 3,
+  "skill_format": "valid",
+  "demo": {
+    "synthetic": true,
+    "events": 42,
+    "calls": 12,
+    "sessions": 2,
+    "purposes_recorded": 8,
+    "purposes_missing": 4
+  },
+  "dashboard_runtime_qa": "DOM fake; actions, purposes, results, search, purpose evidence and export, filtering, UTC, empty state and pagination passed",
+  "browser_visual_qa": "Playwright launch blocked by macOS MachPortRendezvous permission; see docs/design/v2-validation.md",
+  "real_agent_sessions": {
+    "claude": "omitted at user request",
+    "codex": "Native CLI started; hooks/list discovered 12 enabled project hooks, all untrusted. Tool execution and hook firing not verified: workspace routing discovery failed; doctor reported chatgpt.com DNS/provider access failure. See docs/design/codex-live-validation.md and .foundation/codex-live-check.json."
+  },
+  "independent_convergence": "not rerun for v2 after the user's earlier cancellation",
+  "project_hook_wiring": {
+    "claude": ".claude/settings.json -> record.py --source claude",
+    "codex": ".codex/hooks.json -> record.py --source codex",
+    "test": "generated hook commands executed with synthetic stdin for both providers; 2 calls with purpose and success",
+    "native_session_activation": "restart required; Codex trust via /hooks remains a user action"
+  }
+}
