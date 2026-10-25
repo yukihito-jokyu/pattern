@@ -1,0 +1,30 @@
+--- a/courses/go/lessons/variables/lesson.json
++++ b/courses/go/lessons/variables/lesson.json
+@@ -16,13 +16,13 @@
+     },
+     {
+       "title": "宣言から更新までの流れ",
+-      "body": "var count intはint型の変数を宣言します。初期値を省略したintは0で始まります。name := \"Go\"は関数内で値から型を決める宣言で、nameの型はstringになります。その後のcount = 3は新しい宣言ではなく、既にあるcountの値の更新です。宣言の:=と更新の=を、値の流れの違いとして読み分けます。",
++      "body": "var count intはint型の変数を宣言します。初期値を省略したintは0で始まります。name := \"Go\"は関数内で値から型を決める宣言で、nameの型はstringになります。その後のcount = 4は新しい宣言ではなく、既にあるcountの値の更新です。宣言の:=と更新の=を、値の流れの違いとして読み分けます。",
+       "code": "",
+       "output": ""
+     },
+     {
+       "title": "完全なコードを実行する",
+-      "body": "次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。fmt.Printfの%sにはname、%dにはcountが渡るため、更新後の3が表示されます。2026-10-24にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
++      "body": "次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。fmt.Printfの%sにはname、%dにはcountが渡るため、更新後の4が表示されます。2026-10-24にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
+       "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tvar count int\n\tname := \"Go\"\n\tcount = 3\n\tfmt.Printf(\"%s: %d lessons\\n\", name, count)\n}",
+       "output": "Go: 3 lessons"
+     },
+@@ -37,7 +37,10 @@
+     "prompt": "count = 3の行を取り除くと、最後に何が表示されますか。var count intの直後の値から説明してください。",
+     "answer": "Go: 0 lessonsと表示されます。int型を初期値なしで宣言したcountは0から始まり、更新する行がなくなったため、Printfへ0が渡ります。"
+   },
+-  "sources": ["variables", "short-declarations"],
++  "sources": [
++    "variables",
++    "short-declarations"
++  ],
+   "slides": [
+     {
+       "file": "01.html",

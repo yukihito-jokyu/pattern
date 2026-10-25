@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "control-flow",
+  "title": "制御構文",
+  "goal": "条件による分岐と繰り返しの順序を追える",
+  "prerequisites": [
+    "変数と型の学習を終え、var、:=、=を区別できる",
+    "整数の大小比較と等しさの比較を読める"
+  ],
+  "explanation": [
+    {
+      "title": "値から処理の流れを選ぶ",
+      "body": "前の学びでは、変数に入る値を追いました。次はその値を条件に使います。ifは条件に合う処理を選び、forは条件が続く間、同じ処理を繰り返します。ここでは3つの学習項目を順に処理し、最後だけ復習と表示します。",
+      "code": "",
+      "output": ""
+    },
+    {
+      "title": "forとifを順番に読む",
+      "body": "forはlessonを1にする初期化から始まります。lesson <= 3を確認し、trueなら本体を実行します。本体のifはlesson == 3を判定し、3ならreview、それ以外ならlearnを表示します。本体を終えるたびにlesson++で1増やします。4になるとforの条件がfalseになり、繰り返しを終えます。",
+      "code": "",
+      "output": ""
+    },
+    {
+      "title": "完全なコードを実行する",
+      "body": "次をmain.goとして保存し、go run main.goを実行します。lessonが1と2の回はelse側、3の回はif側へ進みます。2026-10-24にGo 1.27.3で実行し、次の3行と終了コード0を確認しています。",
+      "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfor lesson := 1; lesson <= 3; lesson++ {\n\t\tif lesson == 3 {\n\t\t\tfmt.Println(\"review\", lesson)\n\t\t} else {\n\t\t\tfmt.Println(\"learn\", lesson)\n\t\t}\n\t}\n}",
+      "output": "learn 1\nlearn 2\nreview 3"
+    },
+    {
+      "title": "次の学びにつなぐ",
+      "body": "条件と繰り返しを追えると、処理のまとまりが見えてきます。次の関数では、入力を受け取って結果を返すまとまりに名前を付け、呼び出し元と処理の本体を分けます。",
+      "code": "",
+      "output": ""
+    }
+  ],
+  "exercise": {
+    "prompt": "forの条件をlesson < 3へ変えると、どの行が表示されなくなりますか。条件を確認するタイミングから説明してください。",
+    "answer": "review 3が表示されなくなります。lessonが3になった時点で3 < 3はfalseになり、本体へ入りません。ifの判定に達する前に繰り返しが終わるためです。"
+  },
+  "sources": ["if-statements", "for-statements"],
+  "slides": [
+    {
+      "file": "01.html",
+      "title": "forは本体の前に継続条件を確認する",
+      "notes": [
+        {
+          "id": "loop-note",
+          "target": "loop-condition",
+          "side": "left",
+          "title": "本体に入る前に判定する",
+          "body": "lesson <= 3がtrueである回だけ本体を実行します。初回の1にも、更新後の4にも同じ条件を確認します。"
+        },
+        {
+          "id": "stop-note",
+          "target": "stop-row",
+          "side": "right",
+          "title": "4になった回は実行しない",
+          "body": "3の本体を終えてlesson++で4になると、条件がfalseになります。4の表示は起こりません。"
+        }
+      ]
+    },
+    {
+      "file": "02.html",
+      "title": "ifは同じ繰り返しの中で処理を選ぶ",
+      "notes": [
+        {
+          "id": "condition-note",
+          "target": "condition",
+          "side": "left",
+          "title": "現在の値を比較する",
+          "body": "各回のlessonを3と比較します。1と2ではfalseなのでlearn、3ではtrueなのでreviewを選びます。"
+        },
+        {
+          "id": "review-note",
+          "target": "review-branch",
+          "side": "right",
+          "title": "trueの回だけ復習を表示する",
+          "body": "lessonが3の回だけif側へ進んでreview 3を表示します。次の4はfor条件がfalseとなり、本体にもifにも入りません。"
+        }
+      ]
+    }
+  ]
+}

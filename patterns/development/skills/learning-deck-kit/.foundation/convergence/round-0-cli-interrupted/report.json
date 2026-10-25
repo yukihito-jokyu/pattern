@@ -1,0 +1,678 @@
+{
+  "round": 1,
+  "thresholds": {
+    "files": 1,
+    "names": 0.8,
+    "content": 0
+  },
+  "tasks": [
+    {
+      "id": "T1-add",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 0.917,
+      "names": 0.361,
+      "content": 0.822,
+      "check": null,
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          "courses/go/lessons/zero-values/deck/deck.md",
+          "courses/go/lessons/zero-values/deck/index.html",
+          "courses/go/lessons/zero-values/deck/slides/01.html",
+          "courses/go/lessons/zero-values/deck/slides/02.html",
+          "courses/go/lessons/zero-values/deck/theme.css",
+          "courses/go/lessons/zero-values/lesson.json",
+          "courses/go/profile.json"
+        ],
+        "agent-2": [
+          "courses/go/lessons/zero-values/deck/deck.md",
+          "courses/go/lessons/zero-values/deck/index.html",
+          "courses/go/lessons/zero-values/deck/slides/01.html",
+          "courses/go/lessons/zero-values/deck/slides/02.html",
+          "courses/go/lessons/zero-values/deck/theme.css",
+          "courses/go/lessons/zero-values/lesson.json",
+          "courses/go/profile.json"
+        ],
+        "agent-3": [
+          ".tmp-verify-zero/main.go",
+          "courses/go/lessons/zero-values/deck/deck.md",
+          "courses/go/lessons/zero-values/deck/index.html",
+          "courses/go/lessons/zero-values/deck/slides/01.html",
+          "courses/go/lessons/zero-values/deck/slides/02.html",
+          "courses/go/lessons/zero-values/deck/theme.css",
+          "courses/go/lessons/zero-values/lesson.json",
+          "courses/go/profile.json"
+        ]
+      },
+      "partial_files": [
+        {
+          "path": ".tmp-verify-zero/main.go",
+          "agents": [
+            "agent-3"
+          ]
+        }
+      ],
+      "common_new_names": 1,
+      "partial_new_names": {
+        "agent-1": [
+          "initialized"
+        ],
+        "agent-2": [],
+        "agent-3": [
+          "call",
+          "printf"
+        ]
+      },
+      "file_similarity": [
+        {
+          "path": "courses/go/lessons/zero-values/deck/deck.md",
+          "similarity": 0.772,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 0.756
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/index.html",
+          "similarity": 0.998,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 0.998
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/slides/01.html",
+          "similarity": 0.681,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.636
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/slides/02.html",
+          "similarity": 0.719,
+          "worst_pair": [
+            "agent-2",
+            "agent-3"
+          ],
+          "worst": 0.701
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/theme.css",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "courses/go/lessons/zero-values/lesson.json",
+          "similarity": 0.651,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 0.639
+        },
+        {
+          "path": "courses/go/profile.json",
+          "similarity": 0.933,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 0.899
+        }
+      ],
+      "excerpts": [
+        {
+          "path": "courses/go/lessons/zero-values/lesson.json",
+          "pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "similarity": 0.639,
+          "diff": [
+            "--- agent-1/courses/go/lessons/zero-values/lesson.json",
+            "+++ agent-3/courses/go/lessons/zero-values/lesson.json",
+            "@@ -4,78 +4,81 @@",
+            "   \"title\": \"ゼロ値を確かめる\",",
+            "   \"goal\": \"intのゼロ値が0であると説明できる\",",
+            "   \"prerequisites\": [",
+            "-    \"変数と型の学習項目で、varによる宣言と:=による宣言、そして代入の違いを学んでいる\",",
+            "-    \"fmt.Printfの%sと%dへ変数の値が渡ることを変数教材の実行例で見ている\"",
+            "+    \"変数と型の学びで、varによる宣言と:=による宣言、代入を区別できる\",",
+            "+    \"main関数が処理の入口で、fmtが値の表示を担うことを知っている\"",
+            "   ],",
+            "   \"explanation\": [",
+            "     {",
+            "-      \"title\": \"値を決めずに変数を用意する\",",
+            "-      \"body\": \"変数教材では、var count intで宣言した直後にcount = 3を代入しました。ここではその代入を書かず、宣言だけの変数が何から始まるかを確かめます。Goの言語仕様は、初期値の式を書かなかったとき each variable is initialized to its zero value、つまり各変数はその型のゼロ値で初期化されると定めています。\",",
+            "+      \"title\": \"代入しなくても変数は値を持つ\",",
+            "+      \"body\": \"変数と型の学びでは、宣言した後に代入して値を更新しました。では代入する行が無いとき、変数は何を持つのでしょう。Goでは、初期値を書かない宣言でも変数は空ではなく、型ごとに決まったゼロ値で始まります。この学びでは、int型のcountを代入なしで宣言し、その値が表示まで流れることを確かめます。\",",
+            "       \"code\": \"\",",
+            "       \"output\": \"\"",
+            "     },",
+            "     {",
+            "-      \"title\": \"intのゼロ値は0である\",",
+            "-      \"body\": \"ゼロ値は型ごとに決まっており、intでは0です。したがってvar count intと書いた直後のcountの値は0であり、未設定のまま読めない値が入っているわけではありません。name := \\\"Go\\\"は短い変数宣言で、文字列\\\"Go\\\"を初期値としてnameを宣言します。初期値を書いた宣言では、その値から型が決まります。\",",
+            "+      \"title\": \"ゼロ値は宣言の時点で決まる\",",
+            "+      \"body\": \"var count intは初期値を省略した宣言です。このときcountはintのゼロ値である0で始まります。仕様は、初期式が与えられなければ各変数はそのゼロ値で初期化されると定め、数値型のゼロ値は0と定めています。つまりvar count intはvar count int = 0と同じ意味です。一方のname := \\\"Go\\\"は値から型を決める短い変数宣言で、nameは\\\"Go\\\"で始まります。宣言に初期値があるかないかで、最初の値の決まり方が変わります。\",",
+            "       \"code\": \"\",",
+            "       \"output\": \"\"",
+            "     },",
+            "     {",
+            "       \"title\": \"完全なコードを実行する\",",
+            "-      \"body\": \"次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。宣言から表示までの間にcountへの代入がないため、宣言直後の0がそのままfmt.Printfの%dへ渡り、Go: 0 lessonsと表示されます。2026-10-25に全検査のverify:examplesがGo 1.27.3でこのコードを実行し、次の出力との一致を確認しています。\",",
+            "+      \"body\": \"次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。countへ代入する行はありません。fmt.Printfの%sにはname、%dにはcountが渡るため、宣言直後の0がそのまま表示されます。2026-10-25にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。\",",
+            "       \"code\": \"package main\\n\\nimport \\\"fmt\\\"\\n\\nfunc main() {\\n\\tvar count int\\n\\tname := \\\"Go\\\"\\n\\tfmt.Printf(\\\"%s: %d lessons\\\\n\\\", name, count)\\n}\",",
+            "       \"output\": \"Go: 0 lessons\"",
+            "     },",
+            "     {",
+            "-      \"title\": \"宣言だけの変数を安全に読める\",",
+            "-      \"body\": \"ゼロ値のおかげで、宣言しただけの変数でも値を確定したうえで読めます。この保証があるため、初期値が後で決まる変数を先に用意しておく書き方ができます。値を変えたくなったら、変数教材で学んだ代入でゼロ値を上書きします。\",",
+            "+      \"title\": \"練習で確かめる\",",
+            "+      \"body\": \"宣言直後の0は、代入すると置き換わります。練習では、このコードのPrintfの前にcount = 5の1行を足したときに表示がどう変わるかを、ゼロ値からの変化として説明します。\",",
+            "       \"code\": \"\",",
+            "       \"output\": \"\"",
+            "     }",
+            "   ],",
+            "   \"exercise\": {",
+            "-    \"prompt\": \"fmt.Printfの前にcount = 5の行を足すと、最後に何が表示されますか。宣言直後の0がどうなるかを説明してください。\",",
+            "-    \"answer\": \"Go: 5 lessonsと表示されます。var count intでcountはゼロ値の0から始まりますが、count = 5の代入が0を5へ上書きするため、Printfへは5が渡ります。\"",
+            "+    \"prompt\": \"fmt.Printfの前にcount = 5の1行を足すと、最後に何が表示されますか。宣言直後のゼロ値からの変化として説明してください。\",",
+            "+    \"answer\": \"Go: 5 lessonsと表示されます。var count intでcountはゼロ値の0から始まりますが、count = 5の代入で値が5へ置き換わり、Printfには更新後の5が渡ります。\"",
+            "   },",
+            "-  \"sources\": [\"variables\", \"short-declarations\"],",
+            "+  \"sources\": [",
+            "+    \"variables\",",
+            "+    \"short-declarations\"",
+            "+  ],",
+            "   \"slides\": [",
+            "     {",
+            "       \"file\": \"01.html\",",
+            "-      \"title\": \"初期値を省略した宣言はゼロ値で始まる\",",
+            "+      \"title\": \"初期値を省略したintは0で始まる\",",
+            "       \"notes\": [",
+            "         {",
+            "-          \"id\": \"zero-name-note\",",
+            "-          \"target\": \"zero-name-binding\",",
+            "+          \"id\": \"var-note\",",
+            "+          \"target\": \"var-declaration\",",
+            "           \"side\": \"left\",",
+            "-          \"title\": \"名前は宣言だけでも束ねられる\",",
+            "-          \"body\": \"var count intはcountという名前の変数を、初期値なしで用意する宣言です。代入を書かなくても名前と型は決まります。\"",
+            "+          \"title\": \"初期値を書かない宣言\",",
+            "+          \"body\": \"var count intは初期値を省略した宣言です。変数は空にならず、型のゼロ値で始まります。\"",
+            "         },",
+            "         {",
+            "-          \"id\": \"int-zero-note\",",
+            "-          \"target\": \"int-zero-value\",",
+            "+          \"id\": \"zero-note\",",
+            "+          \"target\": \"zero-value\",",
+            "           \"side\": \"right\",",
+            "           \"title\": \"intのゼロ値は0\",",
+            "-          \"body\": \"初期値を省略した変数は型のゼロ値で初期化されます。intのゼロ値は0です。\""
+          ]
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/slides/01.html",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.636,
+          "diff": [
+            "--- agent-1/courses/go/lessons/zero-values/deck/slides/01.html",
+            "+++ agent-2/courses/go/lessons/zero-values/deck/slides/01.html",
+            "@@ -2,7 +2,7 @@",
+            " <html lang=\"ja\">",
+            "   <head>",
+            "     <meta charset=\"utf-8\" />",
+            "-    <title>初期値を省略した宣言はゼロ値で始まる</title>",
+            "+    <title>初期値を省略したintはゼロ値0で始まる</title>",
+            "     <meta",
+            "       http-equiv=\"Content-Security-Policy\"",
+            "       content=\"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'\"",
+            "@@ -16,37 +16,41 @@",
+            "         <div class=\"folio\">01 / 02</div>",
+            "       </header>",
+            "       <main class=\"content\">",
+            "-        <h2>初期値を省略した宣言はゼロ値で始まる</h2>",
+            "-        <p class=\"lead\">var count intのように初期値を書かないと、countはintのゼロ値0で始まる。</p>",
+            "+        <h2>初期値を省略したintはゼロ値0で始まる</h2>",
+            "+        <p class=\"lead\">代入なしで宣言したcountは、最初から値を持つ。</p>",
+            "         <figure class=\"diagram\">",
+            "-          <svg viewBox=\"0 0 1440 360\" role=\"img\" aria-label=\"countという名前、int型、ゼロ値0の対応\">",
+            "-            <title>countという名前、int型、ゼロ値0の対応</title>",
+            "-            <g data-learning-target=\"zero-name-binding\">",
+            "+          <svg",
+            "+            viewBox=\"0 0 1440 360\"",
+            "+            role=\"img\"",
+            "+            aria-label=\"var count int宣言、代入なし、最初の値0の対応\"",
+            "+          >",
+            "+            <title>var count int宣言、代入なし、最初の値0の対応</title>",
+            "+            <g data-learning-target=\"zero-declaration\">",
+            "               <rect class=\"node\" x=\"64\" y=\"80\" width=\"360\" height=\"200\" rx=\"16\" />",
+            "-              <text class=\"diagram-text\" x=\"244\" y=\"140\" text-anchor=\"middle\">名前</text>",
+            "-              <text class=\"diagram-code\" x=\"244\" y=\"220\" text-anchor=\"middle\">count</text>",
+            "+              <text class=\"diagram-text\" x=\"244\" y=\"140\" text-anchor=\"middle\">宣言</text>",
+            "+              <text class=\"diagram-code\" x=\"244\" y=\"220\" text-anchor=\"middle\">var count int</text>",
+            "             </g>",
+            "             <path class=\"link\" d=\"M 444 180 H 528\" />",
+            "             <path class=\"arrow-head\" d=\"M 524 172 L 540 180 L 524 188 Z\" />",
+            "-            <g data-learning-target=\"int-zero-value\">",
+            "-              <rect class=\"emphasis-node\" x=\"560\" y=\"80\" width=\"360\" height=\"200\" rx=\"16\" />",
+            "-              <text class=\"diagram-text\" x=\"740\" y=\"140\" text-anchor=\"middle\">型</text>",
+            "-              <text class=\"diagram-code\" x=\"740\" y=\"220\" text-anchor=\"middle\">int</text>",
+            "-            </g>",
+            "+            <rect class=\"node\" x=\"560\" y=\"80\" width=\"360\" height=\"200\" rx=\"16\" />",
+            "+            <text class=\"diagram-text\" x=\"740\" y=\"140\" text-anchor=\"middle\">代入</text>",
+            "+            <text class=\"diagram-code\" x=\"740\" y=\"220\" text-anchor=\"middle\">なし</text>",
+            "             <path class=\"link\" d=\"M 940 180 H 1024\" />",
+            "             <path class=\"arrow-head\" d=\"M 1020 172 L 1036 180 L 1020 188 Z\" />",
+            "-            <rect class=\"node\" x=\"1056\" y=\"80\" width=\"320\" height=\"200\" rx=\"16\" />",
+            "-            <text class=\"diagram-text\" x=\"1216\" y=\"140\" text-anchor=\"middle\">最初の値</text>",
+            "-            <text class=\"diagram-result\" x=\"1216\" y=\"230\" text-anchor=\"middle\">0</text>",
+            "+            <g data-learning-target=\"zero-value\">",
+            "+              <rect class=\"emphasis-node\" x=\"1056\" y=\"80\" width=\"320\" height=\"200\" rx=\"16\" />",
+            "+              <text class=\"diagram-text\" x=\"1216\" y=\"140\" text-anchor=\"middle\">最初の値</text>",
+            "+              <text class=\"diagram-result\" x=\"1216\" y=\"230\" text-anchor=\"middle\">0</text>",
+            "+            </g>",
+            "           </svg>",
+            "         </figure>",
+            "         <p class=\"summary\">",
+            "-          初期値を省略して宣言した変数は、その型のゼロ値で初期化される。intのゼロ値は0。",
+            "+          初期値の式を省略すると、変数はその型のゼロ値で初期化される。intのゼロ値は0。",
+            "         </p>",
+            "       </main>",
+            "       <footer class=\"slide-footer\">",
+            "         <div class=\"source\">Go言語仕様：Variable declarations / Short variable declarations</div>",
+            "-        <div>Go 1.27 / 2026-10-25</div>",
+            "+        <div>Go 1.27 / 2026-10-24</div>",
+            "       </footer>",
+            "     </article>",
+            "   </body>"
+          ]
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/slides/02.html",
+          "pair": [
+            "agent-2",
+            "agent-3"
+          ],
+          "similarity": 0.701,
+          "diff": [
+            "--- agent-2/courses/go/lessons/zero-values/deck/slides/02.html",
+            "+++ agent-3/courses/go/lessons/zero-values/deck/slides/02.html",
+            "@@ -2,7 +2,7 @@",
+            " <html lang=\"ja\">",
+            "   <head>",
+            "     <meta charset=\"utf-8\" />",
+            "-    <title>宣言直後の0がそのまま表示へ渡る</title>",
+            "+    <title>宣言直後の0が表示まで渡る</title>",
+            "     <meta",
+            "       http-equiv=\"Content-Security-Policy\"",
+            "       content=\"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'\"",
+            "@@ -16,45 +16,40 @@",
+            "         <div class=\"folio\">02 / 02</div>",
+            "       </header>",
+            "       <main class=\"content\">",
+            "-        <h2>宣言直後の0がそのまま表示へ渡る</h2>",
+            "-        <p class=\"lead\">代入がないため、ゼロ値の0が表示まで変わらない。</p>",
+            "+        <h2>宣言直後の0が表示まで渡る</h2>",
+            "+        <p class=\"lead\">代入する行が無くても、countの0はそのままPrintfへ渡る。</p>",
+            "         <div class=\"code-layout\" data-space-frame=\"composition\" data-space-align=\"center-x\">",
+            "           <section class=\"code-panel\">",
+            "             <h3>コードの流れ</h3>",
+            "             <pre>",
+            " <code>",
+            "-<span data-learning-target=\"zero-flow\">var count int</span>",
+            "-name := &quot;Go&quot;",
+            "-fmt.Printf(&quot;%s: %d lessons\\n&quot;,",
+            "-    name, count)</code>",
+            "+<span data-learning-target=\"var-declaration\">var count int",
+            "+name := &quot;Go&quot;</span>",
+            "+<span data-learning-target=\"printf-call\">fmt.Printf(&quot;%s: %d lessons\\n&quot;,",
+            "+    name, count)</span>",
+            "+</code>",
+            " </pre>",
+            "           </section>",
+            "           <div class=\"connector\" data-space-role=\"connector\" aria-hidden=\"true\">→</div>",
+            "           <figure class=\"code-figure\">",
+            "-            <svg",
+            "-              viewBox=\"0 0 576 400\"",
+            "-              role=\"img\"",
+            "-              aria-label=\"宣言直後のcountの0が表示へそのまま渡る\"",
+            "-            >",
+            "-              <title>宣言直後のcountの0が表示へそのまま渡る</title>",
+            "+            <svg viewBox=\"0 0 576 400\" role=\"img\" aria-label=\"宣言直後の0がそのまま表示へ渡る\">",
+            "+              <title>宣言直後の0がそのまま表示へ渡る</title>",
+            "               <rect class=\"node\" x=\"40\" y=\"46\" width=\"496\" height=\"124\" rx=\"16\" />",
+            "               <text class=\"diagram-text\" x=\"288\" y=\"92\" text-anchor=\"middle\">宣言直後</text>",
+            "               <text class=\"diagram-code\" x=\"288\" y=\"142\" text-anchor=\"middle\">count = 0</text>",
+            "               <path class=\"link\" d=\"M 288 182 V 216\" />",
+            "               <path class=\"arrow-head\" d=\"M 280 208 L 288 224 L 296 208 Z\" />",
+            "-              <g data-learning-target=\"zero-output\">",
+            "-                <rect class=\"emphasis-node\" x=\"40\" y=\"238\" width=\"496\" height=\"124\" rx=\"16\" />",
+            "-                <text class=\"diagram-text\" x=\"288\" y=\"284\" text-anchor=\"middle\">表示</text>",
+            "-                <text class=\"diagram-code\" x=\"288\" y=\"334\" text-anchor=\"middle\">Go: 0 lessons</text>",
+            "-              </g>",
+            "+              <rect class=\"emphasis-node\" x=\"40\" y=\"238\" width=\"496\" height=\"124\" rx=\"16\" />",
+            "+              <text class=\"diagram-text\" x=\"288\" y=\"284\" text-anchor=\"middle\">表示</text>",
+            "+              <text class=\"diagram-code\" x=\"288\" y=\"334\" text-anchor=\"middle\">Go: 0 lessons</text>",
+            "             </svg>",
+            "           </figure>",
+            "         </div>",
+            "-        <p class=\"summary\">表示に使われるのは、代入で変わった値ではなく、宣言直後のゼロ値の0。</p>",
+            "+        <p class=\"summary\">nameにはGo、countには宣言直後の0が渡り、go runはGo: 0 lessonsを表示する。</p>",
+            "       </main>",
+            "       <footer class=\"slide-footer\">",
+            "         <div class=\"source\">Go言語仕様：Variable declarations / Short variable declarations</div>",
+            "-        <div>Go 1.27 / 2026-10-24</div>",
+            "+        <div>Go 1.27 / 2026-10-25</div>",
+            "       </footer>",
+            "     </article>",
+            "   </body>"
+          ]
+        },
+        {
+          "path": "courses/go/lessons/zero-values/deck/deck.md",
+          "pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "similarity": 0.756,
+          "diff": [
+            "--- agent-1/courses/go/lessons/zero-values/deck/deck.md",
+            "+++ agent-3/courses/go/lessons/zero-values/deck/deck.md",
+            "@@ -6,7 +6,7 @@",
+            " ",
+            " ## audience",
+            " ",
+            "-Goを初めて学ぶ人。変数と型の学習項目で、varによる宣言と:=による宣言、代入の違いを学んでいる。",
+            "+Goで変数と型を学んだ人。mainとfmtを使う最小の実行環境は用意できている。",
+            " ",
+            " ## situation",
+            " ",
+            "@@ -17,7 +17,7 @@",
+            " ",
+            " ## takeaway",
+            " ",
+            "-初期値を省略して宣言した変数は、その型のゼロ値で始まる。intのゼロ値は0で、代入しなければその0が表示まで渡る。詳しい前提・完全な実行例・練習は外側の学習ページで読む。",
+            "+初期値を省略して宣言したintは0で始まり、代入せず表示しても0のまま出る。詳しい前提・完全な実行例・練習は外側の学習ページで読む。",
+            " ",
+            " ## constraints",
+            " ",
+            "@@ -28,7 +28,7 @@",
+            " - 禁止: 外部通信 / スクリプト / 未出典の数値",
+            " - しきい値の変更: なし",
+            " - 構図予算: M=80 / frame=composition / axis=row / connector=64 / align=center-x",
+            "-- コード例の実行環境: Go 1.27.3、2026-10-25に全検査のverify:examplesで実行し出力との一致を確認",
+            "+- コード例の実行環境: Go 1.27.3、2026-10-25に実行成功と出力を確認",
+            " ",
+            " ## skills",
+            " ",
+            "@@ -41,11 +41,11 @@",
+            " ",
+            " ## design",
+            " ",
+            "-- palette: bg白、surface淡い灰、ink濃い紺、muted灰紺、line灰、accent青緑の6色",
+            "+- palette: bg白、surface淡い灰、ink濃い紺、muted灰紺、line灰、accent青緑の6色（variables教材と同一のtheme.cssを共用）",
+            " - 書体: 表示と本文はHiragino / Yu Gothic / Noto Sans JP / system-ui、等幅はSFMono / Menlo / monospace",
+            " - 文字サイズ段階: 18 / 24 / 26 / 30 / 36 / 60px",
+            "-- 階層の修正: なし。変数教材で確定した見出し60pxをそのまま使う",
+            "-- signature: 値の移動を青緑の矢印と箱で追い、説明との対応は外側の注目表示で補う",
+            "+- 階層の修正: なし。variables教材と同じ段階を使う",
+            "+- signature: 宣言からゼロ値への流れを青緑の矢印と箱で追い、説明との対応は外側の注目表示で補う",
+            " ",
+            " ## accepted",
+            " ",
+            "@@ -53,7 +53,7 @@",
+            " ",
+            " ## storyboard",
+            " ",
+            "-| id  | claim (言い切りの見出し)             | job  | visual                                   | evidence          | 問い(入) → 問い(出)                                   |",
+            "-| --- | ------------------------------------ | ---- | ---------------------------------------- | ----------------- | ----------------------------------------------------- |",
+            "-| 01  | 初期値を省略した宣言はゼロ値で始まる | 構造 | 名前・型・ゼロ値0の3つの箱を矢印で結ぶ図 | Go言語仕様 go1.27 | 宣言だけの変数は何から始まるか → intはゼロ値0で始まる |",
+            "-| 02  | 宣言直後の0がそのまま表示へ渡る      | 因果 | コードと、宣言直後の0がPrintfへ渡る図    | Go言語仕様 go1.27 | 宣言だけの変数は何から始まるか → 0が表示まで渡る      |",
+            "+| id  | claim (言い切りの見出し)   | job  | visual                                        | evidence          | 問い(入) → 問い(出)                                 |",
+            "+| --- | -------------------------- | ---- | --------------------------------------------- | ----------------- | --------------------------------------------------- |",
+            "+| 01  | 初期値を省略したintは0で始まる | 構造 | 宣言・型・ゼロ値の3つの箱を矢印で結ぶ図     | Go言語仕様 go1.27 | ゼロ値はどこで決まるか → 初期値なしのintは0で始まる |",
+            "+| 02  | 宣言直後の0が表示まで渡る   | 因果 | コードと、count=0が表示Go: 0 lessonsへ渡る図  | Go言語仕様 go1.27 | ゼロ値はどこで決まるか → 宣言直後の0が表示まで渡る   |"
+          ]
+        },
+        {
+          "path": "courses/go/profile.json",
+          "pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "similarity": 0.899,
+          "diff": [
+            "--- agent-1/courses/go/profile.json",
+            "+++ agent-3/courses/go/profile.json",
+            "@@ -6,7 +6,9 @@",
+            "   \"version\": \"1.27\",",
+            "   \"goal\": \"値、条件による処理の分岐、関数の入出力を追い、短いGoプログラムの結果を説明できる\",",
+            "   \"audience\": \"Goで変数、制御構文、関数を初めて学ぶ人\",",
+            "-  \"officialHosts\": [\"go.dev\"],",
+            "+  \"officialHosts\": [",
+            "+    \"go.dev\"",
+            "+  ],",
+            "   \"sources\": [",
+            "     {",
+            "       \"id\": \"variables\",",
+            "@@ -62,19 +64,26 @@",
+            "       \"id\": \"control-flow\",",
+            "       \"title\": \"制御構文\",",
+            "       \"goal\": \"条件による分岐と繰り返しの順序を追える\",",
+            "-      \"dependsOn\": [\"variables\"]",
+            "+      \"dependsOn\": [",
+            "+        \"variables\"",
+            "+      ]",
+            "     },",
+            "     {",
+            "       \"id\": \"functions\",",
+            "       \"title\": \"関数\",",
+            "       \"goal\": \"引数から戻り値までの流れを説明できる\",",
+            "-      \"dependsOn\": [\"variables\", \"control-flow\"]",
+            "+      \"dependsOn\": [",
+            "+        \"variables\",",
+            "+        \"control-flow\"",
+            "+      ]",
+            "     },",
+            "     {",
+            "       \"id\": \"zero-values\",",
+            "       \"title\": \"ゼロ値を確かめる\",",
+            "       \"goal\": \"intのゼロ値が0であると説明できる\",",
+            "-      \"dependsOn\": [\"variables\"]",
+            "+      \"dependsOn\": [",
+            "+        \"variables\"",
+            "+      ]",
+            "     }",
+            "   ]",
+            " }"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T2-change",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 0.444,
+      "names": 1.0,
+      "content": 0.983,
+      "check": null,
+      "converged": false,
+      "changed_files": {
+        "agent-1": [
+          "courses/go/lessons/variables/deck/deck.md",
+          "courses/go/lessons/variables/deck/slides/02.html",
+          "courses/go/lessons/variables/lesson.json"
+        ],
+        "agent-2": [
+          "courses/go/lessons/variables/lesson.json"
+        ],
+        "agent-3": [
+          ".tmp-go-check/main.go",
+          "courses/go/lessons/variables/deck/deck.md",
+          "courses/go/lessons/variables/deck/slides/02.html",
+          "courses/go/lessons/variables/lesson.json"
+        ]
+      },
+      "partial_files": [
+        {
+          "path": ".tmp-go-check/main.go",
+          "agents": [
+            "agent-3"
+          ]
+        },
+        {
+          "path": "courses/go/lessons/variables/deck/deck.md",
+          "agents": [
+            "agent-1",
+            "agent-3"
+          ]
+        },
+        {
+          "path": "courses/go/lessons/variables/deck/slides/02.html",
+          "agents": [
+            "agent-1",
+            "agent-3"
+          ]
+        }
+      ],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [
+        {
+          "path": "courses/go/lessons/variables/deck/deck.md",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "courses/go/lessons/variables/deck/slides/02.html",
+          "similarity": 1.0,
+          "worst_pair": [
+            "agent-1",
+            "agent-3"
+          ],
+          "worst": 1.0
+        },
+        {
+          "path": "courses/go/lessons/variables/lesson.json",
+          "similarity": 0.949,
+          "worst_pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "worst": 0.923
+        }
+      ],
+      "excerpts": [
+        {
+          "path": "courses/go/lessons/variables/lesson.json",
+          "pair": [
+            "agent-1",
+            "agent-2"
+          ],
+          "similarity": 0.923,
+          "diff": [
+            "--- agent-1/courses/go/lessons/variables/lesson.json",
+            "+++ agent-2/courses/go/lessons/variables/lesson.json",
+            "@@ -23,8 +23,8 @@",
+            "     {",
+            "       \"title\": \"完全なコードを実行する\",",
+            "       \"body\": \"次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。fmt.Printfの%sにはname、%dにはcountが渡るため、更新後の4が表示されます。2026-10-24にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。\",",
+            "-      \"code\": \"package main\\n\\nimport \\\"fmt\\\"\\n\\nfunc main() {\\n\\tvar count int\\n\\tname := \\\"Go\\\"\\n\\tcount = 4\\n\\tfmt.Printf(\\\"%s: %d lessons\\\\n\\\", name, count)\\n}\",",
+            "-      \"output\": \"Go: 4 lessons\"",
+            "+      \"code\": \"package main\\n\\nimport \\\"fmt\\\"\\n\\nfunc main() {\\n\\tvar count int\\n\\tname := \\\"Go\\\"\\n\\tcount = 3\\n\\tfmt.Printf(\\\"%s: %d lessons\\\\n\\\", name, count)\\n}\",",
+            "+      \"output\": \"Go: 3 lessons\"",
+            "     },",
+            "     {",
+            "       \"title\": \"次の学びにつなぐ\",",
+            "@@ -34,10 +34,13 @@",
+            "     }",
+            "   ],",
+            "   \"exercise\": {",
+            "-    \"prompt\": \"count = 4の行を取り除くと、最後に何が表示されますか。var count intの直後の値から説明してください。\",",
+            "+    \"prompt\": \"count = 3の行を取り除くと、最後に何が表示されますか。var count intの直後の値から説明してください。\",",
+            "     \"answer\": \"Go: 0 lessonsと表示されます。int型を初期値なしで宣言したcountは0から始まり、更新する行がなくなったため、Printfへ0が渡ります。\"",
+            "   },",
+            "-  \"sources\": [\"variables\", \"short-declarations\"],",
+            "+  \"sources\": [",
+            "+    \"variables\",",
+            "+    \"short-declarations\"",
+            "+  ],",
+            "   \"slides\": [",
+            "     {",
+            "       \"file\": \"01.html\",",
+            "@@ -75,7 +78,7 @@",
+            "           \"target\": \"assignment\",",
+            "           \"side\": \"right\",",
+            "           \"title\": \"同じ変数へ新しい値を入れる\",",
+            "-          \"body\": \"count = 4は既存変数の更新です。最後の表示には更新後の4が使われます。\"",
+            "+          \"body\": \"count = 3は既存変数の更新です。最後の表示には更新後の3が使われます。\"",
+            "         }",
+            "       ]",
+            "     }"
+          ]
+        }
+      ],
+      "check_failures": {},
+      "protected_changes": {}
+    },
+    {
+      "id": "T3-cross",
+      "agents": [
+        "agent-1",
+        "agent-2",
+        "agent-3"
+      ],
+      "files": 1.0,
+      "names": 1.0,
+      "content": null,
+      "check": null,
+      "converged": true,
+      "changed_files": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "partial_files": [],
+      "common_new_names": 0,
+      "partial_new_names": {
+        "agent-1": [],
+        "agent-2": [],
+        "agent-3": []
+      },
+      "file_similarity": [],
+      "excerpts": [],
+      "check_failures": {},
+      "protected_changes": {}
+    }
+  ]
+}

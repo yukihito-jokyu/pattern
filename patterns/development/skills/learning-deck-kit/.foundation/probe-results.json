@@ -1,0 +1,196 @@
+{
+  "probes_sha256": "bb9b7c7735d1c42d9afd7bd54754aa11105c6223260a2f6df653f9db92a528bc",
+  "command": "npm run check",
+  "results": [
+    {
+      "id": "STR-01-a",
+      "rule": "STR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "DEP-01-a",
+      "rule": "DEP-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "NAM-01-a",
+      "rule": "NAM-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-02-a",
+      "rule": "CODE-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-01-a",
+      "rule": "CODE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "CODE-04-a",
+      "rule": "CODE-04",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-01-a",
+      "rule": "ERR-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ERR-02-a",
+      "rule": "ERR-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "STATE-01-a",
+      "rule": "STATE-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "ASYNC-01-a",
+      "rule": "ASYNC-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-01-a",
+      "rule": "OPS-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-02-a",
+      "rule": "OPS-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-03-a",
+      "rule": "OPS-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "OPS-03-b",
+      "rule": "OPS-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-01-a",
+      "rule": "TOOL-01",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-02-a",
+      "rule": "TOOL-02",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    },
+    {
+      "id": "TOOL-03-a",
+      "rule": "TOOL-03",
+      "passed": true,
+      "exit": 1,
+      "matched": true,
+      "reason": "",
+      "output_tail": ""
+    }
+  ],
+  "wiring": [
+    {
+      "command": "npm run structure",
+      "probe": "STR-01-a",
+      "passed": true
+    },
+    {
+      "command": "npm run typecheck",
+      "probe": "CODE-02-a",
+      "passed": true
+    },
+    {
+      "command": "npm run lint",
+      "probe": "CODE-01-a",
+      "passed": true
+    },
+    {
+      "command": "npm test",
+      "probe": "ERR-02-a",
+      "passed": true
+    },
+    {
+      "command": "npm run test:browser",
+      "probe": "STATE-01-a",
+      "passed": true
+    },
+    {
+      "command": "npm run format",
+      "probe": "TOOL-01-a",
+      "passed": true
+    },
+    {
+      "command": "python3 .foundation/bin/guard.py --root .",
+      "probe": "TOOL-02-a",
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>変数は名前・型・値を結び付ける</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'"
+    />
+    <link rel="stylesheet" href="../theme.css" />
+  </head>
+  <body>
+    <article class="slide">
+      <header class="slide-header">
+        <div class="eyebrow">GO / 変数と型</div>
+        <div class="folio">01 / 02</div>
+      </header>
+      <main class="content">
+        <h2>変数は名前・型・値を結び付ける</h2>
+        <p class="lead">countという名前で、int型の値を後から取り出せる。</p>
+        <figure class="diagram">
+          <svg viewBox="0 0 1440 360" role="img" aria-label="countという名前、int型、初期値0の対応">
+            <title>countという名前、int型、初期値0の対応</title>
+            <g data-learning-target="name-binding">
+              <rect class="node" x="64" y="80" width="360" height="200" rx="16" />
+              <text class="diagram-text" x="244" y="140" text-anchor="middle">名前</text>
+              <text class="diagram-code" x="244" y="220" text-anchor="middle">count</text>
+            </g>
+            <path class="link" d="M 444 180 H 528" />
+            <g data-learning-target="type-binding">
+              <rect class="node" x="560" y="80" width="360" height="200" rx="16" />
+              <text class="diagram-text" x="740" y="140" text-anchor="middle">型</text>
+              <text class="diagram-code" x="740" y="220" text-anchor="middle">int</text>
+            </g>
+            <path class="link" d="M 940 180 H 1024" />
+            <rect class="node" x="1056" y="80" width="320" height="200" rx="16" />
+            <text class="diagram-text" x="1216" y="140" text-anchor="middle">最初の値</text>
+            <text class="diagram-result" x="1216" y="230" text-anchor="middle">0</text>
+          </svg>
+        </figure>
+        <p class="summary">型を付けて宣言し、初期値を省略すると、その型のゼロ値から始まる。</p>
+      </main>
+      <footer class="slide-footer">
+        <div class="source">Go言語仕様：Variable declarations / Short variable declarations</div>
+        <div>Go 1.27 / 2026-10-24</div>
+      </footer>
+    </article>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "three_second_read": "変数はcountという名前、intという型、最初の値0を結び付ける。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 4,
+        "density": 4,
+        "visual": 4,
+        "craft": 4
+      },
+      "verdict": "pass",
+      "strength": "対等な3箱と無方向線により、名前・型・値が同時に結び付く構造として読めるため維持する。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    },
+    {
+      "slide": "02",
+      "three_second_read": "countは宣言で0になり、代入で3へ更新される。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 4,
+        "density": 3,
+        "visual": 4,
+        "craft": 4
+      },
+      "verdict": "patch",
+      "strength": "2行のコードと右側の0→3が対応し、宣言と代入以外へ注意をそらす要素がなくなったため、この情報の絞り込みは維持する。",
+      "findings": [
+        {
+          "axis": "density",
+          "severity": "medium",
+          "target": ".code-panel pre",
+          "problem": "800×400pxのコードパネルに対して2行が左上の小さな領域だけを使い、残りの大部分が内容を持たない箱内余白になっている。実測でもスライドのwhitespace_ratioは0.75、largest_void_ratioは0.59で、右の状態図より左の空箱の面積が強く見える。",
+          "fix": ".code-panelを見出しとコード領域の2行グリッドにし、preをalign-self:centerへ置く。さらに.code-panel preだけを36px、line-height:2へ上げ、2行をパネル中央の証拠として読める大きさにする。パネル幅や右側の0→3の状態図は変更しない。",
+          "why": "前回合意した2行への絞り込みを保ちながら、箱の面積を宣言・代入の読み分けに使い、左の根拠と右の値変化の視覚的な釣り合いを取る。"
+        }
+      ],
+      "reopen": false,
+      "user_conflict": []
+    }
+  ],
+  "deck": {
+    "goal_met": "yes",
+    "walkthrough": "1枚目で、変数が名前・型・初期値を同時に結び付ける構造を捉える。2枚目では、countの宣言と代入の2行を、0から3への状態変化に対応させて追う。宣言時の状態から代入後の状態へ進むため、最後には両者を区別して現在値を説明できる。",
+    "scores": {
+      "flow": 5,
+      "non_redundancy": 5,
+      "rhythm": 4,
+      "visual_balance": 4,
+      "emphasis": 4,
+      "resolution": 5,
+      "voice": 5
+    },
+    "actions": [],
+    "verdict": "pass",
+    "reopen": false,
+    "user_conflict": []
+  }
+}

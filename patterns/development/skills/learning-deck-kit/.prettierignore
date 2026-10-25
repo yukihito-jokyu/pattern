@@ -1,0 +1,10 @@
+node_modules/
+build/
+test-results/
+playwright-report/
+.foundation/
+docs/design/enforcement-matrix.md
+.claude/skills/learning-setup/vendor/
+package-lock.json
+vendor-lock.json
+courses/**/deck/index.html

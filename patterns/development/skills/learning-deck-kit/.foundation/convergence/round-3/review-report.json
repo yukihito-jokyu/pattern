@@ -1,0 +1,76 @@
+{
+  "round": 3,
+  "expected": [
+    "CODE-03",
+    "DEP-02",
+    "NAM-02",
+    "OPS-01",
+    "PROC-02",
+    "STR-02",
+    "TEST-01",
+    "TOOL-02"
+  ],
+  "agents": [
+    {
+      "agent": "review/agent-1",
+      "missing": false,
+      "recall": 1.0,
+      "detected": [
+        "CODE-03",
+        "DEP-02",
+        "NAM-02",
+        "OPS-01",
+        "PROC-02",
+        "STR-02",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "missed": [],
+      "extra": [
+        "TOOL-01"
+      ],
+      "verdict": "差し戻し"
+    },
+    {
+      "agent": "review/agent-2",
+      "missing": false,
+      "recall": 1.0,
+      "detected": [
+        "CODE-03",
+        "DEP-02",
+        "NAM-02",
+        "OPS-01",
+        "PROC-02",
+        "STR-02",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "missed": [],
+      "extra": [
+        "TOOL-01"
+      ],
+      "verdict": "差し戻し"
+    },
+    {
+      "agent": "review/agent-3",
+      "missing": false,
+      "recall": 1.0,
+      "detected": [
+        "CODE-03",
+        "DEP-02",
+        "NAM-02",
+        "OPS-01",
+        "PROC-02",
+        "STR-02",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "missed": [],
+      "extra": [
+        "TOOL-01"
+      ],
+      "verdict": "差し戻し"
+    }
+  ],
+  "agreement": true
+}

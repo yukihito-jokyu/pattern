@@ -1,0 +1,55 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "three_second_read": "3と1が関数の処理を通り、戻り値2になる。",
+      "scores": {
+        "claim": 5,
+        "entry": 5,
+        "fit": 5,
+        "density": 4,
+        "visual": 5,
+        "craft": 5
+      },
+      "verdict": "pass",
+      "strength": "入力・処理・戻り値の3箱と一方向の矢印で、値の流れを壊さず読める構図。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    },
+    {
+      "slide": "02",
+      "three_second_read": "宣言中のintとreturnが強調され、int型の戻り値2が呼び出し元のmainへ戻る。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 5,
+        "density": 4,
+        "visual": 5,
+        "craft": 5
+      },
+      "verdict": "pass",
+      "strength": "コード内の型・returnの強調と右図の上向き矢印が対応し、宣言が定める入出力を一続きで追える構図。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    }
+  ],
+  "deck": {
+    "goal_met": "yes",
+    "walkthrough": "1枚目で、具体値3と1が関数に入り、計算を経て2として戻る流れを掴む。2枚目では、同じremainingを使って入力型・出力型・returnの位置をコード上で確認し、戻り値2 : intが呼び出し元へ戻る向きを図で結び直す。挙動から宣言の構造へ進み、最後にmainが戻り値を受け取って使うところまで到達するため、引数から戻り値までの流れを説明できる。",
+    "scores": {
+      "flow": 4,
+      "non_redundancy": 4,
+      "rhythm": 4,
+      "visual_balance": 5,
+      "emphasis": 5,
+      "resolution": 5,
+      "voice": 5
+    },
+    "actions": [],
+    "verdict": "pass",
+    "reopen": false,
+    "user_conflict": []
+  }
+}

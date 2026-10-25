@@ -1,0 +1,524 @@
+# 収束テスト ラウンド 3 のレポート
+
+このファイルは convergence.py diff が生成する。揺れの分類（R1〜R7）と対処は convergence-report.md に書く。
+
+基準: files ≥ 1、names ≥ 0.8、content ≥ 0、check は全員通過、保護ファイルの変更なし
+
+## 指標
+
+| 課題 | files | names | content | check | 保護 | 基準 |
+|---|---|---|---|---|---|---|
+| T1-add | 1.000 | 0.667 | 0.846 | 全員通過 | — | 満たさない |
+| T2-change | 1.000 | 1.000 | 1.000 | 全員通過 | — | 満たす |
+| T3-cross | 1.000 | 1.000 | 1.000 | 全員通過 | — | 満たす |
+| H1-holdout | 0.867 | 1.000 | 0.952 | 全員通過 | — | 満たさない |
+
+## T1-add
+
+### 一部のエージェントだけが作った・変えたファイル
+
+なし（全員が同じファイルの集合を変えた）
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 1 個）
+
+- agent-1: `displayed`
+
+### 内容の類似度が低いファイル
+
+#### `courses/go/lessons/zero-values/deck/deck.md`（agent-1 と agent-2、類似度 0.571）
+
+```diff
+--- agent-1/courses/go/lessons/zero-values/deck/deck.md
++++ agent-2/courses/go/lessons/zero-values/deck/deck.md
+@@ -6,18 +6,18 @@
+ 
+ ## audience
+ 
+-Goを初めて学び、変数と型の教材で宣言と代入の違いを学んだ人。
++「変数と型」を学び、宣言と代入を区別できるGo初学者。
+ 
+ ## situation
+ 
+ - 場面: 置いて読ませる非同期の自習教材
+ - 持ち時間: 制限なし
+ - 1枚の字数の上限: 420字（上流の既定値）
+-- 受付値の根拠: 依頼で到達点と2枚構成を確定。形式はキットの既定値。個別スライドの人間確認は未実施。
++- 受付値の根拠: implの既定値と既存の変数教材。個別スライドの人間確認は未実施。
+ 
+ ## takeaway
+ 
+-初期値を省略したintのcountは0で始まり、代入しなければその0が表示へ渡る。完全な実行例と練習は外側の学習ページで読む。
++初期値なしで宣言したintのcountは0から始まり、代入しなければ0が表示へ渡る。完全な例と練習は外側の学習ページで読む。
+ 
+ ## constraints
+ 
+@@ -27,34 +27,34 @@
+ - キャンバス: 1600×900px
+ - 禁止: 外部通信 / スクリプト / 未出典の数値
+ - しきい値の変更: なし
+-- 構図予算: 01はM=80 / frame=diagram / axis=row / children=[名前,型,初期値]。02はM=80 / frame=composition / axis=row / children=[コード,connector,図] / connector=64 / align=center-x
+-- 既存の変数教材の構図とtheme.cssを再利用する。
+-- コード例の実行環境: Go 1.27.3、2026-10-25に実行成功と出力を確認
++- 構図予算: M=80 / frame=composition / axis=row / connector=64 / align=center-x
++- コード例の実行環境: Go 1.27.3、2026-10-25に実行結果を検証
++- 出典: Go言語仕様 go1.27のVariable declarationsとShort variable declarationsの本文を2026-10-25に取得。Variable declarationsから参照されるThe zero valueも照合。
+ 
+ ## skills
+ 
+-- 調べた経路: このセッションの利用可能スキル一覧とキットの同梱スキル。追加の一覧ツールなし。
+-- デザイン・UI: この静的教材専用のデザインスキルはなし。既存の変数教材とquality-contract.md、whitespace-theory.mdの契約を使用。
+-- 図・ダイアグラム: html-deck/references/figures.md。6箱以下で線の交差がないインラインSVGを再利用し実測する。
+-- データ可視化: なし。統計を扱う教材ではない。
+-- 日本語の文章: 専用スキルなし。キットの説明基準に従う。
+-- 材料の読み取り: Go公式言語仕様の変数宣言と短い変数宣言の本文、そこから参照されるゼロ値を取得しgo1.27を確認。
++- 調べた経路: 利用可能スキル一覧と、この作業コピー内の同梱資料
++- デザイン・UI: この作業で利用する専用スキルはなし。指定された既存の変数教材とquality-contract.md、whitespace-theory.mdを使用
++- 図・ダイアグラム: html-deck/references/figures.md。既存教材の3箱とコード・2箱のインラインSVGを再利用
++- データ可視化: なし。統計データを扱わない
++- 日本語の文章: 専用スキルなし。AGENTS.mdの説明基準に従う
++- 材料の読み取り: Go公式言語仕様のHTML本文
+ 
+ ## design
+ 
+-- palette: bg白、surface淡い灰、ink濃い紺、muted灰紺、line灰、accent青緑の6色
++- palette: 既存の変数教材と同じ白、淡い灰、濃い紺、灰紺、灰、青緑
+ - 書体: 表示と本文はHiragino / Yu Gothic / Noto Sans JP / system-ui、等幅はSFMono / Menlo / monospace
+ - 文字サイズ段階: 18 / 24 / 26 / 30 / 36 / 60px
+-- signature: 変数教材と同じ箱と接続線を使い、名前・型・値の対応から表示までの流れへ進む。
++- signature: 名前・型・ゼロ値の対応を3箱で示し、宣言から表示への0の流れを矢印で追う
+ 
+ ## accepted
+ 
+-- [user] 既存の変数教材と同じ構図を使い、2枚で宣言直後の0が表示まで渡る流れを扱う。
+-- ユーザーによる各スライドの確認は未実施。自動検査の成功と人間の承認を区別する。
++- [user] 既存の変数教材と同じ構図を再利用し、2枚で説明する。
++- 人間による個別スライドの確認は未実施。自動検査の成功と人間の承認を区別する。
+ 
+ ## storyboard
+ 
+ | id | claim (言い切りの見出し) | job | visual | evidence | 問い(入) → 問い(出) |
+ | --- | --- | --- | --- | --- | --- |
+-| 01 | 初期値を省略したintは0で始まる | 構造 | count・int・0の対等な3箱を無方向線で結ぶ図 | Go言語仕様 go1.27 変数宣言とゼロ値 | 代入しないcountには何が入るか → intのゼロ値は0 |
+-| 02 | 宣言直後の0をそのまま表示へ渡す | 因果 | 左の短いコードと、右の宣言直後0から表示結果への図 | Go言語仕様 go1.27 変数宣言と短い変数宣言 | 宣言後の0はどうなるか → 代入しなければ表示も0 |
++| 01 | intのゼロ値は0になる | 構造 | 名前count・型int・ゼロ値0の3箱を無方向線で結ぶ | Go言語仕様 go1.27 | 初期値を書かなかったcountは何を持つか → intのゼロ値0を持つ |
++| 02 | 代入しないcountの0が表示へ渡る | 因果 | コードと宣言直後のcount=0から表示結果へ進む2箱の図 | Go言語仕様 go1.27 | 0はどこで使われるか → Printfへ渡りGo: 0 lessonsになる |
+```
+
+#### `courses/go/lessons/zero-values/lesson.json`（agent-1 と agent-3、類似度 0.663）
+
+```diff
+--- agent-1/courses/go/lessons/zero-values/lesson.json
++++ agent-3/courses/go/lessons/zero-values/lesson.json
+@@ -3,79 +3,76 @@
+   "id": "zero-values",
+   "title": "ゼロ値を確かめる",
+   "goal": "intのゼロ値が0であると説明できる",
+-  "prerequisites": [
+-    "変数と型の教材で、varによる宣言、:=による短い変数宣言、=による代入の違いを学んでいる",
+-    "main関数から処理が始まり、fmt.Printfへ渡した値が表示されることを知っている"
+-  ],
++  "prerequisites": ["「変数と型」で、varによる宣言と=による代入を区別し、変数の値を追える"],
+   "explanation": [
+     {
+-      "title": "初期値を省略した宣言を読む",
+-      "body": "変数と型では、宣言で変数を用意し、代入で値を更新しました。今回はcountへ代入せずに表示し、宣言した直後の値を確かめます。var count intはint型のcountを宣言し、初期値を省略しています。このときcountはintのゼロ値である0で初期化されます。値が未定のまま残るわけではありません。",
++      "title": "代入しない変数の値を確かめる",
++      "body": "「変数と型」では、var count intで宣言した後にcount = 3で値を更新しました。今回は更新する行を置かず、宣言直後の値が表示までどう渡るかを追います。int型は初期値を省略するとゼロ値の0で始まるため、代入前でもcountを参照できます。",
+       "code": "",
+       "output": ""
+     },
+     {
+-      "title": "宣言直後の0から表示までを追う",
+-      "body": "最初にvar count intでcountが0になります。続くname := \"Go\"は関数内で使う短い変数宣言で、文字列からnameの型がstringに決まり、値はGoになります。この宣言はcountを更新しません。countへ代入する行がないため、fmt.Printfへ渡す時点でもcountは0です。%sがnameのGo、%dがcountの0を受け取り、Go: 0 lessonsと表示されます。",
++      "title": "宣言直後の0を表示へ渡す",
++      "body": "var count intは、int型のcountを宣言し、ゼロ値の0で初期化します。name := \"Go\"は関数内の短い変数宣言で、文字列からstring型を決めてnameを用意します。この行はcountを更新しないので、countは0のままです。fmt.Printfの%sへnameのGo、%dへcountの0が順に渡り、Go: 0 lessonsと表示されます。",
+       "code": "",
+       "output": ""
+     },
+     {
+       "title": "完全なコードを実行する",
+-      "body": "次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。表示に0を直接書き込むのではなく、宣言時に0となったcountを渡している点を確認してください。2026-10-25にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
++      "body": "次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。countへ代入する行がないことと、表示された0を対応させてください。2026-10-25にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
+       "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tvar count int\n\tname := \"Go\"\n\tfmt.Printf(\"%s: %d lessons\\n\", name, count)\n}",
+       "output": "Go: 0 lessons"
+     },
+     {
+-      "title": "代入した場合と比べる",
+-      "body": "宣言直後の0は、後から別の値を代入すると変わります。練習では表示前にcountへ5を代入し、Printfが宣言直後の値ではなく、その時点の値を受け取ることを確かめます。",
++      "title": "ゼロ値と代入後の値を読み分ける",
++      "body": "表示された0は、var count intによる初期化で決まった値です。宣言後に代入しなかったため、そのまま表示へ渡りました。次の練習では表示前に5を代入し、宣言直後の値と表示時点の値の違いを確かめます。",
+       "code": "",
+       "output": ""
+     }
+   ],
+   "exercise": {
+-    "prompt": "fmt.Printfの直前にcount = 5の行を加えると、何が表示されますか。宣言直後から表示までのcountの値を説明してください。",
+-    "answer": "Go: 5 lessonsと表示されます。var count intの直後はゼロ値の0ですが、count = 5で5へ更新されます。表示前の値が5になったため、Printfの%dへ5が渡ります。"
++    "prompt": "fmt.Printfの直前にcount = 5を追加して実行すると、何が表示されますか。宣言直後と代入後のcountの値を順に説明してください。",
++    "answer": "Go: 5 lessonsと表示されます。var count intの直後はゼロ値の0ですが、count = 5で既存のcountが5へ更新されます。Printfへ渡るのは表示時点の値なので、%dには5が入ります。"
+   },
+   "sources": ["variables", "short-declarations"],
+   "slides": [
+     {
+       "file": "01.html",
+-      "title": "初期値を省略したintは0で始まる",
++      "title": "intは初期値を省略すると0で始まる",
+       "notes": [
+         {
+-          "id": "declaration-note",
+-          "target": "declaration-binding",
++          "id": "name-note",
++          "target": "name-binding",
+           "side": "left",
+-          "title": "countは宣言した変数の名前",
+-          "body": "var count intで用意した変数をcountという名前で参照します。後で表示するときも同じ名前から値を取り出します。"
++          "title": "同じcountを参照する",
++          "body": "countという名前は、宣言で用意した変数を指します。後のPrintfもこの変数の現在の値を参照します。"
+         },
+         {
+-          "id": "type-note",
+-          "target": "type-binding",
++          "id": "zero-value-note",
++          "target": "zero-value",
+           "side": "right",
+-          "title": "intのゼロ値は0",
+-          "body": "countの型はintです。初期値を省略したため、その型のゼロ値で初期化され、宣言直後から0を持ちます。"
++          "title": "intの最初の値は0",
++          "body": "var count intでは初期値を省略しています。int型のゼロ値で初期化されるため、宣言直後からcountの値は0です。"
+         }
+       ]
+```
+
+#### `courses/go/lessons/zero-values/deck/slides/01.html`（agent-1 と agent-3、類似度 0.780）
+
+```diff
+--- agent-1/courses/go/lessons/zero-values/deck/slides/01.html
++++ agent-3/courses/go/lessons/zero-values/deck/slides/01.html
+@@ -2,7 +2,7 @@
+ <html lang="ja">
+   <head>
+     <meta charset="utf-8" />
+-    <title>初期値を省略したintは0で始まる</title>
++    <title>intは初期値を省略すると0で始まる</title>
+     <meta
+       http-equiv="Content-Security-Policy"
+       content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'"
+@@ -16,12 +16,12 @@
+         <div class="folio">01 / 02</div>
+       </header>
+       <main class="content">
+-        <h2>初期値を省略したintは0で始まる</h2>
+-        <p class="lead">var count intで用意したcountには、最初から0が入る。</p>
++        <h2>intは初期値を省略すると0で始まる</h2>
++        <p class="lead">var count intで宣言すると、countのゼロ値は0になる。</p>
+         <figure class="diagram">
+-          <svg viewBox="0 0 1440 360" role="img" aria-label="countという名前、int型、初期値0の対応">
+-            <title>countという名前、int型、初期値0の対応</title>
+-            <g data-learning-target="declaration-binding">
++          <svg viewBox="0 0 1440 360" role="img" aria-label="countという名前、int型、ゼロ値0の対応">
++            <title>countという名前、int型、ゼロ値0の対応</title>
++            <g data-learning-target="name-binding">
+               <rect class="node" x="64" y="80" width="360" height="200" rx="16" />
+               <text class="diagram-text" x="244" y="140" text-anchor="middle">名前</text>
+               <text class="diagram-code" x="244" y="220" text-anchor="middle">count</text>
+@@ -33,12 +33,14 @@
+               <text class="diagram-code" x="740" y="220" text-anchor="middle">int</text>
+             </g>
+             <path class="link" d="M 940 180 H 1024" />
+-            <rect class="node" x="1056" y="80" width="320" height="200" rx="16" />
+-            <text class="diagram-text" x="1216" y="140" text-anchor="middle">最初の値</text>
+-            <text class="diagram-result" x="1216" y="230" text-anchor="middle">0</text>
++            <g data-learning-target="zero-value">
++              <rect class="node" x="1056" y="80" width="320" height="200" rx="16" />
++              <text class="diagram-text" x="1216" y="140" text-anchor="middle">ゼロ値</text>
++              <text class="diagram-result" x="1216" y="230" text-anchor="middle">0</text>
++            </g>
+           </svg>
+         </figure>
+-        <p class="summary">ゼロ値は型ごとの初期値。intのゼロ値は0。</p>
++        <p class="summary">intのゼロ値は0。値を代入しなくても、宣言直後から0を参照できる。</p>
+       </main>
+       <footer class="slide-footer">
+         <div class="source">Go言語仕様：Variable declarations / Short variable declarations</div>
+```
+
+#### `courses/go/lessons/zero-values/deck/slides/02.html`（agent-2 と agent-3、類似度 0.807）
+
+```diff
+--- agent-2/courses/go/lessons/zero-values/deck/slides/02.html
++++ agent-3/courses/go/lessons/zero-values/deck/slides/02.html
+@@ -2,7 +2,7 @@
+ <html lang="ja">
+   <head>
+     <meta charset="utf-8" />
+-    <title>代入しないcountの0が表示へ渡る</title>
++    <title>宣言直後の0がそのまま表示へ渡る</title>
+     <meta
+       http-equiv="Content-Security-Policy"
+       content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'"
+@@ -16,36 +16,38 @@
+         <div class="folio">02 / 02</div>
+       </header>
+       <main class="content">
+-        <h2>代入しないcountの0が表示へ渡る</h2>
+-        <p class="lead">countへ代入する行がないので、宣言直後の0を表示に使う。</p>
++        <h2>宣言直後の0がそのまま表示へ渡る</h2>
++        <p class="lead">countへ代入する行がないため、Printfも0を受け取る。</p>
+         <div class="code-layout" data-space-frame="composition" data-space-align="center-x">
+           <section class="code-panel">
+             <h3>コードの流れ</h3>
+             <pre><code><span data-learning-target="declaration">var count int</span>
+ name := "Go"
+ fmt.Printf("%s: %d lessons\n",
+-    <span data-learning-target="display">name, count</span>)</code></pre>
++    name, count)</code></pre>
+           </section>
+           <div class="connector" data-space-role="connector" aria-hidden="true">→</div>
+           <figure class="code-figure">
+             <svg
+               viewBox="0 0 576 400"
+               role="img"
+-              aria-label="宣言直後のcountの0がGo: 0 lessonsの表示へ渡る"
++              aria-label="宣言直後のcountの0がそのまま表示に使われる"
+             >
+-              <title>宣言直後のcountの0がGo: 0 lessonsの表示へ渡る</title>
++              <title>宣言直後のcountの0がそのまま表示に使われる</title>
+               <rect class="node" x="40" y="46" width="496" height="124" rx="16" />
+               <text class="diagram-text" x="288" y="92" text-anchor="middle">宣言直後</text>
+               <text class="diagram-code" x="288" y="142" text-anchor="middle">count = 0</text>
+               <path class="link" d="M 288 182 V 216" />
+               <path class="arrow-head" d="M 280 208 L 288 224 L 296 208 Z" />
+-              <rect class="emphasis-node" x="40" y="238" width="496" height="124" rx="16" />
+-              <text class="diagram-text" x="288" y="284" text-anchor="middle">表示結果</text>
+-              <text class="diagram-code" x="288" y="334" text-anchor="middle">Go: 0 lessons</text>
++              <g data-learning-target="output">
++                <rect class="emphasis-node" x="40" y="238" width="496" height="124" rx="16" />
++                <text class="diagram-text" x="288" y="284" text-anchor="middle">表示</text>
++                <text class="diagram-code" x="288" y="334" text-anchor="middle">Go: 0 lessons</text>
++              </g>
+             </svg>
+           </figure>
+         </div>
+-        <p class="summary">nameのGoとcountの0をPrintfへ渡すと、Go: 0 lessonsと表示される。</p>
++        <p class="summary">nameのGoとcountの0が、%sと%dへ順に渡り、Go: 0 lessonsと表示される。</p>
+       </main>
+       <footer class="slide-footer">
+         <div class="source">Go言語仕様：Variable declarations / Short variable declarations</div>
+```
+
+#### `courses/go/lessons/zero-values/deck/index.html`（agent-1 と agent-2、類似度 0.999）
+
+```diff
+--- agent-1/courses/go/lessons/zero-values/deck/index.html
++++ agent-2/courses/go/lessons/zero-values/deck/index.html
+@@ -547,8 +547,8 @@
+ // 手で書き換えても次回の検査で上書きされる。順序はファイル名順。
+ // <slides>
+ const slides0 = [
+-  ["slides/01.html", "初期値を省略したintは0で始まる"],
+-  ["slides/02.html", "宣言直後の0をそのまま表示へ渡す"]
++  ["slides/01.html", "intのゼロ値は0になる"],
++  ["slides/02.html", "代入しないcountの0が表示へ渡る"]
+ ];
+ // </slides>
+ 
+```
+
+
+## T2-change
+
+### 一部のエージェントだけが作った・変えたファイル
+
+なし（全員が同じファイルの集合を変えた）
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 0 個）
+
+なし
+
+### 内容の類似度が低いファイル
+
+なし（共通して変えたファイルの中身は全員一致）
+
+## T3-cross
+
+### 一部のエージェントだけが作った・変えたファイル
+
+なし（全員が同じファイルの集合を変えた）
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 0 個）
+
+なし
+
+### 内容の類似度が低いファイル
+
+なし（共通して変えたファイルの中身は全員一致）
+
+## H1-holdout
+
+### 一部のエージェントだけが作った・変えたファイル
+
+| ファイル | agent-1 | agent-2 | agent-3 |
+|---|---|---|---|
+| `courses/go/profile.json` | – | ✓ | ✓ |
+
+### 一部のエージェントだけが作った名前（全員に共通の新しい名前は 0 個）
+
+なし
+
+### 内容の類似度が低いファイル
+
+#### `courses/go/lessons/functions/deck/slides/01.html`（agent-1 と agent-2、類似度 0.836）
+
+```diff
+--- agent-1/courses/go/lessons/functions/deck/slides/01.html
++++ agent-2/courses/go/lessons/functions/deck/slides/01.html
+@@ -17,19 +17,13 @@
+       </header>
+       <main class="content">
+         <h2>関数は入力を受け取り結果を返す</h2>
+-        <p class="lead">remaining(5, 2)は、総数5と完了2を受け取って、残りの3を返す。</p>
++        <p class="lead">remaining(5, 2)は、総数5と完了2を受け取って、残り3を返す。</p>
+         <figure class="diagram">
+-          <svg
+-            viewBox="0 0 1440 360"
+-            role="img"
+-            aria-label="総数5と完了2が関数へ渡り、残りの3が戻る"
+-          >
+-            <title>総数5と完了2が関数へ渡り、残りの3が戻る</title>
++          <svg viewBox="0 0 1440 360" role="img" aria-label="総数5と完了2が関数へ渡り、残り3が戻る">
++            <title>総数5と完了2が関数へ渡り、残り3が戻る</title>
+             <g data-learning-target="arguments">
+               <rect class="node" x="60" y="80" width="360" height="200" rx="16" />
+-              <text class="diagram-text" x="240" y="140" text-anchor="middle">
+-                入力（総数, 完了）
+-              </text>
++              <text class="diagram-text" x="240" y="140" text-anchor="middle">入力</text>
+               <text class="diagram-result" x="240" y="220" text-anchor="middle">5, 2</text>
+             </g>
+             <path class="link" d="M 440 180 H 524" />
+@@ -42,7 +36,7 @@
+             <path class="arrow-head" d="M 1016 172 L 1032 180 L 1016 188 Z" />
+             <g data-learning-target="return-value">
+               <rect class="node" x="1052" y="80" width="328" height="200" rx="16" />
+-              <text class="diagram-text" x="1216" y="140" text-anchor="middle">戻り値（残り）</text>
++              <text class="diagram-text" x="1216" y="140" text-anchor="middle">戻り値</text>
+               <text class="diagram-result" x="1216" y="230" text-anchor="middle">3</text>
+             </g>
+           </svg>
+@@ -51,7 +45,7 @@
+       </main>
+       <footer class="slide-footer">
+         <div class="source">Go言語仕様：Function declarations / Function calls</div>
+-        <div>Go 1.27 / 2026-10-24</div>
++        <div>Go 1.27 / 2026-10-25</div>
+       </footer>
+     </article>
+   </body>
+```
+
+#### `courses/go/lessons/functions/lesson.json`（agent-1 と agent-3、類似度 0.892）
+
+```diff
+--- agent-1/courses/go/lessons/functions/lesson.json
++++ agent-3/courses/go/lessons/functions/lesson.json
+@@ -10,19 +10,19 @@
+   "explanation": [
+     {
+       "title": "処理のまとまりに名前を付ける",
+-      "body": "ここまでで変数の値と処理の順序を追いました。関数を使うと、処理のまとまりに名前を付けて、入力と結果をはっきり分けられます。この学びでは、総数5件と完了2件から残りの件数を求めるremainingを使います。",
++      "body": "ここまでで変数の値と処理の順序を追いました。関数を使うと、処理のまとまりに名前を付けて、入力と結果をはっきり分けられます。この学びでは、総数5件と完了2件から残り3件を求めるremainingを使います。",
+       "code": "",
+       "output": ""
+     },
+     {
+       "title": "引数から戻り値までを追う",
+-      "body": "remaining(5, 2)を呼ぶと、総数の5がtotal、完了件数の2がcompletedへ順に渡ります。関数の本体はtotal - completedで5 - 2を計算し、returnで残りの3を呼び出し元へ返します。宣言の最後のintは戻り値の型です。関数内で表示するのではなく、結果を受け取ったmainがfmt.Printlnで表示します。",
++      "body": "remaining(5, 2)を呼ぶと、総数の5がtotal、完了の2がcompletedへ順に渡ります。関数の本体はtotal - completed、つまり5 - 2を計算し、returnで残りの3を呼び出し元へ返します。宣言の最後のintは戻り値の型です。関数内で表示するのではなく、結果を受け取ったmainがfmt.Printlnで表示します。",
+       "code": "",
+       "output": ""
+     },
+     {
+       "title": "完全なコードを実行する",
+-      "body": "次をmain.goとして保存し、go run main.goを実行します。remainingは総数5件と完了2件から残りの3を計算し、mainは返ってきた値をremaining 3と表示します。2026-10-25にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
++      "body": "次をmain.goとして保存し、go run main.goを実行します。remainingは総数5と完了2を受け取って残り3を返し、mainはremaining 3と表示します。2026-10-25にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
+       "code": "package main\n\nimport \"fmt\"\n\nfunc remaining(total int, completed int) int {\n\treturn total - completed\n}\n\nfunc main() {\n\tfmt.Println(\"remaining\", remaining(5, 2))\n}",
+       "output": "remaining 3"
+     },
+@@ -34,8 +34,8 @@
+     }
+   ],
+   "exercise": {
+-    "prompt": "総数5件・完了2件としてremaining(5, 2)と呼び出した場合、totalとcompletedには何が入り、何が返りますか。引数の順番と、mainでの表示も説明してください。",
+-    "answer": "第1引数の総数5がtotal、第2引数の完了件数2がcompletedへ渡ります。5 - 2を計算し、returnによって残りの件数を表すint型の3が呼び出し元へ返ります。mainがfmt.Printlnで表示するとremaining 3になります。"
++    "prompt": "総数5件、完了2件としてremaining(5, 2)を呼び出すと、totalとcompletedには何が入り、何が返りますか。引数の順番と、mainでの表示も説明してください。",
++    "answer": "第1引数の総数5がtotal、第2引数の完了2がcompletedへ渡ります。5 - 2を計算し、returnによって残りを表すint型の3が呼び出し元へ返ります。mainのfmt.Printlnはremaining 3と表示します。"
+   },
+   "sources": ["function-declarations"],
+   "slides": [
+@@ -48,14 +48,14 @@
+           "target": "arguments",
+           "side": "left",
+           "title": "順番に入力を渡す",
+-          "body": "remaining(5, 2)では、第1引数の総数5がtotal、第2引数の完了件数2がcompletedへ渡ります。値の順番が引数の対応を決めます。"
++          "body": "remaining(5, 2)では、第1引数の総数5がtotal、第2引数の完了2がcompletedへ渡ります。値の順番が引数の対応を決めます。"
+         },
+         {
+           "id": "return-note",
+           "target": "return-value",
+           "side": "right",
+           "title": "計算結果が呼び出し元へ戻る",
+-          "body": "total - completedで5 - 2を計算し、残りの3をreturnで返します。返った値を、呼び出し元で表示や別の計算に使えます。"
++          "body": "total - completed、つまり5 - 2の結果である残り3をreturnで返します。返った値を、呼び出し元で表示や別の計算に使えます。"
+         }
+       ]
+     },
+@@ -68,14 +68,14 @@
+           "target": "parameters",
+           "side": "left",
+           "title": "引数と戻り値の型を読む",
+-          "body": "totalとcompletedはint型の入力です。引数の閉じ括弧の後のintは、関数がint型の結果を返すことを示します。"
++          "body": "totalは総数5、completedは完了2を受け取るint型の入力です。引数の閉じ括弧の後のintは、関数がint型の結果を返すことを示します。"
+         },
+         {
+           "id": "return-statement-note",
+           "target": "return-statement",
+           "side": "right",
+           "title": "結果を返して処理を終える",
+-          "body": "return total - completedが5 - 2の計算結果をint型の値3として呼び出し元へ返し、関数の処理を終えます。この3は残りの件数で、mainがremaining 3と表示します。"
++          "body": "return total - completedが計算した残り3をint型の値として呼び出し元へ返し、関数の処理を終えます。戻った値の使い方は呼び出し元が決めます。"
+         }
+       ]
+     }
+```
+
+#### `courses/go/lessons/functions/deck/deck.md`（agent-1 と agent-3、類似度 0.976）
+
+```diff
+--- agent-1/courses/go/lessons/functions/deck/deck.md
++++ agent-3/courses/go/lessons/functions/deck/deck.md
+@@ -28,7 +28,7 @@
+ - 禁止: 外部通信 / スクリプト / 未出典の数値
+ - しきい値の変更: なし
+ - 構図予算: M=80 / frame=composition / axis=row / connector=64 / align=center-x
+-- コード例の実行環境: Go 1.27.3、2026-10-25に実行成功と出力を確認
++- コード例の実行環境: Go 1.27.3、2026-10-25に総数5・完了2の例を実行し、remaining 3と終了コード0を確認
+ 
+ ## skills
+ 
+```
+
+#### `courses/go/lessons/functions/deck/slides/02.html`（agent-1 と agent-2、類似度 0.986）
+
+```diff
+--- agent-1/courses/go/lessons/functions/deck/slides/02.html
++++ agent-2/courses/go/lessons/functions/deck/slides/02.html
+@@ -67,7 +67,7 @@
+       </main>
+       <footer class="slide-footer">
+         <div class="source">Go言語仕様：Function declarations / Return statements</div>
+-        <div>Go 1.27 / 2026-10-24</div>
++        <div>Go 1.27 / 2026-10-25</div>
+       </footer>
+     </article>
+   </body>
+```

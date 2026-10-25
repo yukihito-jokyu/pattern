@@ -1,0 +1,55 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "three_second_read": "lessonが1〜3の間は本体を実行し、4で条件がfalseになって繰り返しが終わる。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 4,
+        "density": 4,
+        "visual": 4,
+        "craft": 4
+      },
+      "verdict": "pass",
+      "strength": "1〜3の継続行と4の終了行を上下に対比した構図は、条件確認が本体より先だという主張を支えている。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    },
+    {
+      "slide": "02",
+      "three_second_read": "lesson 1と2ではlearn、3ではreviewを表示し、4ではforがfalseになって終了する。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 5,
+        "density": 4,
+        "visual": 5,
+        "craft": 4
+      },
+      "verdict": "pass",
+      "strength": "1から4へ進む横トレースの中にforとifの結果を重ねた構図は、反復と分岐を同時に追うという役割を直接体現している。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    }
+  ],
+  "deck": {
+    "goal_met": "yes",
+    "walkthrough": "1枚目で、forが本体より先に継続条件を確認し、lessonが4になると本体へ入らず終了することを理解する。2枚目では、その反復をlesson 1から4まで展開し、各回のforとifの結果、およびlearn 1、learn 2、review 3という表示順を一続きで追う。最後に4ではifを実行せず終了するところまで示されるため、分岐と繰り返しの順序が統合された状態で決着する。",
+    "scores": {
+      "flow": 5,
+      "non_redundancy": 4,
+      "rhythm": 5,
+      "visual_balance": 5,
+      "emphasis": 5,
+      "resolution": 5,
+      "voice": 5
+    },
+    "actions": [],
+    "verdict": "pass",
+    "reopen": false,
+    "user_conflict": []
+  }
+}
