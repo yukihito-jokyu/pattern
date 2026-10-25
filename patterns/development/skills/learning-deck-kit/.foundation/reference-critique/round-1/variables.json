@@ -1,0 +1,73 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "three_second_read": "変数には名前・型・最初の値があり、countはint型なので0から始まる。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 3,
+        "density": 4,
+        "visual": 3,
+        "craft": 4
+      },
+      "verdict": "patch",
+      "strength": "大見出しと3要素の大きな箱は、名前・型・値という主張の構成要素を一目で特定できるため維持する。",
+      "findings": [
+        {
+          "axis": "fit",
+          "severity": "high",
+          "target": ".diagram .link, .diagram .arrow-head, .diagram .emphasis-node",
+          "problem": "名前→型→最初の値という一方向の矢印と型だけの強調により、3要素を結び付ける構造ではなく、名前が型を経て値へ変換される手順に見える。",
+          "fix": "2つの.arrow-headを削除して.linkを方向のない接続線にし、中央の.emphasis-nodeも.nodeと同じ線色・線幅へそろえる。3箱を対等な構成要素として見せる。",
+          "why": "変数が名前・型・値を同時に結び付けるというclaimを、誤った処理順序を示さずに図として読めるようにする。"
+        }
+      ],
+      "reopen": false,
+      "user_conflict": []
+    },
+    {
+      "slide": "02",
+      "three_second_read": "countは宣言直後の0から、代入後の3へ更新される。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 4,
+        "density": 3,
+        "visual": 4,
+        "craft": 4
+      },
+      "verdict": "patch",
+      "strength": "右側の0→3の縦方向の状態遷移は、宣言と代入の因果を直接見せているため維持する。",
+      "findings": [
+        {
+          "axis": "density",
+          "severity": "medium",
+          "target": ".code-panel code",
+          "problem": "nameの短縮宣言とfmt.Printfがcountの宣言・代入と同じ強さで並び、外側教材にある完全なコードまで追わないといけないように見えて、0→3の更新から注意をそらす。",
+          "fix": "コード欄は`var count int`と`count = 3`の2行だけに絞り、既存のdata-learning-targetを各行に残す。完全な実行例と出力の説明は外側学習ページに委ねる。",
+          "why": "宣言と代入の差だけを左の根拠として残し、右の0→3との対応を読み手が即座に追えるようにする。"
+        }
+      ],
+      "reopen": false,
+      "user_conflict": []
+    }
+  ],
+  "deck": {
+    "goal_met": "yes",
+    "walkthrough": "1枚目で、変数が名前・型・初期値を持ち、intの初期値が0になることを捉える。2枚目では、その宣言直後の0に対して代入を行い、現在値が3へ変わる流れを追う。宣言時の状態から代入後の状態へ進むため、最後には宣言と代入を区別してcountの値を追える。",
+    "scores": {
+      "flow": 5,
+      "non_redundancy": 5,
+      "rhythm": 4,
+      "visual_balance": 5,
+      "emphasis": 4,
+      "resolution": 5,
+      "voice": 5
+    },
+    "actions": [],
+    "verdict": "pass",
+    "reopen": false,
+    "user_conflict": []
+  }
+}

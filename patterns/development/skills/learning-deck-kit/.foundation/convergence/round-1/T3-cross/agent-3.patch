@@ -1,0 +1,69 @@
+--- a/courses/go/lessons/control-flow/lesson.json
++++ b/courses/go/lessons/control-flow/lesson.json
+@@ -31,13 +31,19 @@
+       "body": "条件と繰り返しを追えると、処理のまとまりが見えてきます。次の関数では、入力を受け取って結果を返すまとまりに名前を付け、呼び出し元と処理の本体を分けます。",
+       "code": "",
+       "output": ""
++    },
++    {
++      "title": "版を確かめる",
++      "body": "この教材の対象はGo1.27です。利用中の版はgo versionで確認し、異なる版では公式リリース履歴も確認してください。",
++      "code": "",
++      "output": ""
+     }
+   ],
+   "exercise": {
+     "prompt": "forの条件をlesson < 3へ変えると、どの行が表示されなくなりますか。条件を確認するタイミングから説明してください。",
+     "answer": "review 3が表示されなくなります。lessonが3になった時点で3 < 3はfalseになり、本体へ入りません。ifの判定に達する前に繰り返しが終わるためです。"
+   },
+-  "sources": ["if-statements", "for-statements"],
++  "sources": ["if-statements", "for-statements", "release-history"],
+   "slides": [
+     {
+       "file": "01.html",
+--- a/courses/go/lessons/functions/lesson.json
++++ b/courses/go/lessons/functions/lesson.json
+@@ -31,13 +31,19 @@
+       "body": "変数は値に名前を付け、条件はその値から進む処理を選び、関数は処理の入力と結果を分けます。短いプログラムを読むときは、値がどこで決まり、どの処理へ渡り、どこへ戻るかを順に追ってください。",
+       "code": "",
+       "output": ""
++    },
++    {
++      "title": "版を確かめる",
++      "body": "この教材の対象はGo1.27です。利用中の版はgo versionで確認し、異なる版では公式リリース履歴も確認してください。",
++      "code": "",
++      "output": ""
+     }
+   ],
+   "exercise": {
+     "prompt": "remaining(5, 2)と呼び出した場合、totalとcompletedには何が入り、何が返りますか。引数の順番も説明してください。",
+     "answer": "第1引数の5がtotal、第2引数の2がcompletedへ渡ります。5 - 2を計算し、returnによってint型の3が呼び出し元へ返ります。"
+   },
+-  "sources": ["function-declarations"],
++  "sources": ["function-declarations", "release-history"],
+   "slides": [
+     {
+       "file": "01.html",
+--- a/courses/go/lessons/variables/lesson.json
++++ b/courses/go/lessons/variables/lesson.json
+@@ -31,13 +31,19 @@
+       "body": "変数の値を追えるようになると、その値を比較して処理を選べます。次の制御構文では、lessonの値に応じて学習と復習を切り替えます。",
+       "code": "",
+       "output": ""
++    },
++    {
++      "title": "版を確かめる",
++      "body": "この教材の対象はGo1.27です。利用中の版はgo versionで確認し、異なる版では公式リリース履歴も確認してください。",
++      "code": "",
++      "output": ""
+     }
+   ],
+   "exercise": {
+     "prompt": "count = 3の行を取り除くと、最後に何が表示されますか。var count intの直後の値から説明してください。",
+     "answer": "Go: 0 lessonsと表示されます。int型を初期値なしで宣言したcountは0から始まり、更新する行がなくなったため、Printfへ0が渡ります。"
+   },
+-  "sources": ["variables", "short-declarations"],
++  "sources": ["variables", "short-declarations", "release-history"],
+   "slides": [
+     {
+       "file": "01.html",

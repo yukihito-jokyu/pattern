@@ -1,0 +1,180 @@
+{
+  "name": "learning-deck-kit",
+  "status": "ready",
+  "mode": "new",
+  "domain": [
+    "frontend",
+    "cli-library"
+  ],
+  "language": "ja",
+  "stack": [
+    {
+      "name": "HTML",
+      "version": "Living Standard",
+      "role": "lesson pages",
+      "pinned": true
+    },
+    {
+      "name": "html-deck",
+      "version": "2d638228f0104fa6ebfad6447bb1652379e1da78",
+      "role": "slide generation",
+      "pinned": true
+    }
+  ],
+  "tools": [
+    {
+      "role": "runtime",
+      "language": "javascript",
+      "name": "Node.js",
+      "version": "22.23.4",
+      "pinned": false
+    },
+    {
+      "role": "runtime",
+      "language": "python",
+      "name": "Python",
+      "version": "3.14.9",
+      "pinned": false
+    },
+    {
+      "role": "package-manager",
+      "language": "javascript",
+      "name": "npm",
+      "version": "11.20.0",
+      "pinned": false
+    },
+    {
+      "role": "formatter",
+      "language": "javascript",
+      "name": "Prettier",
+      "version": "3.9.10",
+      "pinned": false
+    },
+    {
+      "role": "linter",
+      "language": "javascript",
+      "name": "ESLint",
+      "version": "10.13.0",
+      "pinned": false
+    },
+    {
+      "role": "test",
+      "language": "javascript",
+      "name": "Playwright",
+      "version": "1.64.1",
+      "pinned": false
+    },
+    {
+      "role": "typecheck",
+      "language": "javascript",
+      "name": "TypeScript",
+      "version": "7.0.2",
+      "pinned": false
+    },
+    {
+      "role": "package-manager",
+      "language": "python",
+      "name": "uv",
+      "version": "0.13.5",
+      "pinned": false
+    }
+  ],
+  "skills": {
+    "impl": "impl",
+    "review": "review"
+  },
+  "commands": {
+    "check": "npm run check",
+    "fix": "npm run fix"
+  },
+  "protected": [
+    "package.json",
+    "package-lock.json",
+    ".nvmrc",
+    "eslint.config.mjs",
+    ".prettier*",
+    "tools/**",
+    "tests/**",
+    "playwright.config.mjs",
+    ".claude/settings.json",
+    ".foundation/**",
+    "docs/design/rules.md",
+    "docs/design/enforcement-matrix.md",
+    "vendor/**",
+    "ci.json",
+    "tsconfig*.json",
+    ".claude/skills/**",
+    "vendor-lock.json",
+    "go.mod"
+  ],
+  "copy": {
+    "link_dirs": [],
+    "skip_dirs": []
+  },
+  "guard": {
+    "rule": "TOOL-02",
+    "include": [
+      "**/*.mjs",
+      "**/*.html",
+      "**/*.css"
+    ],
+    "exclude": [
+      ".claude/skills/learning-setup/vendor/**",
+      ".foundation/**"
+    ],
+    "suppressions": [
+      {
+        "pattern": "eslint-disable|@ts-ignore|@ts-nocheck|@ts-expect-error|prettier-ignore",
+        "rule": "TOOL-02"
+      },
+      {
+        "pattern": "\\b(?:test|describe)\\.(?:skip|only|fixme)\\s*\\(",
+        "rule": "TOOL-02"
+      }
+    ],
+    "allow": []
+  },
+  "hooks": {
+    "post_edit": [
+      {
+        "glob": "courses/**/*.json",
+        "command": "node_modules/.bin/prettier --write {file}"
+      },
+      {
+        "glob": ".claude/skills/learning-setup/scripts/*.mjs",
+        "command": "node_modules/.bin/prettier --write {file} && node_modules/.bin/eslint {file}"
+      }
+    ]
+  },
+  "convergence": {
+    "agents": 3,
+    "max_rounds": 3,
+    "parallel": 3,
+    "timeout_sec": 1800,
+    "runner": [
+      "claude",
+      "-p",
+      "{prompt}",
+      "--output-format",
+      "json",
+      "--permission-mode",
+      "acceptEdits",
+      "--no-session-persistence",
+      "--allowedTools",
+      "Skill",
+      "Bash(npm run *)",
+      "Bash(node tools/learning.mjs *)",
+      "Bash(git diff *)",
+      "Bash(git status *)",
+      "Bash(cp -R courses/*)"
+    ],
+    "ignore": [
+      "**/__pycache__/**"
+    ],
+    "thresholds": {
+      "files": 1,
+      "names": 0.8,
+      "content": 0
+    }
+  }
+}

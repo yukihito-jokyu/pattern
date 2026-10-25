@@ -1,0 +1,65 @@
+{
+  "status": "passed",
+  "runs": [
+    {
+      "task": "T1-add",
+      "agent": 1,
+      "facts": "passed"
+    },
+    {
+      "task": "T1-add",
+      "agent": 2,
+      "facts": "passed"
+    },
+    {
+      "task": "T1-add",
+      "agent": 3,
+      "facts": "passed"
+    },
+    {
+      "task": "T2-change",
+      "agent": 1,
+      "facts": "passed"
+    },
+    {
+      "task": "T2-change",
+      "agent": 2,
+      "facts": "passed"
+    },
+    {
+      "task": "T2-change",
+      "agent": 3,
+      "facts": "passed"
+    },
+    {
+      "task": "T3-cross",
+      "agent": 1,
+      "facts": "passed"
+    },
+    {
+      "task": "T3-cross",
+      "agent": 2,
+      "facts": "passed"
+    },
+    {
+      "task": "T3-cross",
+      "agent": 3,
+      "facts": "passed"
+    },
+    {
+      "task": "H1-holdout",
+      "agent": 1,
+      "facts": "passed"
+    },
+    {
+      "task": "H1-holdout",
+      "agent": 2,
+      "facts": "passed"
+    },
+    {
+      "task": "H1-holdout",
+      "agent": 3,
+      "facts": "passed"
+    }
+  ]
+}

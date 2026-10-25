@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifは同じ繰り返しの中で処理を選ぶ</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'"
+    />
+    <link rel="stylesheet" href="../theme.css" />
+    <style>
+      .integrated-trace {
+        height: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <article class="slide">
+      <header class="slide-header">
+        <div class="eyebrow">GO / 制御構文</div>
+        <div class="folio">02 / 02</div>
+      </header>
+      <main class="content">
+        <h2>ifは同じ繰り返しの中で処理を選ぶ</h2>
+        <p class="lead">forが続く1〜3の各回で条件を調べ、learnかreviewの一方を表示する。</p>
+        <figure class="diagram integrated-trace">
+          <svg
+            viewBox="0 0 1440 400"
+            role="img"
+            aria-label="lessonの1と2はlearn、3はreviewを表示し、4で本体に入らず終了する"
+          >
+            <title>lessonの1と2はlearn、3はreviewを表示し、4で本体に入らず終了する</title>
+            <text class="diagram-code" x="36" y="56" data-learning-target="condition">
+              ifの条件：lesson == 3
+            </text>
+            <text class="diagram-label" x="1404" y="56" text-anchor="end">本体の後でlesson++</text>
+            <text class="diagram-text" x="186" y="112" text-anchor="middle">lesson = 1</text>
+            <rect class="node" x="36" y="138" width="300" height="232" rx="16" />
+            <text class="diagram-code" x="186" y="188" text-anchor="middle">for: true</text>
+            <text class="diagram-code" x="186" y="242" text-anchor="middle">if: false</text>
+            <text class="diagram-text" x="186" y="332" text-anchor="middle">learn 1</text>
+            <path class="link" d="M 348 250 H 372" />
+            <path class="arrow-head" d="M 372 242 L 388 250 L 372 258 Z" />
+            <text class="diagram-text" x="542" y="112" text-anchor="middle">lesson = 2</text>
+            <rect class="node" x="392" y="138" width="300" height="232" rx="16" />
+            <text class="diagram-code" x="542" y="188" text-anchor="middle">for: true</text>
+            <text class="diagram-code" x="542" y="242" text-anchor="middle">if: false</text>
+            <text class="diagram-text" x="542" y="332" text-anchor="middle">learn 2</text>
+            <path class="link" d="M 704 250 H 728" />
+            <path class="arrow-head" d="M 728 242 L 744 250 L 728 258 Z" />
+            <text class="diagram-text" x="898" y="112" text-anchor="middle">lesson = 3</text>
+            <rect class="emphasis-node" x="748" y="138" width="300" height="232" rx="16" />
+            <text class="diagram-code" x="898" y="188" text-anchor="middle">for: true</text>
+            <g data-learning-target="review-branch">
+              <text class="diagram-code" x="898" y="242" text-anchor="middle">if: true</text>
+              <text class="diagram-text" x="898" y="332" text-anchor="middle">review 3</text>
+            </g>
+            <path class="link" d="M 1060 250 H 1084" />
+            <path class="arrow-head" d="M 1084 242 L 1100 250 L 1084 258 Z" />
+            <text class="diagram-text" x="1254" y="112" text-anchor="middle">lesson = 4</text>
+            <rect class="node" x="1104" y="138" width="300" height="232" rx="16" />
+            <text class="diagram-code" x="1254" y="188" text-anchor="middle">for: false</text>
+            <text class="diagram-label" x="1254" y="242" text-anchor="middle">本体に入らない</text>
+            <text class="diagram-text" x="1254" y="332" text-anchor="middle">終了</text>
+          </svg>
+        </figure>
+        <p class="summary">
+          表示はlearn 1 → learn 2 → review 3の順。4ではfor条件がfalseになり、ifも実行しない。
+        </p>
+      </main>
+      <footer class="slide-footer">
+        <div class="source">Go言語仕様：If statements / For statements</div>
+        <div>Go 1.27 / 2026-10-24</div>
+      </footer>
+    </article>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+# 0005 一時領域とPlaywrightの出力所有者を分ける
+
+- 状態: 採用
+- 日付: 2026-10-25
+
+通常ラウンド2では、複数の作者が指定どおりtest-results/authoringをTMPDIRへ設定したところ、Playwrightがtest-resultsを初期化し、その後のサーバーのmkdtempがENOENTで失敗した。単体検査のfixtureは既に分離していたが、一時領域全体の所有者が競合していた。R1（出力の所有者の軸が未決定）として扱う。
+
+Playwrightはtest-resultsだけを所有する。全検査に渡すTMPDIRはbuild/temporary、保持するログと画像はbuild/verificationへ統一する。手順とAGENTS・構造文書を合わせ、prepareが各コピーのbuild/temporaryを先に作り、全作者へ同じTMPDIRを明示する。ソース・他者の出力に関するヒントは加えない。最終ラウンドはこの条件で通常課題と未使用課題を測る。
+
+各作者は検査を緩めず、コピー内の別の生成物用一時領域へ移して全検査を成功させた。成果物の一致と、この環境手順の問題は分けて記録する。修正後はコピー内TMPDIRを使って、単体からブラウザ・Go例まで全検査が通ることを確認する。

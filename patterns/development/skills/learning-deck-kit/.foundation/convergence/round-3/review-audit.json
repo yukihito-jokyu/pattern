@@ -1,0 +1,72 @@
+{
+  "method": "親担当が3全文を読み、各seedの実際の記述・理由・修正案と照合した。単なるID出現率だけで判定しない。",
+  "evidence": {
+    "STR-02": "Go専用の本文をruntimeで組み立てる。",
+    "DEP-02": "printWidth",
+    "NAM-02": "annotations:boolean",
+    "CODE-03": "@returns {string}",
+    "OPS-01": "URL文字列がhttpsなら本文の取得を省略して確認済みと記録する",
+    "TEST-01": "assert.ok(true)",
+    "PROC-02": "count = 3を新しく宣言する",
+    "TOOL-02": "eslint-disable-next-line"
+  },
+  "agents": [
+    {
+      "agent": 1,
+      "seedFindingsVerified": [
+        "CODE-03",
+        "DEP-02",
+        "NAM-02",
+        "OPS-01",
+        "PROC-02",
+        "STR-02",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "recall": 1.0,
+      "falsePositives": [],
+      "extraRuleIds": [
+        "TOOL-01"
+      ],
+      "extraAssessment": "実際のPrettier不一致を根拠にした追加指摘。seedとは別IDだが誤検出ではない。"
+    },
+    {
+      "agent": 2,
+      "seedFindingsVerified": [
+        "CODE-03",
+        "DEP-02",
+        "NAM-02",
+        "OPS-01",
+        "PROC-02",
+        "STR-02",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "recall": 1.0,
+      "falsePositives": [],
+      "extraRuleIds": [
+        "TOOL-01"
+      ],
+      "extraAssessment": "実際のPrettier不一致を根拠にした追加指摘。seedとは別IDだが誤検出ではない。"
+    },
+    {
+      "agent": 3,
+      "seedFindingsVerified": [
+        "CODE-03",
+        "DEP-02",
+        "NAM-02",
+        "OPS-01",
+        "PROC-02",
+        "STR-02",
+        "TEST-01",
+        "TOOL-02"
+      ],
+      "recall": 1.0,
+      "falsePositives": [],
+      "extraRuleIds": [
+        "TOOL-01"
+      ],
+      "extraAssessment": "実際のPrettier不一致を根拠にした追加指摘。seedとは別IDだが誤検出ではない。"
+    }
+  ]
+}

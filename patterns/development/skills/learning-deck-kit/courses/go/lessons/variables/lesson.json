@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "variables",
+  "title": "変数と型",
+  "goal": "宣言と代入を区別し、変数に入る値を追える",
+  "prerequisites": [
+    "Goをインストールし、ターミナルでgo runを実行できる",
+    "main関数が処理の入口で、fmtが値の表示を担うことを知っている"
+  ],
+  "explanation": [
+    {
+      "title": "値を残すために名前を付ける",
+      "body": "後から同じ値を使うには、値に名前を付けておく必要があります。変数はそのための仕組みです。Goでは変数が扱う値の種類を型が決めます。この学びでは、数を扱うcountと文字列を扱うnameを使い、宣言した後に値がどう変わるかを追います。",
+      "code": "",
+      "output": ""
+    },
+    {
+      "title": "宣言から更新までの流れ",
+      "body": "var count intはint型の変数を宣言します。初期値を省略したintは0で始まります。name := \"Go\"は関数内で値から型を決める宣言で、nameの型はstringになります。その後のcount = 3は新しい宣言ではなく、既にあるcountの値の更新です。宣言の:=と更新の=を、値の流れの違いとして読み分けます。",
+      "code": "",
+      "output": ""
+    },
+    {
+      "title": "完全なコードを実行する",
+      "body": "次をmain.goとして保存し、そのディレクトリでgo run main.goを実行します。fmt.Printfの%sにはname、%dにはcountが渡るため、更新後の3が表示されます。2026-10-24にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
+      "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tvar count int\n\tname := \"Go\"\n\tcount = 3\n\tfmt.Printf(\"%s: %d lessons\\n\", name, count)\n}",
+      "output": "Go: 3 lessons"
+    },
+    {
+      "title": "次の学びにつなぐ",
+      "body": "変数の値を追えるようになると、その値を比較して処理を選べます。次の制御構文では、lessonの値に応じて学習と復習を切り替えます。",
+      "code": "",
+      "output": ""
+    }
+  ],
+  "exercise": {
+    "prompt": "count = 3の行を取り除くと、最後に何が表示されますか。var count intの直後の値から説明してください。",
+    "answer": "Go: 0 lessonsと表示されます。int型を初期値なしで宣言したcountは0から始まり、更新する行がなくなったため、Printfへ0が渡ります。"
+  },
+  "sources": ["variables", "short-declarations"],
+  "slides": [
+    {
+      "file": "01.html",
+      "title": "変数は名前・型・値を結び付ける",
+      "notes": [
+        {
+          "id": "name-note",
+          "target": "name-binding",
+          "side": "left",
+          "title": "名前で後から参照する",
+          "body": "countは変数を指す名前です。同じ名前を使うことで、後続の処理から今の値を参照できます。"
+        },
+        {
+          "id": "type-note",
+          "target": "type-binding",
+          "side": "right",
+          "title": "型が扱う値を決める",
+          "body": "int型のcountは整数を扱います。初期値を省略すると、最初の値は0です。"
+        }
+      ]
+    },
+    {
+      "file": "02.html",
+      "title": "宣言した変数の値を代入で更新する",
+      "notes": [
+        {
+          "id": "declaration-note",
+          "target": "declaration",
+          "side": "left",
+          "title": "最初に変数を宣言する",
+          "body": "var count intでint型のcountを用意します。初期値を省略したため、宣言直後の値は0です。"
+        },
+        {
+          "id": "assignment-note",
+          "target": "assignment",
+          "side": "right",
+          "title": "同じ変数へ新しい値を入れる",
+          "body": "count = 3は既存変数の更新です。countが保持する値は0から3へ変わり、その後の処理で3を参照できます。"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "functions",
+  "title": "関数",
+  "goal": "引数から戻り値までの流れを説明できる",
+  "prerequisites": [
+    "変数と制御構文の学習を終え、値と処理の実行順を追える",
+    "整数の引き算を式として読める"
+  ],
+  "explanation": [
+    {
+      "title": "処理のまとまりに名前を付ける",
+      "body": "ここまでで変数の値と処理の順序を追いました。関数を使うと、処理のまとまりに名前を付けて、入力と結果をはっきり分けられます。この学びでは、全体の件数と完了件数から残りの件数を求めるremainingを使います。",
+      "code": "",
+      "output": ""
+    },
+    {
+      "title": "引数から戻り値までを追う",
+      "body": "remaining(3, 1)を呼ぶと、3がtotal、1がcompletedへ順に渡ります。関数の本体はtotal - completedを計算し、returnで2を呼び出し元へ返します。宣言の最後のintは戻り値の型です。関数内で表示するのではなく、結果を受け取ったmainがfmt.Printlnで表示します。",
+      "code": "",
+      "output": ""
+    },
+    {
+      "title": "完全なコードを実行する",
+      "body": "次をmain.goとして保存し、go run main.goを実行します。remainingは渡された値を計算し、mainは返ってきた2を表示します。2026-10-24にGo 1.27.3で実行し、次の出力と終了コード0を確認しています。",
+      "code": "package main\n\nimport \"fmt\"\n\nfunc remaining(total int, completed int) int {\n\treturn total - completed\n}\n\nfunc main() {\n\tfmt.Println(\"remaining\", remaining(3, 1))\n}",
+      "output": "remaining 2"
+    },
+    {
+      "title": "学んだ流れを自分で説明する",
+      "body": "変数は値に名前を付け、条件はその値から進む処理を選び、関数は処理の入力と結果を分けます。短いプログラムを読むときは、値がどこで決まり、どの処理へ渡り、どこへ戻るかを順に追ってください。",
+      "code": "",
+      "output": ""
+    }
+  ],
+  "exercise": {
+    "prompt": "remaining(5, 2)と呼び出した場合、totalとcompletedには何が入り、何が返りますか。引数の順番も説明してください。",
+    "answer": "第1引数の5がtotal、第2引数の2がcompletedへ渡ります。5 - 2を計算し、returnによってint型の3が呼び出し元へ返ります。"
+  },
+  "sources": ["function-declarations"],
+  "slides": [
+    {
+      "file": "01.html",
+      "title": "関数は入力を受け取り結果を返す",
+      "notes": [
+        {
+          "id": "arguments-note",
+          "target": "arguments",
+          "side": "left",
+          "title": "順番に入力を渡す",
+          "body": "remaining(3, 1)では、第1引数3がtotal、第2引数1がcompletedへ渡ります。値の順番が引数の対応を決めます。"
+        },
+        {
+          "id": "return-note",
+          "target": "return-value",
+          "side": "right",
+          "title": "計算結果が呼び出し元へ戻る",
+          "body": "total - completedの結果2をreturnで返します。返った値を、呼び出し元で表示や別の計算に使えます。"
+        }
+      ]
+    },
+    {
+      "file": "02.html",
+      "title": "宣言の型とreturnが入出力の形を決める",
+      "notes": [
+        {
+          "id": "parameters-note",
+          "target": "parameters",
+          "side": "left",
+          "title": "引数と戻り値の型を読む",
+          "body": "totalとcompletedはint型の入力です。引数の閉じ括弧の後のintは、関数がint型の結果を返すことを示します。"
+        },
+        {
+          "id": "return-statement-note",
+          "target": "return-statement",
+          "side": "right",
+          "title": "結果を返して処理を終える",
+          "body": "return total - completedが計算結果をint型の値2として呼び出し元へ返し、関数の処理を終えます。戻った値の使い方は呼び出し元が決めます。"
+        }
+      ]
+    }
+  ]
+}

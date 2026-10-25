@@ -1,0 +1,72 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "three_second_read": "3と1が関数の処理を通り、戻り値2になる。",
+      "scores": {
+        "claim": 5,
+        "entry": 5,
+        "fit": 5,
+        "density": 4,
+        "visual": 5,
+        "craft": 5
+      },
+      "verdict": "pass",
+      "strength": "入力・処理・戻り値の3箱と一方向の矢印で、値の流れを壊さず読める構図。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    },
+    {
+      "slide": "02",
+      "three_second_read": "remainingのコードから、mainでの呼び出しと結果表示へ処理が流れる。",
+      "scores": {
+        "claim": 3,
+        "entry": 4,
+        "fit": 3,
+        "density": 4,
+        "visual": 3,
+        "craft": 5
+      },
+      "verdict": "patch",
+      "strength": "コードと呼び出し元を左右に分けた骨格と、戻る向きを示す右側の縦方向の流れは維持する。",
+      "findings": [
+        {
+          "axis": "fit",
+          "severity": "high",
+          "target": ".code-panel code [data-learning-target=\"parameters\"], .code-panel code [data-learning-target=\"return-statement\"]",
+          "problem": "見出しは宣言の型とreturnを主役にしているが、画面ではコード全体が同じ強さで見え、intとreturnの対応を視線だけでは拾えない。右図の主役も型ではなくmainの呼び出しと表示になっている。",
+          "fix": "parameters内の2つの入力型intと宣言末尾の出力型int、およびreturnだけをアクセント色か太字で強調し、同じ色の短いラベルで「入力の型」「出力の型」「値を返す」をコード内に対応付ける。コード全文や詳説は増やさない。",
+          "why": "3秒で見た内容を、mainの操作説明から『型が入出力を定め、returnが値を戻す』という契約上の主張へ一致させるため。"
+        },
+        {
+          "axis": "visual",
+          "severity": "medium",
+          "target": ".code-figure svg",
+          "problem": "右図は呼び出しから表示への下向き矢印だけなので、左のreturnが呼び出し元へ値を戻す関係を絵として示していない。左右を結ぶ横矢印もコードから右へ進む向きで、戻り値の向きとは逆に読める。",
+          "fix": "右図の下段を「戻り値 2 : int」に変え、returnから呼び出し元へ戻る関係が分かる上向きまたは左向きの矢印として描く。表示という利用例は下部summaryに任せる。",
+          "why": "returnの戻る向きと出力型を図だけで追えるようにし、構造スライドとして文字を読まなくても関係が残るようにするため。"
+        }
+      ],
+      "reopen": false,
+      "user_conflict": []
+    }
+  ],
+  "deck": {
+    "goal_met": "yes",
+    "walkthrough": "1枚目で、具体値3と1が関数に入り、計算を経て2として戻る流れを掴む。2枚目では、その流れをGoの関数宣言と呼び出し元の関係へ接続するため、挙動からコード構造へ自然に進む。2枚とも同じremainingの例を使うので対象を見失わず、最後は戻り値をmainが使うところまで決着する。2枚目の型とreturnの視覚的な対応は弱いが、外側の詳説と合わせればデッキの到達目標は満たせる。",
+    "scores": {
+      "flow": 4,
+      "non_redundancy": 4,
+      "rhythm": 4,
+      "visual_balance": 5,
+      "emphasis": 4,
+      "resolution": 4,
+      "voice": 5
+    },
+    "actions": [],
+    "verdict": "pass",
+    "reopen": false,
+    "user_conflict": []
+  }
+}

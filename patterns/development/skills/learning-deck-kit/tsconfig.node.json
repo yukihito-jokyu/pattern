@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": [
+    ".claude/skills/learning-setup/scripts/**/*.mjs",
+    ".claude/skills/learning-setup/scripts/**/*.d.ts",
+    "tools/**/*.mjs",
+    "tests/*.mjs"
+  ],
+  "exclude": [".claude/skills/learning-setup/vendor/**"]
+}

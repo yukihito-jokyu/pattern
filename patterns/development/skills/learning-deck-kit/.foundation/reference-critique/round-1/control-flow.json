@@ -1,0 +1,74 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "three_second_read": "lessonが1〜3の間は本体を実行し、4で条件がfalseになって繰り返しが終わる。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 4,
+        "density": 4,
+        "visual": 4,
+        "craft": 4
+      },
+      "verdict": "pass",
+      "strength": "1〜3の継続行と4の終了行を上下に対比した構図は、条件確認が本体より先だという主張を支えている。",
+      "findings": [],
+      "reopen": false,
+      "user_conflict": []
+    },
+    {
+      "slide": "02",
+      "three_second_read": "lessonが3ならreview、それ以外ならlearnへ分岐する。",
+      "scores": {
+        "claim": 5,
+        "entry": 4,
+        "fit": 4,
+        "density": 4,
+        "visual": 4,
+        "craft": 3
+      },
+      "verdict": "patch",
+      "strength": "左の条件式から右の二分岐図へ視線が進む対応関係は維持する。",
+      "findings": [
+        {
+          "axis": "craft",
+          "severity": "high",
+          "target": ".code-figure svg .diagram-label",
+          "problem": "trueとfalseの文字を分岐の縦線が貫き、条件結果のラベルと接続線が重なって読みにくい。",
+          "fix": "trueのxを160から116へ、falseのxを416から460へ移し、y=196は維持して各ラベルを縦線の外側へ逃がす。分岐線と結果ボックスの座標は変えない。",
+          "why": "条件からどちらの処理へ進むかを、線とラベルの干渉なしに一度で追えるようにするため。"
+        }
+      ],
+      "reopen": false,
+      "user_conflict": []
+    }
+  ],
+  "deck": {
+    "goal_met": "partial",
+    "walkthrough": "1枚目で、forが本体より先に継続条件を確認し、lessonが4になると本体へ入らず終了することを理解する。2枚目で、各反復の中ではifがreviewかlearnの一方を選ぶことを理解する。しかし最後まで見ても、lesson 1、2、3、4を通した実際の順序が1本の流れとして示されず、反復と分岐を読み手自身で合成する必要が残る。したがって個々の仕組みは分かるが、デッキのゴールである両者を含む順序を追える状態までは決着していない。",
+    "scores": {
+      "flow": 3,
+      "non_redundancy": 5,
+      "rhythm": 5,
+      "visual_balance": 5,
+      "emphasis": 4,
+      "resolution": 3,
+      "voice": 5
+    },
+    "actions": [
+      {
+        "type": "rebuild",
+        "slides": [
+          "02"
+        ],
+        "problem": "01の問い(出)はforが本体前に条件確認することだが、02はif単体のコードと分岐を示すため、forの各回のどこでifが働き、最終的に何がどの順で表示されるかへ接続していない。",
+        "proposal": "02を、lesson 1→learn、2→learn、3→review、4→for条件falseで終了、という横方向の統合トレースに置き換える。各1〜3の節点内にif判定結果を示し、4だけは本体へ入らない終端として描く。完全なコードは外側HTMLに残す。",
+        "why": "最後の1枚でforの反復順とifの選択を合成し、見た人が条件による分岐と繰り返しの順序を実際に追える状態にするため。"
+      }
+    ],
+    "verdict": "revise",
+    "reopen": false,
+    "user_conflict": []
+  }
+}

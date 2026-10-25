@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "go",
+  "title": "Goを値と処理の流れから学ぶ",
+  "technology": "Go",
+  "version": "1.27",
+  "goal": "値、条件による処理の分岐、関数の入出力を追い、短いGoプログラムの結果を説明できる",
+  "audience": "Goで変数、制御構文、関数を初めて学ぶ人",
+  "officialHosts": ["go.dev"],
+  "sources": [
+    {
+      "id": "variables",
+      "title": "Go言語仕様：変数宣言",
+      "url": "https://go.dev/ref/spec#Variable_declarations",
+      "version": "go1.27",
+      "checkedAt": "2026-10-24"
+    },
+    {
+      "id": "short-declarations",
+      "title": "Go言語仕様：短い変数宣言",
+      "url": "https://go.dev/ref/spec#Short_variable_declarations",
+      "version": "go1.27",
+      "checkedAt": "2026-10-24"
+    },
+    {
+      "id": "if-statements",
+      "title": "Go言語仕様：if文",
+      "url": "https://go.dev/ref/spec#If_statements",
+      "version": "go1.27",
+      "checkedAt": "2026-10-24"
+    },
+    {
+      "id": "for-statements",
+      "title": "Go言語仕様：for文",
+      "url": "https://go.dev/ref/spec#For_statements",
+      "version": "go1.27",
+      "checkedAt": "2026-10-24"
+    },
+    {
+      "id": "function-declarations",
+      "title": "Go言語仕様：関数宣言",
+      "url": "https://go.dev/ref/spec#Function_declarations",
+      "version": "go1.27",
+      "checkedAt": "2026-10-24"
+    },
+    {
+      "id": "release-history",
+      "title": "Goのリリース履歴",
+      "url": "https://go.dev/doc/devel/release",
+      "version": "go1.27.3",
+      "checkedAt": "2026-10-24"
+    }
+  ],
+  "curriculum": [
+    {
+      "id": "variables",
+      "title": "変数と型",
+      "goal": "宣言と代入を区別し、変数に入る値を追える",
+      "dependsOn": []
+    },
+    {
+      "id": "control-flow",
+      "title": "制御構文",
+      "goal": "条件による分岐と繰り返しの順序を追える",
+      "dependsOn": ["variables"]
+    },
+    {
+      "id": "functions",
+      "title": "関数",
+      "goal": "引数から戻り値までの流れを説明できる",
+      "dependsOn": ["variables", "control-flow"]
+    }
+  ]
+}
