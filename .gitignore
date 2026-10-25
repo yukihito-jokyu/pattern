@@ -8,3 +8,7 @@ test-results/
 .autoflow/runs/
 .autoflow/profile-approval.json
 __pycache__/
+/.agent-logs/
+/.agent-observer/
+/reports/agent-behavior.html
+/reports/agent-behavior.json
